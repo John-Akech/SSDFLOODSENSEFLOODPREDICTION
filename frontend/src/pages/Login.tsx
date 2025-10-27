@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
-import api from '../services/api';
+
 import { WaveIcon } from '../components/Icons';
 import { useLanguage } from '../i18n/LanguageContext';
 

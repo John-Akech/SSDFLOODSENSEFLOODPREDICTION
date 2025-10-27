@@ -198,7 +198,7 @@ const Home: React.FC = () => {
                       <span className="text-xs text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
                     </div>
                     <p className="text-sm font-semibold text-gray-900 mb-2">{a.message}</p>
-                    <p className="text-xs text-gray-600">{t('location')}: {locationNames[a.id] || `${a.latitude.toFixed(3)}, ${a.longitude.toFixed(3)}`}</p>
+                    <p className="text-xs text-gray-600">{t('location')}: {locationNames[a.id as number] || `${a.latitude.toFixed(3)}, ${a.longitude.toFixed(3)}`}</p>
                   </motion.div>
                 ))}
               </div>

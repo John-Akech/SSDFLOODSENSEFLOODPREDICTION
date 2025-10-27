@@ -3,7 +3,7 @@ import { apiService } from '../services/api';
 import RiskBadge from '../components/RiskBadge';
 import { Prediction } from '../types';
 import api from '../services/api';
-import { ShieldIcon, ChartIcon } from '../components/Icons';
+import { ShieldIcon } from '../components/Icons';
 import { useLanguage } from '../i18n/LanguageContext';
 import { reverseGeocode } from '../services/geocoding';
 

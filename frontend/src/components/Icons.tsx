@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 export const WaveIcon = ({ className = "w-6 h-6" }: { className?: string }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 24 24">

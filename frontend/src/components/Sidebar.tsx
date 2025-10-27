@@ -30,13 +30,12 @@ const Sidebar: React.FC = () => {
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.path);
-          const LinkComponent = item.external ? 'a' : Link;
-          const linkProps = item.external ? { href: item.path, target: '_blank', rel: 'noopener noreferrer' } : { to: item.path };
-          
-          return (
-            <LinkComponent
+          return item.external ? (
+            <a
               key={item.path}
-              {...linkProps}
+              href={item.path}
+              target="_blank"
+              rel="noopener noreferrer"
               className={`group flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${
                 active
                   ? 'bg-gradient-to-r from-ocean-500 to-cyan-600 text-white shadow-xl scale-105'
@@ -50,7 +49,25 @@ const Sidebar: React.FC = () => {
               {active && (
                 <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
               )}
-            </LinkComponent>
+            </a>
+          ) : (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`group flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${
+                active
+                  ? 'bg-gradient-to-r from-ocean-500 to-cyan-600 text-white shadow-xl scale-105'
+                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:scale-105'
+              }`}
+            >
+              <div className={`p-2 rounded-xl ${active ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`}`}>
+                <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-white'}`} />
+              </div>
+              <span className="font-bold">{item.label}</span>
+              {active && (
+                <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
+              )}
+            </Link>
           );
         })}
       </nav>

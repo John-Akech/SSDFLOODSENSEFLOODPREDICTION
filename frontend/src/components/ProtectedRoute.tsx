@@ -1,5 +1,4 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
 import { ShieldIcon } from './Icons';
 
 interface ProtectedRouteProps {

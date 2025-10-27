@@ -32,7 +32,7 @@ const MapController: React.FC<{ center: [number, number] | null; zoom: number }>
 };
 
 const Map: React.FC = () => {
-  const { t } = useLanguage();
+  const { } = useLanguage();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [existingPredictions, setExistingPredictions] = useState<Prediction[]>([]);

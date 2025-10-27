@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await apiService.login({ email, password });
+    await apiService.login({ email, password });
     const userData = { id: 1, email, role: 'admin' };
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));

@@ -6,7 +6,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 const Footer: React.FC = () => {
   const { t } = useLanguage();
   
-  const handlePolicyClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handlePolicyClick = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
