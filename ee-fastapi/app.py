@@ -30,24 +30,30 @@ gee_error = None
 
 # Try to initialize Earth Engine on startup
 try:
-    import os
+    import json
     service_account_file = os.path.join(os.path.dirname(__file__), 'gee-service-account.json')
     
     if os.path.exists(service_account_file):
-        credentials = ee.ServiceAccountCredentials(None, service_account_file)
-        ee.Initialize(credentials)
+        with open(service_account_file, 'r') as f:
+            key_data = json.load(f)
+        service_account = key_data['client_email']
+        credentials = ee.ServiceAccountCredentials(service_account, service_account_file)
+        ee.Initialize(credentials, project='floodsense-476422')
         logger.info("[OK] Earth Engine initialized with service account")
+        gee_initialized = True
     elif settings.GEE_PROJECT_ID:
         ee.Initialize(project=settings.GEE_PROJECT_ID)
         logger.info("[OK] Earth Engine initialized with project ID")
+        gee_initialized = True
     else:
         ee.Initialize()
         logger.info("[OK] Earth Engine initialized")
-    gee_initialized = True
+        gee_initialized = True
 except Exception as e:
     gee_error = str(e)
     logger.warning(f"[WARN] Earth Engine not initialized: {e}")
     logger.info("User will need to authenticate via UI")
+    gee_initialized = False
 
 app = FastAPI(
     title="FloodSense SAR Detection API",
