@@ -243,33 +243,30 @@ async def get_dyke_recommendations(
 async def get_active_alerts(
     latitude: Optional[float] = None,
     longitude: Optional[float] = None,
-    radius_km: float = 50,
-    db: Session = Depends(get_db)
+    radius_km: float = 50
 ):
-    """Get active flood alerts (only admin-approved)"""
-    # Only return published predictions
-    published_predictions = db.query(DBPrediction).filter(
-        DBPrediction.published == True,
-        DBPrediction.retracted != True
-    ).all()
-    
-    alerts = alert_service.get_active_alerts(latitude, longitude, radius_km)
-    
-    return {
-        "alerts": [
-            {
-                "id": alert.id,
-                "latitude": alert.latitude,
-                "longitude": alert.longitude,
-                "message": alert.message,
-                "severity": alert.severity,
-                "created_at": alert.created_at,
-                "expires_at": alert.expires_at
-            }
-            for alert in alerts
-        ],
-        "count": len(alerts)
-    }
+    """Get active flood alerts"""
+    try:
+        alerts = alert_service.get_active_alerts(latitude, longitude, radius_km)
+        
+        return {
+            "alerts": [
+                {
+                    "id": alert.id,
+                    "latitude": alert.latitude,
+                    "longitude": alert.longitude,
+                    "message": alert.message,
+                    "severity": alert.severity,
+                    "created_at": alert.created_at.isoformat(),
+                    "expires_at": alert.expires_at.isoformat() if alert.expires_at else None
+                }
+                for alert in alerts
+            ],
+            "count": len(alerts)
+        }
+    except Exception as e:
+        logger.error(f"Error getting alerts: {e}")
+        return {"alerts": [], "count": 0}
 
 
 
