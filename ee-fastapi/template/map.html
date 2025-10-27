@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>FloodSense - SAR Flood Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.5.2/ol.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #1a1a2e;
+            overflow: hidden;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: -450px;
+            width: 450px;
+            height: 100vh;
+            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+            box-shadow: 5px 0 30px rgba(0, 0, 0, 0.3);
+            transition: left 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 2000;
+            overflow-y: auto;
+        }
+
+        .sidebar.open {
+            left: 0;
+        }
+
+        .sidebar-toggle {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            z-index: 2001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        .sidebar-toggle span {
+            display: block;
+            width: 24px;
+            height: 2px;
+            background: white;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle span::before,
+        .sidebar-toggle span::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 2px;
+            background: white;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-toggle span::before { top: -8px; }
+        .sidebar-toggle span::after { top: 8px; }
+
+        .sidebar-toggle.active span {
+            background: transparent;
+        }
+
+        .sidebar-toggle.active span::before {
+            transform: rotate(45deg);
+            top: 0;
+        }
+
+        .sidebar-toggle.active span::after {
+            transform: rotate(-45deg);
+            top: 0;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 30px;
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .sidebar-header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .sidebar-header p {
+            font-size: 14px;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 12px;
+            backdrop-filter: blur(10px);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-section {
+            padding: 30px;
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .date-range {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .date-range span {
+            text-align: center;
+            color: #999;
+            font-weight: 700;
+            font-size: 18px;
+        }
+
+        input[type="date"], input[type="text"], select {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid #e8e8e8;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            background: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        input[type="date"]:focus, input[type="text"]:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(17, 153, 142, 0.3);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            box-shadow: 0 8px 20px rgba(245, 87, 108, 0.3);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+            padding: 18px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border-left: 4px solid #00acc1;
+        }
+
+        .info-box p {
+            font-size: 13px;
+            color: #006064;
+            line-height: 1.7;
+            font-weight: 500;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 25px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e8e8e8;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .result-panel {
+            display: none;
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-top: 20px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .result-panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 12px;
+        }
+
+        .result-value {
+            font-size: 36px;
+            font-weight: 800;
+            color: #1b5e20;
+            margin-bottom: 4px;
+        }
+
+        .result-unit {
+            font-size: 14px;
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        .sidebar-footer {
+            padding: 25px 30px;
+            text-align: center;
+            background: #f8f9fa;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .sidebar-footer p {
+            font-size: 11px;
+            color: #999;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .sidebar-footer strong {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .modal-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            font-weight: 700;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .modal-subtitle {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .auth-steps {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .auth-step {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .auth-step:last-child {
+            margin-bottom: 0;
+        }
+
+        .step-number {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            flex-shrink: 0;
+        }
+
+        .step-text {
+            flex: 1;
+            color: #333;
+        }
+
+        .step-text a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .step-text a:hover {
+            text-decoration: underline;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <span></span>
+    </button>
+
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h1>FloodSense SAR</h1>
+            <p>Sentinel-1 Flood Detection System</p>
+            <span class="status-badge" id="statusBadge">CHECKING...</span>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Location Search</div>
+            <div class="input-group">
+                <label class="input-label">Find Location</label>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="locationSearch" placeholder="Enter place name (e.g., Juba, Bor)" style="flex: 1;">
+                    <button class="btn btn-primary" id="searchLocationBtn" style="width: auto; padding: 14px 24px; margin: 0;">Search</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Drawing Tools</div>
+            <div class="input-group">
+                <select id="drawTool" onchange="handleToolChange()">
+                    <option value="">Select Drawing Tool</option>
+                    <option value="rectangle">Rectangle</option>
+                    <option value="polygon">Polygon</option>
+                    <option value="line">Line</option>
+                    <option value="circle">Circle</option>
+                </select>
+            </div>
+            <button class="btn btn-danger" onclick="clearDrawing()">Clear Drawing</button>
+            <button class="btn btn-secondary" onclick="window.location.href='http://localhost:3000'">Go to Main App</button>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Baseline Period</div>
+            <div class="input-group">
+                <label class="input-label">Before Flood</label>
+                <div class="date-range">
+                    <input type="date" id="init_start" value="2025-01-01" min="2014-01-01">
+                    <span>→</span>
+                    <input type="date" id="init_last" value="2025-03-31" min="2014-01-01">
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Flood Period</div>
+            <div class="input-group">
+                <label class="input-label">Peak Flood Season (Aug-Nov)</label>
+                <div class="date-range">
+                    <input type="date" id="flood_start" value="2025-08-01" min="2014-01-01">
+                    <span>→</span>
+                    <input type="date" id="flood_last" value="2025-11-30" min="2014-01-01">
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Detection Settings</div>
+            <div class="input-group">
+                <label class="input-label">Flood Threshold</label>
+                <input type="text" id="threshold" value="1.25" placeholder="1.25">
+            </div>
+            <div class="info-box">
+                <p><strong>South Sudan Flood Season:</strong> Rainy season April-October, peak flooding August-November. Higher threshold = stricter detection.</p>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Actions</div>
+            <div class="alert alert-warning" id="authWarning" style="display: none;">
+                <strong>Not Authenticated</strong><br>
+                Please authenticate with Google Earth Engine first.
+            </div>
+            <button class="btn btn-primary" id="display" disabled>
+                <span>Detect Flood</span>
+            </button>
+            <button class="btn btn-secondary" id="download" disabled>
+                <span id="downloadText">Download GeoPackage</span>
+            </button>
+            <button class="btn btn-secondary" id="pauseDownload" disabled style="display: none;">
+                <span>Pause Download</span>
+            </button>
+            <button class="btn btn-secondary" id="resumeDownload" disabled style="display: none;">
+                <span>Resume Download</span>
+            </button>
+            <button class="btn btn-danger" id="undo">
+                <span>Clear Map</span>
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p style="color: #667eea; font-weight: 600;">Processing SAR data...</p>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="progress-text" id="progressText">0%</div>
+            </div>
+
+            <div class="result-panel" id="result">
+                <div class="result-title">Flood Detected</div>
+                <div class="result-value" id="floodArea">0</div>
+                <div class="result-unit">hectares affected</div>
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="section-title">Keyboard Shortcuts</div>
+            <div style="font-size: 12px; color: #666; line-height: 2;">
+                <div><strong>Ctrl+M</strong> - Toggle Menu</div>
+                <div><strong>Ctrl+D</strong> - Detect Flood</div>
+                <div><strong>Ctrl+C</strong> - Clear Drawing</div>
+                <div><strong>Esc</strong> - Close Modal</div>
+            </div>
+        </div>
+
+        <div class="sidebar-footer">
+            <p><strong>FloodSense</strong> | BSc. Software Engineering</p>
+            <p>John Akech | Supervisor: Samiratu Ntohsi</p>
+        </div>
+    </div>
+
+    <div class="modal" id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-icon">AUTH</div>
+                <h2 class="modal-title">Google Earth Engine Authentication</h2>
+                <p class="modal-subtitle">This system requires Google Earth Engine access to process satellite imagery</p>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" id="authAlert">
+                    <strong>Authentication Required</strong><br>
+                    Please authenticate with Google Earth Engine to use this service.
+                </div>
+                <div class="auth-steps">
+                    <div class="auth-step">
+                        <div class="step-number">1</div>
+                        <div class="step-text">Sign up for <a href="https://earthengine.google.com/signup/" target="_blank">Google Earth Engine</a></div>
+                    </div>
+                    <div class="auth-step">
+                        <div class="step-number">2</div>
+                        <div class="step-text">Create a <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Project</a></div>
+                    </div>
+                    <div class="auth-step">
+                        <div class="step-number">3</div>
+                        <div class="step-text">Enable Earth Engine API in your project</div>
+                    </div>
+                    <div class="auth-step">
+                        <div class="step-number">4</div>
+                        <div class="step-text">Run: <code style="background: #e8e8e8; padding: 2px 6px; border-radius: 4px; font-family: monospace;">earthengine authenticate</code></div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Google Cloud Project ID (Optional)</label>
+                    <input type="text" id="projectId" placeholder="your-project-id">
+                </div>
+            </div>
+            <button class="btn btn-primary" id="authenticateBtn">
+                <span>Initialize Earth Engine</span>
+            </button>
+            <button class="btn btn-secondary" id="skipAuthBtn" style="margin-top: 10px;">
+                <span>Retry Connection</span>
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ol@v7.5.2/dist/ol.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>
