@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  backend:
+    container_name: floodsense-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./database/floodsense.db
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-key-in-production}
+      - CORS_ORIGINS=http://localhost:80,http://localhost:3000
+    volumes:
+      - ./backend/database:/app/database
+      - ./backend/logs:/app/logs
+      - ./models:/app/models:ro
+    restart: unless-stopped
+    networks:
+      - floodsense-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  sar-detection:
+    container_name: floodsense-sar
+    build:
+      context: ./ee-fastapi
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - GEE_PROJECT_ID=${GEE_PROJECT_ID}
+      - API_HOST=0.0.0.0
+      - API_PORT=8080
+    volumes:
+      - ${HOME}/.config/earthengine:/home/appuser/.config/earthengine:ro
+      - ./ee-fastapi/output:/app/output
+    restart: unless-stopped
+    networks:
+      - floodsense-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    container_name: floodsense-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - sar-detection
+    restart: unless-stopped
+    networks:
+      - floodsense-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+networks:
+  floodsense-network:
+    driver: bridge
+    name: floodsense-network
+
+volumes:
+  backend-data:
+  sar-output:

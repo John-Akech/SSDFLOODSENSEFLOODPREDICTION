@@ -1,0 +1,166 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply antialiased;
+  }
+  
+  body {
+    @apply text-gray-800;
+    font-family: 'Poppins', 'Inter', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0c4a6e 100%);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 0 60px rgba(6, 182, 212, 0.2); }
+  50% { box-shadow: 0 0 50px rgba(59, 130, 246, 0.6), 0 0 100px rgba(6, 182, 212, 0.4); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-8 py-4 bg-gradient-to-r from-cyan-600 via-blue-600 to-teal-600 text-white font-bold rounded-xl shadow-2xl hover:shadow-cyan-500/50 hover:scale-105 transition-all duration-300;
+    background-size: 200% auto;
+    animation: gradient 3s ease infinite;
+  }
+  
+  .btn-secondary {
+    @apply px-8 py-4 bg-white/10 backdrop-blur-xl text-white font-bold rounded-xl border-2 border-white/30 hover:bg-white/20 hover:border-white/50 transition-all duration-300;
+  }
+  
+  .glass-card {
+    @apply bg-white/95 backdrop-blur-2xl rounded-2xl shadow-xl border border-gray-200 p-8 hover:shadow-cyan-500/20 hover:scale-[1.01] transition-all duration-300;
+  }
+  
+  .gradient-card {
+    @apply bg-gradient-to-br from-cyan-700 via-blue-700 to-teal-800 rounded-2xl shadow-xl p-8 text-white relative overflow-hidden;
+  }
+  
+  .input-field {
+    @apply w-full px-5 py-4 bg-white/80 backdrop-blur-sm border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/30 focus:border-blue-500 focus:bg-white transition-all duration-300 shadow-sm;
+  }
+  
+  .risk-badge {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold shadow-lg;
+  }
+  
+  .risk-low {
+    @apply bg-gradient-to-r from-teal-500 to-cyan-600 text-white border-2 border-teal-400;
+  }
+  
+  .risk-medium {
+    @apply bg-gradient-to-r from-yellow-500 to-orange-500 text-white border-2 border-yellow-400;
+  }
+  
+  .risk-high {
+    @apply bg-gradient-to-r from-orange-600 to-red-600 text-white border-2 border-orange-500;
+  }
+  
+  .risk-critical {
+    @apply bg-gradient-to-r from-red-600 to-rose-700 text-white border-2 border-red-500 animate-pulse shadow-red-600/60;
+  }
+  
+  .nav-link {
+    @apply px-5 py-3 text-sm font-semibold text-gray-700 hover:text-cyan-700 hover:bg-cyan-50 rounded-xl transition-all duration-200;
+  }
+  
+  .nav-link-active {
+    @apply px-5 py-3 text-sm font-bold text-white bg-gradient-to-r from-cyan-600 to-blue-600 rounded-xl shadow-lg;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.6s ease-out;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out;
+  }
+  
+  .animate-glow {
+    animation: glow 3s ease-in-out infinite;
+  }
+  
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .page-container {
+    @apply min-h-screen bg-gradient-to-br from-slate-100 via-cyan-50 to-blue-100 relative overflow-hidden;
+  }
+  
+  .content-wrapper {
+    @apply max-w-7xl mx-auto px-6 py-12;
+  }
+  
+  .stat-card {
+    @apply relative overflow-hidden rounded-3xl p-8 shadow-2xl transform hover:scale-105 transition-all duration-500;
+  }
+  
+  .alert-card {
+    @apply p-6 bg-gradient-to-br from-white to-gray-50 rounded-2xl border-l-4 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  .gradient-text {
+    @apply bg-gradient-to-r from-cyan-700 via-blue-700 to-teal-700 bg-clip-text text-transparent font-bold;
+  }
+  
+  .glass-effect {
+    @apply bg-white/20 backdrop-blur-xl border border-white/30;
+  }
+}
