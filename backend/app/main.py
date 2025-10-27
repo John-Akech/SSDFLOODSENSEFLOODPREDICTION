@@ -70,8 +70,7 @@ app.add_middleware(
 )
 
 # Rate Limiter
-rate_limiter = RateLimiter(requests=100, window=3600)
-app.middleware("http")(rate_limiter)
+app.add_middleware(RateLimiter, requests=100, window=3600)
 
 app.add_exception_handler(SQLAlchemyError, database_error_handler)
 

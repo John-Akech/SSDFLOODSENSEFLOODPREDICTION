@@ -1,15 +1,17 @@
 from fastapi import Request, HTTPException
+from starlette.middleware.base import BaseHTTPMiddleware
 from datetime import datetime, timedelta
 from collections import defaultdict
 from typing import Dict
 
-class RateLimiter:
-    def __init__(self, requests: int = 100, window: int = 3600):
+class RateLimiter(BaseHTTPMiddleware):
+    def __init__(self, app, requests: int = 100, window: int = 3600):
+        super().__init__(app)
         self.requests = requests
         self.window = window
         self.clients: Dict[str, list] = defaultdict(list)
     
-    async def __call__(self, request: Request):
+    async def dispatch(self, request: Request, call_next):
         client_ip = request.client.host
         now = datetime.now()
         
@@ -24,5 +26,4 @@ class RateLimiter:
             raise HTTPException(status_code=429, detail="Rate limit exceeded")
         
         self.clients[client_ip].append(now)
-
-rate_limiter = RateLimiter(requests=100, window=3600)
+        return await call_next(request)
