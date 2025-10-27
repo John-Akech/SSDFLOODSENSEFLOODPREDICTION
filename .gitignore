@@ -114,6 +114,7 @@ tmp/
 *.crt
 secrets/
 credentials/
+gee-service-account.json
 
 # =============================================================================
 # Project Specific

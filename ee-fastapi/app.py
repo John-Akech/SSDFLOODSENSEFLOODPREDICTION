@@ -30,15 +30,23 @@ gee_error = None
 
 # Try to initialize Earth Engine on startup
 try:
-    if settings.GEE_PROJECT_ID:
+    import os
+    service_account_file = os.path.join(os.path.dirname(__file__), 'gee-service-account.json')
+    
+    if os.path.exists(service_account_file):
+        credentials = ee.ServiceAccountCredentials(None, service_account_file)
+        ee.Initialize(credentials)
+        logger.info("[OK] Earth Engine initialized with service account")
+    elif settings.GEE_PROJECT_ID:
         ee.Initialize(project=settings.GEE_PROJECT_ID)
+        logger.info("[OK] Earth Engine initialized with project ID")
     else:
         ee.Initialize()
+        logger.info("[OK] Earth Engine initialized")
     gee_initialized = True
-    logger.info("✓ Earth Engine initialized successfully")
 except Exception as e:
     gee_error = str(e)
-    logger.warning(f"⚠ Earth Engine not initialized: {e}")
+    logger.warning(f"[WARN] Earth Engine not initialized: {e}")
     logger.info("User will need to authenticate via UI")
 
 app = FastAPI(
