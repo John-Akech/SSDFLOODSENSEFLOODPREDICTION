@@ -36,7 +36,7 @@ const Map: React.FC = () => {
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [existingPredictions, setExistingPredictions] = useState<Prediction[]>([]);
-  const [locationNames, setLocationNames] = useState<Record<number, string>>({});
+  const [locationNames, setLocationNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [predicting, setPredicting] = useState(false);
   const [searchPlace, setSearchPlace] = useState('');
@@ -227,7 +227,7 @@ const Map: React.FC = () => {
                         <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">ACTIVE</span>
                         <RiskBadge level={a.severity as any} />
                       </div>
-                      <p className="font-bold text-sm mb-1">{locationNames[`alert-${a.id}`] || 'Loading...'}</p>
+                      <p className="font-bold text-sm mb-1">{(locationNames as any)[`alert-${a.id}`] || 'Loading...'}</p>
                       <p className="text-xs text-gray-700 mb-2">{a.message}</p>
                       <p className="text-xs text-gray-500">{new Date(a.created_at).toLocaleString()}</p>
                     </div>
@@ -366,7 +366,7 @@ const Map: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      {locationNames[`alert-${a.id}`] || 'Loading...'}
+                      {(locationNames as any)[`alert-${a.id}`] || 'Loading...'}
                     </p>
                   </motion.div>
                 ))}

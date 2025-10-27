@@ -63,7 +63,7 @@ const Analytics: React.FC = () => {
     };
   });
 
-  const COLORS = ['#3b82f6', '#06b6d4', '#8b5cf6', '#ec4899', '#f59e0b'];
+
 
   return (
     <div className="page-container">
