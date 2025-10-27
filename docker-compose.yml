@@ -34,21 +34,23 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - GEE_PROJECT_ID=${GEE_PROJECT_ID}
+      - GEE_PROJECT_ID=${GEE_PROJECT_ID:-floodsense-476422}
       - API_HOST=0.0.0.0
       - API_PORT=8080
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gee-service-account.json
     volumes:
-      - ${HOME}/.config/earthengine:/home/appuser/.config/earthengine:ro
+      - ${USERPROFILE}/.config/earthengine:/home/appuser/.config/earthengine:ro
       - ./ee-fastapi/output:/app/output
+      - ./ee-fastapi/gee-service-account.json:/app/gee-service-account.json:ro
     restart: unless-stopped
     networks:
       - floodsense-network
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/health')"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
+      interval: 60s
+      timeout: 15s
+      retries: 5
+      start_period: 30s
 
   frontend:
     container_name: floodsense-frontend

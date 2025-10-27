@@ -108,11 +108,10 @@ def db_creator(
                   .filter(ee.Filter.eq("resolution_meters",10)) \
                   .filterBounds(aoi)\
                   .select(polarization)
-    # .filter(ee.Filter.eq('relativeOrbitNumber_start', relative_orbit)) \
 
-        # Select images by predefined dates
-        before_collection = collection.filterDate(base_period[0], base_period[1])
-        after_collection = collection.filterDate(flood_period[0], flood_period[1])
+        # Select images by predefined dates with strict limits
+        before_collection = collection.filterDate(base_period[0], base_period[1]).limit(5)
+        after_collection = collection.filterDate(flood_period[0], flood_period[1]).limit(5)
 
         if quiet:
             # print dates of before images to console

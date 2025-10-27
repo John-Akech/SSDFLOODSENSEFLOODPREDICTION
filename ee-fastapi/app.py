@@ -33,26 +33,34 @@ try:
     import json
     service_account_file = os.path.join(os.path.dirname(__file__), 'gee-service-account.json')
     
+    # Try service account first (for production)
     if os.path.exists(service_account_file):
-        with open(service_account_file, 'r') as f:
-            key_data = json.load(f)
-        service_account = key_data['client_email']
-        credentials = ee.ServiceAccountCredentials(service_account, service_account_file)
-        ee.Initialize(credentials, project='floodsense-476422')
-        logger.info("[OK] Earth Engine initialized with service account")
-        gee_initialized = True
-    elif settings.GEE_PROJECT_ID:
-        ee.Initialize(project=settings.GEE_PROJECT_ID)
-        logger.info("[OK] Earth Engine initialized with project ID")
-        gee_initialized = True
+        try:
+            with open(service_account_file, 'r') as f:
+                key_data = json.load(f)
+            service_account = key_data['client_email']
+            credentials = ee.ServiceAccountCredentials(service_account, service_account_file)
+            ee.Initialize(credentials)  # Don't specify project - let it use default
+            logger.info("[OK] Earth Engine initialized with service account")
+            gee_initialized = True
+        except Exception as sa_error:
+            logger.warning(f"[WARN] Service account failed: {sa_error}")
+            # Fallback to personal auth
+            try:
+                ee.Initialize()
+                logger.info("[OK] Earth Engine initialized with personal auth")
+                gee_initialized = True
+            except:
+                pass
     else:
+        # No service account file, use personal auth
         ee.Initialize()
-        logger.info("[OK] Earth Engine initialized")
+        logger.info("[OK] Earth Engine initialized with personal auth")
         gee_initialized = True
 except Exception as e:
     gee_error = str(e)
     logger.warning(f"[WARN] Earth Engine not initialized: {e}")
-    logger.info("User will need to authenticate via UI")
+    logger.info("Run 'earthengine authenticate' in terminal first")
     gee_initialized = False
 
 app = FastAPI(
