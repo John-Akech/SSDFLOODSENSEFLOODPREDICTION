@@ -1,12 +1,16 @@
-const CACHE_NAME = 'floodsense-v1';
-const API_CACHE = 'floodsense-api-v1';
+const CACHE_NAME = 'floodsense-v2';
+const API_CACHE = 'floodsense-api-v2';
+const IMAGE_CACHE = 'floodsense-images-v1';
 
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
   '/images/FloodSenseLogo.png',
-  '/favicon.ico'
+  '/favicon.ico',
+  '/accessibility.html',
+  '/privacy-policy.html',
+  '/terms-of-service.html'
 ];
 
 self.addEventListener('install', (event) => {
@@ -61,7 +65,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== API_CACHE) {
+          if (cacheName !== CACHE_NAME && cacheName !== API_CACHE && cacheName !== IMAGE_CACHE) {
             return caches.delete(cacheName);
           }
         })
@@ -69,4 +73,32 @@ self.addEventListener('activate', (event) => {
     })
   );
   self.clients.claim();
+});
+
+// Handle push notifications
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : {};
+  const title = data.title || 'FloodSense Alert';
+  const options = {
+    body: data.body || 'New flood alert in your area',
+    icon: '/images/FloodSenseLogo.png',
+    badge: '/images/FloodSenseLogo.png',
+    vibrate: [200, 100, 200],
+    data: data,
+    actions: [
+      { action: 'view', title: 'View Details' },
+      { action: 'close', title: 'Dismiss' }
+    ]
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  if (event.action === 'view') {
+    event.waitUntil(
+      clients.openWindow('/')
+    );
+  }
 });

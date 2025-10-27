@@ -16,7 +16,7 @@ class User(Base):
     full_name = Column(String, nullable=True)
     role = Column(String, default="community_member")  # community_member, ngo_partner, admin
     language = Column(String, default="en")
-    contact_info = Column(String, nullable=True)
+    contact_info = Column(Text, nullable=True)  # Encrypted with AES-256
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
