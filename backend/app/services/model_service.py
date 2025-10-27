@@ -80,10 +80,10 @@ class ModelService:
             print(f"Checking RF model at: {rf_path.absolute()}")
             if rf_path.exists():
                 cls.rf_model = joblib.load(rf_path)
-                print(f"✓ Random Forest model loaded from {rf_path}")
+                print(f"[OK] Random Forest model loaded from {rf_path}")
                 logger.info(f"Random Forest model loaded from {rf_path}")
             else:
-                print(f"✗ Random Forest model not found at {rf_path}")
+                print(f"[WARN] Random Forest model not found at {rf_path}")
                 logger.warning(f"Random Forest model not found at {rf_path}")
 
             # Load TCN model
@@ -94,28 +94,28 @@ class ModelService:
                 cls.tcn_model.load_state_dict(torch.load(
                     tcn_path, map_location=get_device()))
                 cls.tcn_model.eval()
-                print(f"✓ TCN model loaded from {tcn_path}")
+                print(f"[OK] TCN model loaded from {tcn_path}")
                 logger.info(f"TCN model loaded from {tcn_path}")
             else:
-                print(f"✗ TCN model not found at {tcn_path}")
+                print(f"[WARN] TCN model not found at {tcn_path}")
                 logger.warning(f"TCN model not found at {tcn_path}")
 
             # Load Prototypical model (placeholder for now)
             proto_path = models_dir / "prototypical_model.pt"
             if proto_path.exists():
-                print(f"✓ Prototypical model found at {proto_path}")
+                print(f"[OK] Prototypical model found at {proto_path}")
                 logger.info(
                     f"Prototypical model found at {proto_path} but not implemented yet")
             else:
-                print(f"✗ Prototypical model not found at {proto_path}")
+                print(f"[WARN] Prototypical model not found at {proto_path}")
                 logger.warning(f"Prototypical model not found at {proto_path}")
 
             cls.models_loaded = True
-            print("✓ Model loading complete")
+            print("[OK] Model loading complete")
             logger.info("All available models loaded successfully")
 
         except Exception as e:
-            print(f"✗ Error loading models: {e}")
+            print(f"[ERROR] Error loading models: {e}")
             logger.error(f"Error loading models: {e}")
             import traceback
             traceback.print_exc()

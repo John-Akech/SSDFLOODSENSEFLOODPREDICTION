@@ -29,8 +29,7 @@ router = APIRouter()
 @router.post("/predictions", response_model=PredictionResponse)
 async def create_prediction(
     request: PredictionRequest,
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_db)
+    background_tasks: BackgroundTasks
 ):
     """Create a flood prediction"""
     try:
@@ -63,24 +62,6 @@ async def create_prediction(
         # Get risk level
         risk_level = ModelService.get_risk_level(probability)
         
-        # Create prediction record
-        db_prediction = DBPrediction(
-            user_id=None,
-            latitude=request.latitude,
-            longitude=request.longitude,
-            flood_probability=probability,
-            risk_level=risk_level,
-            model_type=request.model_type,
-            lead_time_hours=request.lead_time_hours,
-            confidence_score=confidence,
-            inference_time_ms=inference_time,
-            features_used=str(features)
-        )
-        
-        db.add(db_prediction)
-        db.commit()
-        db.refresh(db_prediction)
-        
         # Create alert if probability is significant
         if probability >= 0.3:
             alert = alert_service.create_alert(
@@ -100,15 +81,15 @@ async def create_prediction(
         
         # Prepare response
         response = PredictionResponse(
-            id=db_prediction.id,
-            latitude=db_prediction.latitude,
-            longitude=db_prediction.longitude,
-            flood_probability=db_prediction.flood_probability,
-            model_type=db_prediction.model_type,
-            lead_time_hours=db_prediction.lead_time_hours,
-            confidence_score=db_prediction.confidence_score,
+            id=1,
+            latitude=request.latitude,
+            longitude=request.longitude,
+            flood_probability=probability,
+            model_type=request.model_type,
+            lead_time_hours=request.lead_time_hours,
+            confidence_score=confidence,
             risk_level=risk_level,
-            created_at=db_prediction.created_at,
+            created_at=datetime.utcnow(),
             model_predictions=model_predictions
         )
         
@@ -119,7 +100,6 @@ async def create_prediction(
         import traceback
         error_details = traceback.format_exc()
         logger.error(f"Error creating prediction: {e}\n{error_details}")
-        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Prediction failed: {str(e)}"
@@ -131,8 +111,7 @@ async def create_prediction(
 
 @router.post("/predictions/batch", response_model=BatchPredictionResponse)
 async def create_batch_predictions(
-    request: BatchPredictionRequest,
-    db: Session = Depends(get_db)
+    request: BatchPredictionRequest
 ):
     """Create predictions for multiple locations"""
     predictions = []
@@ -158,26 +137,11 @@ async def create_batch_predictions(
             # Get risk level
             risk_level = ModelService.get_risk_level(probability)
             
-            # Create prediction record
-            db_prediction = DBPrediction(
-                user_id=None,
-                latitude=lat,
-                longitude=lon,
-                flood_probability=probability,
-                risk_level=risk_level,
-                model_type=request.model_type,
-                lead_time_hours=request.lead_time_hours,
-                confidence_score=confidence,
-                features_used=str(features)
-            )
-            
-            db.add(db_prediction)
-            
             if risk_level in ["high", "critical"]:
                 high_risk_count += 1
             
             predictions.append(PredictionResponse(
-                id=0,  # Will be set after commit
+                id=0,
                 latitude=lat,
                 longitude=lon,
                 flood_probability=probability,
@@ -191,8 +155,6 @@ async def create_batch_predictions(
         except Exception as e:
             logger.error(f"Error in batch prediction for location {location}: {e}")
             continue
-    
-    db.commit()
     
     summary = {
         "total_locations": len(request.locations),

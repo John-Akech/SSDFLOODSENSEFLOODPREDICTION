@@ -72,7 +72,7 @@ app.add_middleware(
 # Rate Limiter
 app.add_middleware(RateLimiter, requests=100, window=3600)
 
-app.add_exception_handler(SQLAlchemyError, database_error_handler)
+# app.add_exception_handler(SQLAlchemyError, database_error_handler)
 
 # Include API routes
 app.include_router(auth_router, prefix="/api/v1")
