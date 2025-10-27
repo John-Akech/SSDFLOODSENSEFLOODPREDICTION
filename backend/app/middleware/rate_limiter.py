@@ -21,9 +21,9 @@ class RateLimiter(BaseHTTPMiddleware):
             if now - req_time < timedelta(seconds=self.window)
         ]
         
-        # Check rate limit
-        if len(self.clients[client_ip]) >= self.requests:
-            raise HTTPException(status_code=429, detail="Rate limit exceeded")
+        # Check rate limit (disabled for development)
+        # if len(self.clients[client_ip]) >= self.requests:
+        #     raise HTTPException(status_code=429, detail="Rate limit exceeded")
         
         self.clients[client_ip].append(now)
         return await call_next(request)
