@@ -73,13 +73,13 @@ class TokenData(BaseModel):
 
 # Prediction schemas
 class PredictionRequest(BaseModel):
-    latitude: float = Field(..., ge=-90, le=90)
-    longitude: float = Field(..., ge=-180, le=180)
+    latitude: float = Field(..., ge=-90, le=90, examples=[7.012])
+    longitude: float = Field(..., ge=-180, le=180, examples=[31.3063])
     model_type: ModelType = ModelType.RANDOM_FOREST
-    lead_time_hours: int = Field(default=12, ge=1, le=168)  # 1 hour to 1 week
+    lead_time_hours: int = Field(default=12, ge=1, le=168, examples=[12])
     features: Optional[Dict[str, float]] = None
     
-    model_config = {"protected_namespaces": ()}
+    model_config = {"protected_namespaces": (), "json_schema_extra": {"examples": [{"latitude": 7.012, "longitude": 31.3063, "model_type": "ensemble", "lead_time_hours": 12}]}}
 
 
 class PredictionResponse(BaseModel):
@@ -175,11 +175,13 @@ class Alert(BaseModel):
 
 # GIS schemas
 class DykePlacementRequest(BaseModel):
-    latitude: float = Field(..., ge=-90, le=90)
-    longitude: float = Field(..., ge=-180, le=180)
-    flood_probability: float = Field(..., ge=0, le=1)
-    elevation: Optional[float] = None
-    river_distance: Optional[float] = None
+    latitude: float = Field(..., ge=-90, le=90, examples=[7.012])
+    longitude: float = Field(..., ge=-180, le=180, examples=[31.3063])
+    flood_probability: float = Field(..., ge=0, le=1, examples=[0.65])
+    elevation: Optional[float] = Field(None, examples=[450])
+    river_distance: Optional[float] = Field(None, examples=[500])
+    
+    model_config = {"json_schema_extra": {"examples": [{"latitude": 7.012, "longitude": 31.3063, "flood_probability": 0.65, "elevation": 450, "river_distance": 500}]}}
 
 
 class DykePlacementResponse(BaseModel):

@@ -62,9 +62,8 @@ class AlertService:
             severity = "low"
             message = f"LOW FLOOD ALERT: Minor flood risk ({flood_probability:.1%}) detected. Stay informed."
         
-        # Add location and timing information
-        message += f" Location: {latitude:.3f}, {longitude:.3f}. "
-        message += f"Predicted within {lead_time_hours} hours using {model_type.upper()} model."
+        # Add timing information (location will be resolved by frontend)
+        message += f" Predicted within {lead_time_hours} hours using {model_type.upper()} model."
         
         alert = Alert(
             id=str(uuid.uuid4()),

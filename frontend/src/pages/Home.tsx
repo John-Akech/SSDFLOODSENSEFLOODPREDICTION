@@ -207,7 +207,12 @@ const Home: React.FC = () => {
                       <span className="text-xs text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
                     </div>
                     <p className="text-sm font-semibold text-gray-900 mb-2">{a.message}</p>
-                    <p className="text-xs text-gray-600">{t('location')}: {(locationNames as any)[a.id] || `${a.latitude.toFixed(3)}, ${a.longitude.toFixed(3)}`}</p>
+                    <p className="text-xs text-gray-600 flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      </svg>
+                      {(locationNames as any)[a.id] || `${a.latitude.toFixed(3)}, ${a.longitude.toFixed(3)}`}
+                    </p>
                   </motion.div>
                 ))}
               </div>

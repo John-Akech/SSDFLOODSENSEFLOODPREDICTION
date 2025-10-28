@@ -367,14 +367,13 @@ const Map: React.FC = () => {
                       <RiskBadge level={a.severity as any} />
                       <span className="text-xs text-gray-500">{new Date(a.created_at).toLocaleTimeString()}</span>
                     </div>
-                    <p className="text-sm text-gray-900 font-semibold mt-2">{a.message}</p>
-                    <p className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                    <p className="text-xs text-gray-600 mb-2 flex items-center gap-1 font-semibold">
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       {(locationNames as any)[`alert-${a.id}`] || 'Loading...'}
                     </p>
+                    <p className="text-sm text-gray-900">{a.message}</p>
                   </motion.div>
                 ))}
               </div>
