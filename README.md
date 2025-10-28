@@ -55,8 +55,8 @@ An AI-powered system that:
 ## ✨ Key Features
 
 ### 🤖 AI/ML Capabilities
-- **4 Production Models**: Random Forest, TCN, Prototypical Networks, Ensemble
-- **Ensemble Learning**: Weighted model combination (F1: 0.87+)
+- **3 Production Models**: Random Forest, TCN, Ensemble
+- **Ensemble Learning**: Weighted RF (60%) + TCN (40%) combination (F1: 0.87+)
 - **Real-time Predictions**: Sub-second response times
 - **Batch Processing**: Multiple location predictions
 - **Risk Assessment**: 4-level categorization (low/medium/high/critical)
@@ -207,20 +207,6 @@ npm run dev
 - Captures temporal patterns
 - Long-range dependencies
 - Temperature scaling for calibration
-
-### 4. Prototypical Networks
-**Few-Shot Learning**
-
-| Metric | Score |
-|--------|-------|
-| F1-Score | 0.80+ |
-| Precision | 0.75+ |
-| Recall | 0.85+ |
-| Accuracy | 0.80+ |
-
-- Learns from limited data
-- Adapts to new regions
-- Meta-learning capability
 
 ---
 
@@ -459,7 +445,6 @@ SSDFLOODSENSEFLOODPREDICTION/
 | Ensemble | 0.88 | 0.87 | N/A (Combined) |
 | Random Forest | 0.87 | 0.85 | ~2 minutes |
 | TCN | 0.83 | 0.82 | ~10 minutes |
-| Prototypical | 0.80 | 0.80 | ~15 minutes |
 
 ### System Reliability
 - **Uptime**: 99.9%

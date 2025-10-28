@@ -85,11 +85,17 @@ const Map: React.FC = () => {
         latitude: lat,
         longitude: lng,
         model_type: 'ensemble',
-        lead_time_hours: 24
+        lead_time_hours: 12
       });
       const name = await reverseGeocode(pred.latitude, pred.longitude);
       setLocationNames(prev => ({ ...prev, [`pred-${pred.id}`]: name }));
       setPredictions(p => [...p, pred]);
+      
+      // Show success notification
+      const riskMsg = pred.risk_level === 'critical' ? 'CRITICAL RISK' :
+                      pred.risk_level === 'high' ? 'HIGH RISK' :
+                      pred.risk_level === 'medium' ? 'MODERATE RISK' : 'LOW RISK';
+      alert(`✓ Prediction Complete\n\nLocation: ${name}\nFlood Risk: ${riskMsg} (${(pred.flood_probability * 100).toFixed(1)}%)\nConfidence: ${(pred.confidence_score * 100).toFixed(0)}%`);
     } catch (err: any) {
       console.error('Prediction failed:', err);
       const errorMsg = err?.response?.data?.detail || err?.message || 'Unknown error';
@@ -235,12 +241,12 @@ const Map: React.FC = () => {
                 </Marker>
                 <Circle
                   center={[a.latitude, a.longitude]}
-                  radius={8000}
+                  radius={a.severity === 'critical' ? 12000 : a.severity === 'high' ? 10000 : 8000}
                   pathOptions={{
                     color: getRiskColor(a.severity),
                     fillColor: getRiskColor(a.severity),
-                    fillOpacity: 0.15,
-                    weight: 2
+                    fillOpacity: 0.2,
+                    weight: 3
                   }}
                 />
               </React.Fragment>
@@ -268,12 +274,13 @@ const Map: React.FC = () => {
                 </Marker>
                 <Circle
                   center={[p.latitude, p.longitude]}
-                  radius={6000}
+                  radius={p.risk_level === 'critical' ? 10000 : p.risk_level === 'high' ? 8000 : 6000}
                   pathOptions={{
                     color: getRiskColor(p.risk_level),
                     fillColor: getRiskColor(p.risk_level),
-                    fillOpacity: 0.12,
-                    weight: 2
+                    fillOpacity: 0.15,
+                    weight: 2,
+                    dashArray: '3, 3'
                   }}
                 />
               </React.Fragment>
@@ -301,12 +308,12 @@ const Map: React.FC = () => {
                 </Marker>
                 <Circle
                   center={[p.latitude, p.longitude]}
-                  radius={5000}
+                  radius={p.risk_level === 'critical' ? 9000 : p.risk_level === 'high' ? 7000 : 5000}
                   pathOptions={{
                     color: getRiskColor(p.risk_level),
                     fillColor: getRiskColor(p.risk_level),
-                    fillOpacity: 0.1,
-                    weight: 2,
+                    fillOpacity: 0.18,
+                    weight: 3,
                     dashArray: '5, 5'
                   }}
                 />

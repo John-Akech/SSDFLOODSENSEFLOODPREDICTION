@@ -29,10 +29,23 @@ router = APIRouter()
 @router.post("/predictions", response_model=PredictionResponse)
 async def create_prediction(
     request: PredictionRequest,
-    background_tasks: BackgroundTasks
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db)
 ):
     """Create a flood prediction"""
     try:
+        # Validate coordinates are not default/invalid values
+        if (request.latitude == -90.0 and request.longitude == -180.0) or \
+           (request.latitude == 0.0 and request.longitude == 0.0):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid coordinates: Please provide valid location coordinates for South Sudan (latitude: 3-13°N, longitude: 24-36°E)"
+            )
+        
+        # Validate coordinates are within South Sudan bounds (approximate)
+        if not (3 <= request.latitude <= 13 and 24 <= request.longitude <= 36):
+            logger.warning(f"Coordinates outside South Sudan: {request.latitude}, {request.longitude}")
+        
         # Generate features if not provided
         if request.features:
             features = request.features
@@ -48,19 +61,30 @@ async def create_prediction(
             probability, confidence, inference_time = ModelService.predict_rf(features)
         elif request.model_type == ModelType.TCN:
             probability, confidence, inference_time = ModelService.predict_tcn(features)
-        elif request.model_type == ModelType.PROTOTYPICAL:
-            probability, confidence = ModelService.predict_prototypical(features)
-            inference_time = 0
         elif request.model_type == ModelType.ENSEMBLE:
             probability, confidence, model_predictions, inference_time = ModelService.predict_ensemble(features)
         else:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid model type"
+                detail="Invalid model type. Use: rf, tcn, or ensemble"
             )
         
         # Get risk level
         risk_level = ModelService.get_risk_level(probability)
+        
+        # Save to database
+        db_prediction = DBPrediction(
+            latitude=request.latitude,
+            longitude=request.longitude,
+            flood_probability=probability,
+            model_type=request.model_type,
+            lead_time_hours=request.lead_time_hours,
+            confidence_score=confidence,
+            risk_level=risk_level
+        )
+        db.add(db_prediction)
+        db.commit()
+        db.refresh(db_prediction)
         
         # Create alert if probability is significant
         if probability >= 0.3:
@@ -81,15 +105,15 @@ async def create_prediction(
         
         # Prepare response
         response = PredictionResponse(
-            id=1,
-            latitude=request.latitude,
-            longitude=request.longitude,
-            flood_probability=probability,
-            model_type=request.model_type,
-            lead_time_hours=request.lead_time_hours,
-            confidence_score=confidence,
-            risk_level=risk_level,
-            created_at=datetime.utcnow(),
+            id=db_prediction.id,
+            latitude=db_prediction.latitude,
+            longitude=db_prediction.longitude,
+            flood_probability=db_prediction.flood_probability,
+            model_type=db_prediction.model_type,
+            lead_time_hours=db_prediction.lead_time_hours,
+            confidence_score=db_prediction.confidence_score,
+            risk_level=db_prediction.risk_level,
+            created_at=db_prediction.created_at,
             model_predictions=model_predictions
         )
         
@@ -131,8 +155,10 @@ async def create_batch_predictions(
                 probability, confidence, _ = ModelService.predict_rf(features)
             elif request.model_type == ModelType.TCN:
                 probability, confidence, _ = ModelService.predict_tcn(features)
+            elif request.model_type == ModelType.ENSEMBLE:
+                probability, confidence, _, _ = ModelService.predict_ensemble(features)
             else:
-                probability, confidence = ModelService.predict_prototypical(features)
+                continue
             
             # Get risk level
             risk_level = ModelService.get_risk_level(probability)

@@ -18,7 +18,6 @@ class Language(str, Enum):
 class ModelType(str, Enum):
     RANDOM_FOREST = "rf"
     TCN = "tcn"
-    PROTOTYPICAL = "prototypical"
     ENSEMBLE = "ensemble"
 
 

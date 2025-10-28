@@ -12,14 +12,21 @@ const Home: React.FC = () => {
   const [stats, setStats] = useState({ total: 0, high: 0, zones: 0 });
   const [loading, setLoading] = useState(true);
   const [locationNames, setLocationNames] = useState<Record<number, string>>({});
+  const [populationByState, setPopulationByState] = useState<Record<string, number>>({});
   const { t } = useLanguage();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const data = await apiService.getActiveAlerts();
-        const alertList = data.alerts || [];
+        const [alertData, systemStats] = await Promise.all([
+          apiService.getActiveAlerts(),
+          apiService.getSystemStats()
+        ]);
+        
+        const alertList = alertData.alerts || [];
         setAlerts(alertList);
+        setPopulationByState(systemStats.population_by_state || {});
+        
         const uniqueZones = new Set(alertList.map((a: Alert) => 
           `${Math.floor(a.latitude)},${Math.floor(a.longitude)}`
         ));
@@ -46,11 +53,10 @@ const Home: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const states = ['Jonglei', 'Unity', 'Upper Nile', 'Lakes', 'Warrap'];
-  const chartData = states.map(state => ({
-    state,
-    warnings: alerts.filter(a => a.message?.includes(state)).length
-  })).filter(d => d.warnings > 0).slice(0, 5);
+  const chartData = Object.entries(populationByState)
+    .map(([state, population]) => ({ state, population: Math.round(population / 1000) }))
+    .sort((a, b) => b.population - a.population)
+    .slice(0, 6);
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
   const trendData = months.map((month, idx) => ({
@@ -115,20 +121,23 @@ const Home: React.FC = () => {
               transition={{ delay: 0.3 }}
               className="glass-card"
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('activeWarningsByState')}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Population at Risk by State</h2>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData}>
                   <defs>
                     <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#3b82f6" stopOpacity={1} />
-                      <stop offset="100%" stopColor="#06b6d4" stopOpacity={0.8} />
+                      <stop offset="0%" stopColor="#ef4444" stopOpacity={1} />
+                      <stop offset="100%" stopColor="#f97316" stopOpacity={0.8} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="state" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }} />
-                  <Bar dataKey="warnings" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
+                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} label={{ value: 'Thousands', angle: -90, position: 'insideLeft', style: { fontSize: '12px' } }} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px' }}
+                    formatter={(value: any) => [`${value}K people`, 'At Risk']}
+                  />
+                  <Bar dataKey="population" fill="url(#barGradient)" radius={[8, 8, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </motion.div>

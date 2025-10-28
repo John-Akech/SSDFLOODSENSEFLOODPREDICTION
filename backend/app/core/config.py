@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", 
-        f"sqlite:///{os.path.abspath(os.path.join(os.path.dirname(__file__), '../../database/flood_prediction.db'))}")
+        f"sqlite:///{os.path.abspath(os.path.join(os.path.dirname(__file__), '../../database/floodsense.db'))}")
 
     # Model paths
     RF_MODEL_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../models/random_forest.pkl'))

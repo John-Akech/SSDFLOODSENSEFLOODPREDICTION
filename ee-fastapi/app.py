@@ -39,19 +39,22 @@ try:
             with open(service_account_file, 'r') as f:
                 key_data = json.load(f)
             service_account = key_data['client_email']
+            project_id = key_data.get('project_id')
             credentials = ee.ServiceAccountCredentials(service_account, service_account_file)
-            ee.Initialize(credentials)  # Don't specify project - let it use default
-            logger.info("[OK] Earth Engine initialized with service account")
+            ee.Initialize(credentials, project=project_id)
+            logger.info(f"[OK] Earth Engine initialized with service account (project: {project_id})")
             gee_initialized = True
         except Exception as sa_error:
             logger.warning(f"[WARN] Service account failed: {sa_error}")
             # Fallback to personal auth
             try:
                 ee.Initialize()
-                logger.info("[OK] Earth Engine initialized with personal auth")
+                logger.info("[OK] Earth Engine initialized with personal auth (fallback)")
                 gee_initialized = True
-            except:
-                pass
+            except Exception as fallback_error:
+                logger.error(f"[ERROR] Personal auth also failed: {fallback_error}")
+                gee_error = f"Service account: {sa_error}. Personal auth: {fallback_error}"
+                gee_initialized = False
     else:
         # No service account file, use personal auth
         ee.Initialize()

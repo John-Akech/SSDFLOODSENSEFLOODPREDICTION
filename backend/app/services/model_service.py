@@ -64,61 +64,48 @@ class ModelService:
     async def load_models(cls):
         """Load all ML models"""
         try:
-            # Get absolute path from backend/app directory
-            base_dir = Path(__file__).parent.parent.parent.parent
-            models_dir = base_dir / "models"
-
-            print(f"Looking for models in: {models_dir.absolute()}")
-            print(f"Models directory exists: {models_dir.exists()}")
-
-            if models_dir.exists():
-                print(
-                    f"Files in models directory: {list(models_dir.glob('*'))}")
+            # Try multiple paths to find models directory
+            possible_paths = [
+                Path("/app/models"),  # Docker container path (priority)
+                Path(__file__).parent.parent.parent.parent / "models",  # From backend/app/services
+                Path.cwd() / "models",  # From current working directory
+            ]
+            
+            models_dir = None
+            for path in possible_paths:
+                if path.exists():
+                    models_dir = path
+                    break
+            
+            if not models_dir:
+                logger.error("Models directory not found")
+                cls.models_loaded = False
+                return
 
             # Load Random Forest model
             rf_path = models_dir / "random_forest.pkl"
-            print(f"Checking RF model at: {rf_path.absolute()}")
             if rf_path.exists():
                 cls.rf_model = joblib.load(rf_path)
-                print(f"[OK] Random Forest model loaded from {rf_path}")
-                logger.info(f"Random Forest model loaded from {rf_path}")
-            else:
-                print(f"[WARN] Random Forest model not found at {rf_path}")
-                logger.warning(f"Random Forest model not found at {rf_path}")
+                logger.info("Random Forest model loaded")
 
             # Load TCN model
             tcn_path = models_dir / "tcn_model.pt"
-            print(f"Checking TCN model at: {tcn_path.absolute()}")
             if tcn_path.exists():
                 cls.tcn_model = TCNModel()
-                cls.tcn_model.load_state_dict(torch.load(
-                    tcn_path, map_location=get_device()))
+                cls.tcn_model.load_state_dict(torch.load(tcn_path, map_location=get_device()))
                 cls.tcn_model.eval()
-                print(f"[OK] TCN model loaded from {tcn_path}")
-                logger.info(f"TCN model loaded from {tcn_path}")
-            else:
-                print(f"[WARN] TCN model not found at {tcn_path}")
-                logger.warning(f"TCN model not found at {tcn_path}")
+                logger.info("TCN model loaded")
 
-            # Load Prototypical model (placeholder for now)
-            proto_path = models_dir / "prototypical_model.pt"
-            if proto_path.exists():
-                print(f"[OK] Prototypical model found at {proto_path}")
-                logger.info(
-                    f"Prototypical model found at {proto_path} but not implemented yet")
+            # Mark as loaded if at least one model is available
+            if cls.rf_model or cls.tcn_model:
+                cls.models_loaded = True
+                logger.info(f"Models loaded: RF={cls.rf_model is not None}, TCN={cls.tcn_model is not None}")
             else:
-                print(f"[WARN] Prototypical model not found at {proto_path}")
-                logger.warning(f"Prototypical model not found at {proto_path}")
-
-            cls.models_loaded = True
-            print("[OK] Model loading complete")
-            logger.info("All available models loaded successfully")
+                cls.models_loaded = False
+                logger.error("No models were loaded")
 
         except Exception as e:
-            print(f"[ERROR] Error loading models: {e}")
             logger.error(f"Error loading models: {e}")
-            import traceback
-            traceback.print_exc()
             cls.models_loaded = False
 
     @classmethod
@@ -146,7 +133,7 @@ class ModelService:
     def predict_rf(cls, features: Dict[str, Any]) -> Tuple[float, float, float]:
         """Make prediction using Random Forest model with calibrated confidence"""
         if cls.rf_model is None:
-            raise ValueError("Random Forest model not loaded")
+            raise ValueError("Random Forest model not loaded. Please check server logs and ensure models directory is mounted correctly.")
 
         start_time = time.time()
         X = cls.preprocess_features(features)
@@ -163,7 +150,7 @@ class ModelService:
     def predict_tcn(cls, features: Dict[str, Any]) -> Tuple[float, float, float]:
         """Make prediction using TCN model with temperature scaling"""
         if cls.tcn_model is None:
-            raise ValueError("TCN model not loaded")
+            raise ValueError("TCN model not loaded. Please check server logs and ensure models directory is mounted correctly.")
 
         start_time = time.time()
         device = get_device()
@@ -180,15 +167,7 @@ class ModelService:
         inference_time = (time.time() - start_time) * 1000
         return float(probability), float(confidence), inference_time
 
-    @classmethod
-    def predict_prototypical(cls, features: Dict[str, Any]) -> Tuple[float, float]:
-        """Make prediction using Prototypical Network (placeholder)"""
-        # Placeholder implementation
-        # In a real implementation, this would use few-shot learning
-        probability = 0.5  # Neutral prediction
-        confidence = 0.3   # Low confidence for placeholder
 
-        return float(probability), float(confidence)
     
     @classmethod
     def predict_ensemble(cls, features: Dict[str, Any]) -> Tuple[float, float, Dict[str, float], float]:

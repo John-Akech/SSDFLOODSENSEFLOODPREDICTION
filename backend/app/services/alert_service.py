@@ -39,6 +39,15 @@ class AlertService:
     ) -> Alert:
         """Create a flood alert based on prediction"""
         
+        # Validate coordinates
+        if latitude == -90.0 and longitude == -180.0:
+            logger.error("Invalid default coordinates received for alert creation")
+            raise ValueError("Invalid coordinates: cannot create alert with default values")
+        
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            logger.error(f"Invalid coordinates: lat={latitude}, lon={longitude}")
+            raise ValueError(f"Invalid coordinates: lat={latitude}, lon={longitude}")
+        
         # Determine severity based on probability
         if flood_probability >= 0.8:
             severity = "critical"

@@ -20,6 +20,9 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     # Sanitize email input
     email = sanitize_input(user_data.email.lower())
     
+    # Truncate password to bcrypt limit
+    user_data.password = user_data.password[:72]
+    
     # Validate password strength
     validate_password_strength(user_data.password)
     

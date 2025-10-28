@@ -131,32 +131,34 @@ async def get_system_stats(db: Session = Depends(get_db)):
     # Get all alerts
     alerts = db.query(DBAlert).all()
     
-    # Map coordinates to states (simplified - in production use proper geocoding)
+    # Map coordinates to states with population data
     state_coords = {
-        "Jonglei": {"lat_range": (5.5, 8.5), "lon_range": (30.5, 34.0)},
-        "Unity": {"lat_range": (8.0, 10.5), "lon_range": (28.5, 31.0)},
-        "Upper Nile": {"lat_range": (8.5, 11.0), "lon_range": (31.0, 34.5)},
-        "Central Equatoria": {"lat_range": (3.5, 5.5), "lon_range": (30.0, 32.5)},
-        "Eastern Equatoria": {"lat_range": (3.5, 6.0), "lon_range": (32.5, 35.5)},
-        "Western Equatoria": {"lat_range": (3.5, 6.0), "lon_range": (27.0, 30.0)},
+        "Jonglei": {"lat_range": (5.5, 8.5), "lon_range": (30.5, 34.0), "population": 1358602},
+        "Unity": {"lat_range": (8.0, 10.5), "lon_range": (28.5, 31.0), "population": 799343},
+        "Upper Nile": {"lat_range": (8.5, 11.0), "lon_range": (31.0, 34.5), "population": 964353},
+        "Central Equatoria": {"lat_range": (3.5, 5.5), "lon_range": (30.0, 32.5), "population": 1193130},
+        "Eastern Equatoria": {"lat_range": (3.5, 6.0), "lon_range": (32.5, 35.5), "population": 906126},
+        "Western Equatoria": {"lat_range": (3.5, 6.0), "lon_range": (27.0, 30.0), "population": 619029},
+        "Lakes": {"lat_range": (6.0, 8.0), "lon_range": (28.5, 31.0), "population": 833000},
+        "Warrap": {"lat_range": (7.5, 9.5), "lon_range": (27.5, 30.0), "population": 1044000},
     }
     
-    # Group alerts by state
-    alerts_by_state = {}
+    # Group predictions and alerts by state
     population_by_state = {}
     
     for state, coords in state_coords.items():
-        state_alerts = []
-        for alert in alerts:
-            if (coords["lat_range"][0] <= alert.latitude <= coords["lat_range"][1] and
-                coords["lon_range"][0] <= alert.longitude <= coords["lon_range"][1]):
-                state_alerts.append({"severity": alert.severity})
+        state_predictions = [p for p in high_risk_predictions if 
+            coords["lat_range"][0] <= p.latitude <= coords["lat_range"][1] and
+            coords["lon_range"][0] <= p.longitude <= coords["lon_range"][1]]
         
-        if state_alerts:
-            alerts_by_state[state] = state_alerts
-            # Estimate population at risk based on alert count and severity
-            high_count = sum(1 for a in state_alerts if a["severity"] in ["high", "critical"])
-            population_by_state[state] = high_count * 50000 + len(state_alerts) * 10000
+        state_alerts = [a for a in alerts if a.is_active and
+            coords["lat_range"][0] <= a.latitude <= coords["lat_range"][1] and
+            coords["lon_range"][0] <= a.longitude <= coords["lon_range"][1]]
+        
+        if state_predictions or state_alerts:
+            # Calculate population at risk: 10% of state population per high-risk prediction
+            risk_factor = len(state_predictions) * 0.10 + len([a for a in state_alerts if a.severity in ["high", "critical"]]) * 0.15
+            population_by_state[state] = int(min(coords["population"] * risk_factor, coords["population"]))
     
     # Calculate lead time and false alarm rate
     avg_lead_time = db.query(DBPrediction).filter(DBPrediction.lead_time_hours != None).all()
@@ -179,6 +181,6 @@ async def get_system_stats(db: Session = Depends(get_db)):
             "tcn": {"accuracy": 0.83, "f1_score": 0.82},
             "ensemble": {"accuracy": 0.89, "f1_score": 0.87}
         },
-        "alerts_by_state": alerts_by_state,
+
         "population_by_state": population_by_state
     }
