@@ -202,8 +202,7 @@ const Analytics: React.FC = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 pb-16 p-6">
-      <div className="max-w-7xl mx-auto">
+    <>
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -462,8 +461,7 @@ const Analytics: React.FC = () => {
             </div>
           </motion.div>
         )}
-      </div>
-    </div>
+    </>
   );
 };
 

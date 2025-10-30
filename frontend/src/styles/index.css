@@ -14,6 +14,12 @@
     scroll-behavior: smooth;
   }
   
+  html, body, #root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  
   body {
     @apply text-gray-800 bg-gradient-to-br from-blue-50 via-white to-cyan-50;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -190,7 +196,7 @@
   }
   
   .content-wrapper {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+    @apply max-w-7xl mx-auto px-4 sm:px-5 lg:px-6 py-6;
   }
   
   .section-padding {
@@ -304,4 +310,15 @@
   .glass-effect {
     @apply bg-white/20 backdrop-blur-xl border border-white/30;
   }
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  z-index: 1;
+}
+
+.leaflet-tile-container img {
+  max-width: none !important;
 }

@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 import uvicorn
 import ee
 import os
@@ -91,7 +91,8 @@ class FloodDetectionRequest(BaseModel):
     flood_last: str = Field(..., description="Flood period end date (YYYY-MM-DD)")
     flood_threshold: float = Field(default=1.25, ge=1.0, le=3.0)
     
-    @validator('bbox')
+    @field_validator('bbox')
+    @classmethod
     def validate_bbox(cls, v):
         try:
             coords = [float(x) for x in v.split(",")]
@@ -269,11 +270,15 @@ async def flood_display(request: FloodDetectionRequest):
         # Generate tile URLs
         tileids = display(flood_added)
         
+        # Extract numeric flood area for frontend display
+        area_stats = flood_added.get("flood_area_stats") or {}
+        area_ha = area_stats.get("area_hectares") if isinstance(area_stats, dict) else None
+
         return FloodDetectionResponse(
-            before_tile=tileids["before_flood"],
-            after_tile=tileids["after_flood"],
-            flood_tile=tileids["s1_fresults_id"],
-            flood_area_ha=flood_added.get("flood_area_stats"),
+            before_tile=tileids.get("before_flood", ""),
+            after_tile=tileids.get("after_flood", ""),
+            flood_tile=tileids.get("flood_results", ""),
+            flood_area_ha=area_ha,
             metadata={
                 "base_period": f"{request.init_start} to {request.init_last}",
                 "flood_period": f"{request.flood_start} to {request.flood_last}",

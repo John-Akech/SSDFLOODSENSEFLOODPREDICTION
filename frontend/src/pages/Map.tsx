@@ -280,13 +280,12 @@ const Map: React.FC = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 pb-16">
-      <div className="min-h-screen flex flex-col">
+    <div className="min-h-[70vh] flex flex-col">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flood-card p-4 m-4 mb-0"
+          className="flood-card p-4 mb-4"
         >
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
@@ -340,12 +339,12 @@ const Map: React.FC = () => {
         </motion.div>
 
         {/* Map Container */}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative" style={{ minHeight: '60vh' }}>
           <MapContainer
             key={mapKey} // Force re-render when needed
             center={mapCenter || [7.5, 30.0]}
             zoom={6}
-            className="h-full w-full"
+            style={{ height: '100%', width: '100%', zIndex: 1 }}
             bounds={southSudanBounds}
             boundsOptions={{ padding: [20, 20] }}
           >
@@ -491,7 +490,7 @@ const Map: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flood-card p-4 m-4 mt-0"
+          className="flood-card p-4 mt-4"
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
@@ -512,7 +511,6 @@ const Map: React.FC = () => {
             </div>
           </div>
         </motion.div>
-      </div>
     </div>
   );
 };

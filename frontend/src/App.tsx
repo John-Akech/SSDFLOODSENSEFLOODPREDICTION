@@ -86,7 +86,7 @@ const App: React.FC = () => {
             </button>
 
             {/* Sidebar */}
-            <div className={`fixed lg:static inset-y-0 left-0 z-30 w-64 transform transition-transform duration-300 ease-in-out ${
+            <div className={`fixed lg:static inset-y-0 left-0 z-30 w-56 transform transition-transform duration-300 ease-in-out ${
               sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
             }`}>
               <EnhancedSidebar onToggleSidebar={toggleSidebar} />
@@ -101,15 +101,16 @@ const App: React.FC = () => {
             )}
 
             {/* Main Content */}
-            <div className="flex-1 flex flex-col lg:ml-64 ml-0 transition-all duration-300">
+            <div className="flex-1 min-w-0 flex flex-col lg:ml-56 ml-0 transition-all duration-300 overflow-x-hidden">
               <motion.main 
                 className="flex-1"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <AnimatePresence mode="wait">
-                  <Routes>
+                <div className="content-wrapper">
+                  <AnimatePresence mode="wait">
+                    <Routes>
                     {/* Public Routes */}
                     <Route path="/" element={<Landing />} />
                     <Route path="/home" element={<Home />} />
@@ -144,8 +145,9 @@ const App: React.FC = () => {
                         <Admin />
                       </ProtectedRoute>
                     } />
-                  </Routes>
-                </AnimatePresence>
+                    </Routes>
+                  </AnimatePresence>
+                </div>
               </motion.main>
 
               {/* Footer - Show on all pages */}

@@ -4,6 +4,7 @@
     <title>FloodSense - SAR Flood Detection</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=AAAA"/>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.5.2/ol.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -30,11 +31,11 @@
         .sidebar {
             position: fixed;
             top: 0;
-            left: -450px;
-            width: 450px;
+            left: -360px;
+            width: 360px;
             height: 100vh;
-            background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
-            box-shadow: 5px 0 30px rgba(0, 0, 0, 0.3);
+            background: #ffffff;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
             transition: left 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             z-index: 2000;
             overflow-y: auto;
@@ -62,10 +63,7 @@
             transition: all 0.3s ease;
         }
 
-        .sidebar-toggle:hover {
-            transform: scale(1.1) rotate(90deg);
-            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
-        }
+        .sidebar-toggle:hover { box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6); }
 
         .sidebar-toggle span {
             display: block;
@@ -139,7 +137,7 @@
         }
 
         .sidebar-section {
-            padding: 30px;
+            padding: 20px;
             border-bottom: 1px solid #e8e8e8;
         }
 
@@ -1212,18 +1210,19 @@
         </div>
 
         <div class="sidebar-section">
-            <div class="section-title">Drawing Tools</div>
+            <div class="section-title">Drawing</div>
             <div class="input-group">
                 <select id="drawTool" onchange="handleToolChange()">
-                    <option value="">Select Drawing Tool</option>
                     <option value="rectangle">Rectangle</option>
                     <option value="polygon">Polygon</option>
-                    <option value="line">Line</option>
                     <option value="circle">Circle</option>
+                    <option value="line">Line</option>
                 </select>
             </div>
-            <button class="btn btn-danger" onclick="clearDrawing()">Clear Drawing</button>
-            <button class="btn btn-secondary" onclick="window.location.href='http://localhost:3000'">Go to Main App</button>
+            <div style="display:flex; gap:8px;">
+                <button class="btn btn-danger" onclick="clearDrawing()" style="margin:0;">Clear</button>
+                <button class="btn btn-secondary" onclick="window.location.href='http://localhost:3000'" style="margin:0;">Main App</button>
+            </div>
         </div>
 
         <div class="sidebar-section">
@@ -1251,7 +1250,7 @@
         </div>
 
         <div class="sidebar-section">
-            <div class="section-title">Advanced Detection Settings</div>
+            <div class="section-title">Detection Settings</div>
             
             <!-- SAR Processing Parameters -->
             <div class="input-group">
@@ -1312,15 +1311,6 @@
                     <option value="12">12-connected</option>
                     <option value="disabled">Disabled</option>
                 </select>
-            </div>
-
-            <!-- Advanced Options Toggle -->
-            <div class="input-group">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="advancedOptions" onchange="toggleAdvancedOptions()">
-                    <span class="checkmark"></span>
-                    Show Advanced Options
-                </label>
             </div>
 
             <!-- Advanced Options Panel -->
@@ -1458,59 +1448,18 @@
                 </button>
             </div>
 
-            <!-- Enhanced Loading with Steps -->
+            <!-- Simple Loading -->
             <div class="loading" id="loading">
-                <div class="loading-header">
-                    <div class="spinner"></div>
-                    <h3>Processing SAR Data</h3>
-                </div>
-                
-                <div class="processing-steps">
-                    <div class="step" id="step1">
-                        <div class="step-icon">1</div>
-                        <div class="step-text">Loading satellite imagery</div>
-                        <div class="step-status" id="step1Status">⏳</div>
-                    </div>
-                    <div class="step" id="step2">
-                        <div class="step-icon">2</div>
-                        <div class="step-text">Applying speckle filtering</div>
-                        <div class="step-status" id="step2Status">⏳</div>
-                    </div>
-                    <div class="step" id="step3">
-                        <div class="step-icon">3</div>
-                        <div class="step-text">Computing change detection</div>
-                        <div class="step-status" id="step3Status">⏳</div>
-                    </div>
-                    <div class="step" id="step4">
-                        <div class="step-icon">4</div>
-                        <div class="step-text">Generating flood extent</div>
-                        <div class="step-status" id="step4Status">⏳</div>
-                    </div>
-                </div>
-                
+                <div class="spinner"></div>
                 <div class="progress-container">
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
+                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
                     <div class="progress-text" id="progressText">0%</div>
-                </div>
-                
-                <div class="processing-info" id="processingInfo">
-                    <div class="info-item">
-                        <span class="info-label">Processing Time:</span>
-                        <span class="info-value" id="processingTime">0s</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Images Processed:</span>
-                        <span class="info-value" id="imagesProcessed">0/0</span>
-                    </div>
                 </div>
             </div>
 
             <!-- Enhanced Results Panel -->
             <div class="result-panel" id="result">
                 <div class="result-header">
-                    <div class="result-icon">🌊</div>
                     <div class="result-title">Flood Detection Results</div>
                 </div>
                 

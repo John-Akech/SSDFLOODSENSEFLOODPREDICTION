@@ -379,7 +379,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
   };
 
   return (
-    <aside className="w-64 bg-white/95 backdrop-blur-xl border-r border-gray-200/50 h-screen fixed left-0 top-0 z-40 flex flex-col shadow-2xl">
+    <aside className="w-56 bg-white/95 backdrop-blur-xl border-r border-gray-200/60 h-screen fixed left-0 top-0 z-40 flex flex-col shadow-xl">
       {/* Header with Logo */}
       <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-cyan-800 p-4 border-b border-blue-600/30">
         <div className="flex items-center justify-between">
@@ -417,12 +417,12 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
       </div>
 
       {/* Navigation */}
-      <nav className="p-6 space-y-2 flex-1 overflow-y-auto">
+      <nav className="p-5 space-y-2 flex-1 overflow-y-auto">
         {menuItems.map((item, index) => renderMenuItem(item, index))}
       </nav>
 
       {/* Bottom Section - Fixed at bottom */}
-      <div className="p-6 space-y-6 border-t border-gray-200/50 bg-white/50">
+      <div className="p-5 space-y-5 border-t border-gray-200/60 bg-white/60">
         {/* Language Switcher */}
         <div className="flex justify-center">
           <LanguageSwitcher />

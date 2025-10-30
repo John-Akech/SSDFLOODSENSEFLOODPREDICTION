@@ -135,7 +135,7 @@ window.handleLocationSearch = async function() {
     
 // raster layer (OSM)
 var raster = new ol.layer.Tile({    
-    title:"OSM basemap",
+    title:"basemap",
     source: new ol.source.OSM(),
 })
 
@@ -145,6 +145,11 @@ var vector = new ol.layer.Vector({
     title:"geometry",
     source: source,    
 });
+
+// Keep references to SAR layers so we can replace/clear them
+var layerBefore = null;
+var layerAfter = null;
+var layerFlood = null;
 
 // Map Creator
 function CreateMap(layers) {
@@ -234,8 +239,6 @@ document.getElementById('download').addEventListener('click', function () {
 
     document.getElementById('loading').classList.add('active');
     document.getElementById('download').disabled = true;
-    document.getElementById('pauseDownload').style.display = 'inline-block';
-    document.getElementById('pauseDownload').disabled = false;
 
     var features = source.getFeatures();
     if (features.length === 0) {
@@ -247,7 +250,9 @@ document.getElementById('download').addEventListener('click', function () {
     }
 
     var lastFeature = features[features.length - 1].clone();
-    var bbox = lastFeature.getGeometry().transform('EPSG:3857', 'EPSG:4326').getExtent().toString();
+    var geom3857 = lastFeature.getGeometry();
+    var extent4326 = geom3857.clone().transform('EPSG:3857', 'EPSG:4326').getExtent();
+    var bbox = extent4326.toString();
     
     var init_start = document.getElementById("init_start").value;
     var init_last = document.getElementById("init_last").value;
@@ -288,37 +293,13 @@ document.getElementById('download').addEventListener('click', function () {
         window.URL.revokeObjectURL(url);
         document.getElementById('loading').classList.remove('active');
         document.getElementById('download').disabled = false;
-        document.getElementById('pauseDownload').style.display = 'none';
-        document.getElementById('resumeDownload').style.display = 'none';
     })
     .catch(error => {
-        if (error.name === 'AbortError') {
-            document.getElementById('downloadText').textContent = 'Download Paused';
-            document.getElementById('loading').classList.remove('active');
-            document.getElementById('pauseDownload').style.display = 'none';
-            document.getElementById('resumeDownload').style.display = 'inline-block';
-            document.getElementById('resumeDownload').disabled = false;
-        } else {
-            console.error(error);
-            alert('Download failed: ' + error.message);
-            document.getElementById('loading').classList.remove('active');
-            document.getElementById('download').disabled = false;
-            document.getElementById('pauseDownload').style.display = 'none';
-        }
+        console.error(error);
+        alert('Download failed: ' + error.message);
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('download').disabled = false;
     });      
-});
-
-document.getElementById('pauseDownload').addEventListener('click', function() {
-    if (downloadController) {
-        downloadController.abort();
-    }
-});
-
-document.getElementById('resumeDownload').addEventListener('click', function() {
-    document.getElementById('downloadText').textContent = 'Download GeoPackage';
-    document.getElementById('resumeDownload').style.display = 'none';
-    document.getElementById('download').disabled = false;
-    document.getElementById('download').click();
 });
 
 document.getElementById('display').addEventListener('click', function () {
@@ -370,28 +351,45 @@ document.getElementById('display').addEventListener('click', function () {
         }
     })
     .then(response => {
-        var bflood = new ol.layer.Tile({
-          source: new ol.source.XYZ({ url: response.before_tile }),
-          title: "Before Flood"
-        });
-        var aflood = new ol.layer.Tile({
-          source: new ol.source.XYZ({ url: response.after_tile }),
-          title: "After Flood"
-        });
-        var final = new ol.layer.Tile({
-          source: new ol.source.XYZ({ url: response.flood_tile }),
-          title: "Flood Area"
-        });
-        
-        map.addLayer(bflood);
-        map.addLayer(aflood);
-        map.addLayer(final);
-        
-        if (response.flood_area_ha) {
-          document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
-          document.getElementById('result').classList.add('active');
+        // Defensive checks
+        if (!response.before_tile || !response.after_tile || !response.flood_tile) {
+            throw new Error('Tiles not returned. Try adjusting dates/threshold or ensure GEE auth.');
         }
-        
+
+        // Remove existing SAR layers
+        [layerBefore, layerAfter, layerFlood].forEach(l => { if (l) map.removeLayer(l); });
+
+        // Create new layers
+        layerBefore = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.before_tile }), title: 'Before Flood' });
+        layerAfter  = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.after_tile  }), title: 'After Flood'  });
+        layerFlood  = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.flood_tile  }), title: 'Flood Area'   });
+
+        // Apply opacity from UI
+        var sarOpacityVal = parseInt(document.getElementById('sarOpacity')?.value || '80', 10) / 100;
+        layerBefore.setOpacity(sarOpacityVal);
+        layerAfter.setOpacity(sarOpacityVal);
+        layerFlood.setOpacity(0.9);
+
+        // Add in sensible order (flood on top)
+        map.addLayer(layerBefore);
+        map.addLayer(layerAfter);
+        map.addLayer(layerFlood);
+
+        // Fit view to drawn extent
+        try {
+            var extent3857 = ol.proj.transformExtent(extent4326, 'EPSG:4326', 'EPSG:3857');
+            map.getView().fit(extent3857, { duration: 600, padding: [40,40,40,40] });
+        } catch (_) {}
+
+        // Results panel
+        if (typeof response.flood_area_ha === 'number') {
+            document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
+            document.getElementById('result').classList.add('active');
+        } else {
+            document.getElementById('result').classList.add('active');
+            document.getElementById('floodArea').textContent = '0.00';
+        }
+
         document.getElementById('loading').classList.remove('active');
         document.getElementById('display').disabled = false;
     })
@@ -519,67 +517,13 @@ function initializeRangeSliders() {
 function startProcessing() {
     processingStartTime = Date.now();
     currentStep = 0;
-    
     // Show loading panel
     const loadingPanel = document.getElementById('loading');
     const resultPanel = document.getElementById('result');
     
     if (loadingPanel) loadingPanel.classList.add('active');
     if (resultPanel) resultPanel.classList.remove('active');
-    
-    // Reset all steps
-    for (let i = 1; i <= 4; i++) {
-        const step = document.getElementById(`step${i}`);
-        const status = document.getElementById(`step${i}Status`);
-        if (step) {
-            step.classList.remove('active', 'completed');
-        }
-        if (status) {
-            status.textContent = '⏳';
-        }
-    }
-    
-    // Start processing steps
-    processStep(1);
-}
-
-function processStep(stepNumber) {
-    currentStep = stepNumber;
-    const step = document.getElementById(`step${stepNumber}`);
-    const status = document.getElementById(`step${stepNumber}Status`);
-    
-    if (step) {
-        step.classList.add('active');
-        step.classList.remove('completed');
-    }
-    
-    // Simulate processing time for each step
-    const stepTimes = [2000, 3000, 4000, 2000]; // milliseconds
-    const stepTime = stepTimes[stepNumber - 1] || 2000;
-    
-    setTimeout(() => {
-        if (step) {
-            step.classList.remove('active');
-            step.classList.add('completed');
-        }
-        if (status) {
-            status.textContent = '✅';
-        }
-        
-        // Update progress
-        const progress = (stepNumber / 4) * 100;
-        updateProgress(progress);
-        
-        // Move to next step
-        if (stepNumber < 4) {
-            processStep(stepNumber + 1);
-        } else {
-            // Processing complete
-            setTimeout(() => {
-                completeProcessing();
-            }, 1000);
-        }
-    }, stepTime);
+    // Simple progress will be handled by simulateProgress()
 }
 
 function updateProgress(percentage) {
@@ -642,8 +586,22 @@ function initializeMapControls() {
     const baseMapSelect = document.getElementById('baseMap');
     if (baseMapSelect) {
         baseMapSelect.addEventListener('change', function() {
-            console.log('Base map changed to:', this.value);
-            // Implementation for base map switching would go here
+            let src;
+            switch (this.value) {
+                case 'terrain':
+                    src = new ol.source.XYZ({ url: 'https://tile.opentopomap.org/{z}/{x}/{y}.png', attributions: '© OpenTopoMap' });
+                    break;
+                case 'hybrid':
+                    src = new ol.source.XYZ({ url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png' });
+                    break;
+                case 'street':
+                    src = new ol.source.OSM();
+                    break;
+                case 'satellite':
+                default:
+                    src = new ol.source.XYZ({ url: 'https://{a-c}.tile.openstreetmap.org/{z}/{x}/{y}.png' });
+            }
+            raster.setSource(src);
         });
     }
     
@@ -651,8 +609,9 @@ function initializeMapControls() {
     const sarOpacitySlider = document.getElementById('sarOpacity');
     if (sarOpacitySlider) {
         sarOpacitySlider.addEventListener('input', function() {
-            console.log('SAR opacity changed to:', this.value + '%');
-            // Implementation for SAR layer opacity would go here
+            const val = parseInt(this.value, 10) / 100;
+            if (layerBefore) layerBefore.setOpacity(val);
+            if (layerAfter)  layerAfter.setOpacity(val);
         });
     }
     
@@ -667,9 +626,24 @@ function initializeMapControls() {
 }
 
 // Enhanced flood detection with new parameters
+function getBoundingBox() {
+    var features = source.getFeatures();
+    if (features.length === 0) {
+        return null;
+    }
+    var lastFeature = features[features.length - 1].clone();
+    return lastFeature.getGeometry().transform('EPSG:3857', 'EPSG:4326').getExtent().toString();
+}
+
 function detectFloodEnhanced() {
     if (!isAuthenticated) {
         alert('Please authenticate with Google Earth Engine first.');
+        return;
+    }
+    
+    var features = source.getFeatures();
+    if (features.length === 0) {
+        alert('⚠️ Please draw a rectangle on the map first');
         return;
     }
     
@@ -696,12 +670,74 @@ function detectFloodEnhanced() {
     console.log('Enhanced flood detection parameters:', params);
     
     // Start processing
+    document.getElementById('loading').classList.add('active');
+    document.getElementById('display').disabled = true;
+    document.getElementById('result').classList.remove('active');
     startProcessing();
     
-    // Simulate API call (replace with actual implementation)
-    setTimeout(() => {
+    // Prepare abort controller with timeout (3 minutes)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 180000);
+
+    // Call the actual API
+    fetch(`${baseUrl}/flood_display`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify(params),
+        signal: controller.signal
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json();
+        } else {
+            return response.json().then(err => { throw new Error(err.detail); });
+        }
+    })
+    .then(response => {
+        clearTimeout(timeoutId);
         console.log('Flood detection completed with enhanced parameters');
-    }, 10000);
+        // Process the response data
+        var bflood = new ol.layer.Tile({
+          source: new ol.source.XYZ({ url: response.before_tile }),
+          title: "Before Flood"
+        });
+        var aflood = new ol.layer.Tile({
+          source: new ol.source.XYZ({ url: response.after_tile }),
+          title: "After Flood"
+        });
+        var final = new ol.layer.Tile({
+          source: new ol.source.XYZ({ url: response.flood_tile }),
+          title: "Flood Area"
+        });
+        
+        map.addLayer(bflood);
+        map.addLayer(aflood);
+        map.addLayer(final);
+        
+        if (response.flood_area_ha) {
+          document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
+          document.getElementById('result').classList.add('active');
+        }
+        
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('display').disabled = false;
+    })
+    .catch(error => {
+        clearTimeout(timeoutId);
+        console.error('Flood detection failed:', error);
+        let message = error && error.message ? error.message : 'Unknown error';
+        if (error.name === 'AbortError') {
+            message = 'Request timed out. Try a smaller area or narrower date range.';
+        } else if (!navigator.onLine) {
+            message = 'You appear to be offline. Please check your connection.';
+        } else if (message === 'Failed to fetch') {
+            message = 'Network error or server unavailable. Ensure backend is running and GEE is authenticated.';
+        }
+        alert('❌ Detection failed: ' + message);
+        document.getElementById('loading').classList.remove('active');
+        document.getElementById('display').disabled = false;
+    });
 }
 
 // Legend Control Functions
@@ -813,8 +849,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update the main detect button to use enhanced function
     const detectButton = document.getElementById('display');
     if (detectButton) {
-        // Remove existing event listeners and add new one
-        detectButton.removeEventListener('click', detectFlood);
+        // Add event listener for the enhanced detection function
         detectButton.addEventListener('click', detectFloodEnhanced);
     }
     

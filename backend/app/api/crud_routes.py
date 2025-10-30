@@ -8,8 +8,9 @@ from schemas.schemas import *
 from models.database_models import (
     User as DBUser, FloodEvent as DBFloodEvent, 
     Prediction as DBPrediction, Feedback as DBFeedback,
-    Alert as DBAlert
+    Alert as DBAlert, Recommendation as DBRecommendation
 )
+from services.recommendation_service import RecommendationService
 from middleware.auth_middleware import get_current_user, require_admin
 
 router = APIRouter(tags=["crud"])
@@ -116,6 +117,37 @@ async def get_prediction(prediction_id: int, db: Session = Depends(get_db)):
         risk_level=pred.risk_level,
         created_at=pred.created_at
     )
+
+# Recommendation CRUD and generation
+@router.post("/recommendations", response_model=Recommendation, status_code=status.HTTP_201_CREATED)
+async def create_recommendation(rec: RecommendationCreate, db: Session = Depends(get_db)):
+    db_rec = DBRecommendation(
+        prediction_id=rec.prediction_id,
+        recommendation_type=rec.recommendation_type,
+        latitude=rec.latitude,
+        longitude=rec.longitude,
+        description=rec.description,
+        priority=rec.priority.value if hasattr(rec.priority, 'value') else str(rec.priority),
+        estimated_cost=rec.estimated_cost
+    )
+    db.add(db_rec)
+    db.commit()
+    db.refresh(db_rec)
+    return db_rec
+
+@router.get("/predictions/{prediction_id}/recommendations", response_model=List[Recommendation])
+async def get_recommendations_for_prediction(prediction_id: int, db: Session = Depends(get_db)):
+    recs = db.query(DBRecommendation).filter(DBRecommendation.prediction_id == prediction_id).all()
+    return recs
+
+@router.post("/predictions/{prediction_id}/recommendations/generate", response_model=List[Recommendation])
+async def generate_recommendations_for_prediction(prediction_id: int, db: Session = Depends(get_db)):
+    pred = db.query(DBPrediction).filter(DBPrediction.id == prediction_id).first()
+    if not pred:
+        raise HTTPException(status_code=404, detail="Prediction not found")
+    recs_payload = RecommendationService.generate_for_prediction(pred)
+    saved = RecommendationService.upsert_recommendations(db, recs_payload)
+    return saved
 
 # Alert CRUD
 @router.post("/alerts", response_model=Alert, status_code=status.HTTP_201_CREATED)

@@ -86,12 +86,12 @@ class Recommendation(Base):
     __tablename__ = "recommendations"
     
     id = Column(Integer, primary_key=True, index=True)
-    prediction_id = Column(Integer, ForeignKey("predictions.id"), nullable=False)
-    recommendation_type = Column(String, nullable=False)  # dyke_placement, evacuation, etc.
-    latitude = Column(Float, nullable=False)
-    longitude = Column(Float, nullable=False)
+    prediction_id = Column(Integer, ForeignKey("predictions.id"), nullable=False, index=True)
+    recommendation_type = Column(String, nullable=False, index=True)  # dyke_placement, evacuation, etc.
+    latitude = Column(Float, nullable=False, index=True)
+    longitude = Column(Float, nullable=False, index=True)
     description = Column(Text, nullable=False)
-    priority = Column(String, default="medium")  # low, medium, high, critical
+    priority = Column(String, default="medium", index=True)  # low, medium, high, critical
     estimated_cost = Column(Float, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     

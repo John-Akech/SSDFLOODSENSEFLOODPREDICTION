@@ -135,110 +135,51 @@ const DataSharing: React.FC = () => {
             </p>
           </div>
 
-          {/* Main Content - Grid Layout */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
-            {/* Left Sidebar - Data Types */}
-            <div className="xl:col-span-1 space-y-6">
-              {/* Data Types Card */}
-              <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900">Data Types</h3>
-                </div>
-                <div className="space-y-3">
-                  {dataTypes.map((type, idx) => (
-                    <motion.div
-                      key={type.value}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className={`p-4 rounded-xl border-2 transition-all cursor-pointer group ${
-                        formData.dataType === type.value
-                          ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-500 shadow-md'
-                          : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
-                      }`}
-                      onClick={() => setFormData({ ...formData, dataType: type.value })}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${
-                          formData.dataType === type.value
-                            ? `bg-gradient-to-br ${type.color} text-white shadow-lg`
-                            : 'bg-gray-100 group-hover:bg-blue-100 text-gray-600'
-                        }`}>
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={type.icon} />
-                          </svg>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-semibold text-gray-900 text-sm block">{type.label}</span>
-                          <span className="text-xs text-gray-500 mt-1 block line-clamp-2">{type.desc}</span>
-                          {formData.dataType === type.value && (
-                            <div className="flex items-center gap-1 mt-2">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                              <span className="text-xs text-blue-600 font-semibold">Selected</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
+          {/* Main Content - Grid Layout (minimalist, no cards) */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 md:gap-10 items-start">
+            {/* Left Sidebar - Data Types (plain list) */}
+            <div className="xl:col-span-1 min-w-0">
+              <h3 className="text-base font-semibold text-gray-900 mb-3">Data Types</h3>
+              <div className="space-y-2">
+                {dataTypes.map((type) => (
+                  <button
+                    key={type.value}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, dataType: type.value })}
+                    className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
+                      formData.dataType === type.value
+                        ? 'bg-blue-50 border-blue-400 text-blue-800'
+                        : 'bg-white border-gray-200 text-gray-800 hover:border-blue-300'
+                    }`}
+                    aria-pressed={formData.dataType === type.value}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
+                      <span className="font-medium">{type.label}</span>
+                      {formData.dataType === type.value && (
+                        <span className="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">Selected</span>
+                      )}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1 truncate">{type.desc}</div>
+                  </button>
+                ))}
               </div>
 
-              {/* Benefits Card */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200 shadow-lg">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900">Why Share?</h3>
-                </div>
-                <ul className="space-y-3">
-                  {benefits.map((item, idx) => (
-                    <motion.li
-                      key={idx}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.1 }}
-                      className="flex items-center gap-3 p-3 bg-white/60 rounded-lg hover:bg-white/80 transition-all duration-200 cursor-pointer group"
-                    >
-                      <div className={`w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform ${item.color}`}>
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
-                        </svg>
-                      </div>
-                      <span className="font-medium text-gray-700 text-sm">{item.text}</span>
-                    </motion.li>
-                  ))}
-                </ul>
-              </div>
+              <h3 className="text-base font-semibold text-gray-900 mt-8 mb-3">Why Share?</h3>
+              <ul className="space-y-2">
+                {benefits.map((item, idx) => (
+                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">
+                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    {item.text}
+                  </li>
+                ))}
+              </ul>
             </div>
 
-            {/* Main Form Area */}
-            <div className="xl:col-span-3">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100"
-              >
-                <div className="flex items-center gap-4 mb-8">
-                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h3 className="text-2xl font-bold text-gray-900">Upload Your Data</h3>
-                    <p className="text-gray-600">Fill out the form below to contribute your data</p>
-                  </div>
-                </div>
+            {/* Main Form Area (plain section) */}
+            <div className="xl:col-span-3 min-w-0">
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Your Data</h3>
+              <p className="text-gray-600 mb-6">Fill out the form below to contribute your data</p>
                 
                 <AnimatePresence mode="wait">
                   {!submitted ? (
@@ -252,7 +193,7 @@ const DataSharing: React.FC = () => {
                     >
                       {/* Form Fields Grid */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
+                        <div className="min-w-0">
                           <label className="block text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
                             <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -261,7 +202,7 @@ const DataSharing: React.FC = () => {
                           </label>
                           <input
                             type="text"
-                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 text-gray-900"
+                            className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 text-gray-900 break-words"
                             placeholder="e.g., Bor County, Jonglei State"
                             value={formData.location}
                             onChange={(e) => setFormData({ ...formData, location: e.target.value })}
@@ -286,7 +227,7 @@ const DataSharing: React.FC = () => {
                         </div>
                       </div>
 
-                      <div>
+                      <div className="min-w-0">
                         <label className="block text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
                           <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -294,7 +235,7 @@ const DataSharing: React.FC = () => {
                           Description
                         </label>
                         <textarea
-                          className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 text-gray-900 resize-none"
+                          className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 text-gray-900 resize-none break-words"
                           rows={4}
                           placeholder="Describe your observation or data in detail..."
                           value={formData.description}
@@ -310,7 +251,7 @@ const DataSharing: React.FC = () => {
                           </svg>
                           Upload File (Optional)
                         </label>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-200 group">
+                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 hover:bg-blue-50/50 transition-all duration-200">
                           <input
                             type="file"
                             className="hidden"
@@ -319,11 +260,6 @@ const DataSharing: React.FC = () => {
                             accept=".csv,.xlsx,.jpg,.png,.pdf"
                           />
                           <label htmlFor="file-upload" className="cursor-pointer">
-                            <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-200">
-                              <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                              </svg>
-                            </div>
                             <p className="text-base text-gray-700 font-medium mb-2">
                               {formData.file ? formData.file.name : 'Click to upload or drag and drop'}
                             </p>
@@ -332,7 +268,7 @@ const DataSharing: React.FC = () => {
                         </div>
                       </div>
 
-                      <div>
+                      <div className="min-w-0">
                         <label className="block text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
                           <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -341,7 +277,7 @@ const DataSharing: React.FC = () => {
                         </label>
                         <input
                           type="email"
-                          className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 text-gray-900"
+                          className="w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 placeholder-gray-400 text-gray-900 break-words"
                           placeholder="your.email@example.com"
                           value={formData.contactEmail}
                           onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
@@ -370,19 +306,19 @@ const DataSharing: React.FC = () => {
                       {/* Submit Button */}
                       <motion.button
                         type="submit"
-                        className="w-full py-4 bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 text-white font-bold text-lg rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={uploading}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
                         {uploading ? (
                           <span className="flex items-center justify-center gap-3">
-                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                             Uploading...
                           </span>
                         ) : (
                           <span className="flex items-center justify-center gap-3">
-                            <svg className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                             </svg>
                             Submit Data Contribution
@@ -412,9 +348,8 @@ const DataSharing: React.FC = () => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </motion.div>
+              </div>
             </div>
-          </div>
         </motion.div>
       </div>
     </div>
