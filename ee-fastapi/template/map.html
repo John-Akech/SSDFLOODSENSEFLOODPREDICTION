@@ -509,10 +509,685 @@
             border-left: 4px solid #dc3545;
             color: #721c24;
         }
+
+        /* Enhanced UI Components */
+        .range-value {
+            text-align: center;
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            margin-top: 5px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkmark {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e8e8e8;
+            border-radius: 4px;
+            margin-right: 12px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-label input[type="checkbox"]:checked + .checkmark {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+        }
+
+        .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .advanced-panel {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+            border-left: 4px solid #667eea;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; max-height: 0; }
+            to { opacity: 1; max-height: 500px; }
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        .loading-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .loading-header h3 {
+            margin: 15px 0 0 0;
+            color: #667eea;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .processing-steps {
+            margin-bottom: 20px;
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-left: 4px solid #2196f3;
+        }
+
+        .step.completed {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-left: 4px solid #4caf50;
+        }
+
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            background: #e8e8e8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            margin-right: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-icon {
+            background: #2196f3;
+            color: white;
+        }
+
+        .step.completed .step-icon {
+            background: #4caf50;
+            color: white;
+        }
+
+        .step-text {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .step-status {
+            font-size: 16px;
+        }
+
+        .progress-container {
+            margin-bottom: 15px;
+        }
+
+        .processing-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .info-label {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .info-value {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .result-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .result-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2e7d32;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1b5e20;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #4caf50;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .result-details {
+            background: rgba(255, 255, 255, 0.5);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .detail-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .detail-label {
+            color: #666;
+            font-weight: 600;
+        }
+
+        .detail-value {
+            color: #333;
+            font-weight: 700;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                left: -100%;
+            }
+            
+            .result-stats {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+            
+            .action-buttons {
+                gap: 8px;
+            }
+            
+            .btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+
+        /* Accessibility Improvements */
+        .btn:focus {
+            outline: 3px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        input:focus, select:focus {
+            outline: 3px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .checkbox-label:focus-within .checkmark {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        /* Legend Styles */
+        .legend-group {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .legend-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            margin-right: 12px;
+            border: 3px solid #fff;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .legend-label {
+            color: #555;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        /* SAR Imagery Colors - High Contrast */
+        .sar-before {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%);
+            border-color: #1e40af;
+        }
+
+        .sar-after {
+            background: linear-gradient(135deg, #7c2d12 0%, #ea580c 50%, #f97316 100%);
+            border-color: #7c2d12;
+        }
+
+        .sar-difference {
+            background: linear-gradient(135deg, #991b1b 0%, #dc2626 50%, #ef4444 100%);
+            border-color: #991b1b;
+        }
+
+        /* Flood Detection Colors - High Contrast */
+        .flood-high {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #fca5a5 100%);
+            border-color: #7f1d1d;
+            animation: pulse 2s infinite;
+            position: relative;
+        }
+
+        .flood-high::after {
+            content: "!";
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #fff;
+            color: #dc2626;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #dc2626;
+        }
+
+        .flood-medium {
+            background: linear-gradient(135deg, #9a3412 0%, #ea580c 50%, #fb923c 100%);
+            border-color: #9a3412;
+        }
+
+        .flood-low {
+            background: linear-gradient(135deg, #a16207 0%, #eab308 50%, #fde047 100%);
+            border-color: #a16207;
+        }
+
+        .flood-uncertain {
+            background: linear-gradient(135deg, #374151 0%, #6b7280 50%, #9ca3af 100%);
+            border-color: #374151;
+        }
+
+        /* Terrain Colors - High Contrast */
+        .water-permanent {
+            background: linear-gradient(135deg, #0c4a6e 0%, #0ea5e9 50%, #7dd3fc 100%);
+            border-color: #0c4a6e;
+        }
+
+        .slope-high {
+            background: linear-gradient(135deg, #78350f 0%, #d97706 50%, #fbbf24 100%);
+            border-color: #78350f;
+        }
+
+        .urban {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #6b7280 100%);
+            border-color: #1f2937;
+        }
+
+        .vegetation {
+            background: linear-gradient(135deg, #14532d 0%, #16a34a 50%, #4ade80 100%);
+            border-color: #14532d;
+        }
+
+        /* Processing Status Colors - High Contrast */
+        .processing-pending {
+            background: linear-gradient(135deg, #374151 0%, #6b7280 50%, #9ca3af 100%);
+            border-color: #374151;
+        }
+
+        .processing-active {
+            background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #60a5fa 100%);
+            border-color: #1e40af;
+            animation: pulse 1.5s infinite;
+        }
+
+        .processing-complete {
+            background: linear-gradient(135deg, #14532d 0%, #16a34a 50%, #4ade80 100%);
+            border-color: #14532d;
+        }
+
+        .processing-error {
+            background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #fca5a5 100%);
+            border-color: #7f1d1d;
+        }
+
+        .legend-controls {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        /* Legend Animation */
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Legend Toggle States */
+        .legend-group.collapsed {
+            max-height: 40px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .legend-group.expanded {
+            max-height: 500px;
+            transition: max-height 0.3s ease;
+        }
+
+        /* Floating Legend (for map overlay) */
+        .floating-legend {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            max-width: 300px;
+            display: none;
+        }
+
+        .floating-legend.active {
+            display: block;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .floating-legend .legend-group {
+            margin-bottom: 15px;
+            padding: 12px;
+        }
+
+        .floating-legend .legend-title {
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .floating-legend .legend-item {
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        .floating-legend .legend-color {
+            width: 16px;
+            height: 16px;
+            margin-right: 8px;
+        }
+
+        /* Legend Toggle Button */
+        .legend-toggle {
+            position: fixed;
+            top: 100px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 50%;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .legend-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        .legend-toggle:active {
+            transform: scale(0.95);
+        }
+
+        /* Legend Header */
+        .legend-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e8e8e8;
+        }
+
+        .legend-header h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .legend-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .legend-close:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        /* Mobile Legend Adjustments */
+        @media (max-width: 768px) {
+            .floating-legend {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+                padding: 15px;
+            }
+            
+            .legend-group {
+                padding: 12px;
+                margin-bottom: 15px;
+            }
+            
+            .legend-item {
+                font-size: 11px;
+            }
+
+            .legend-toggle {
+                top: 80px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
+
+    <!-- Floating Legend Overlay -->
+    <div class="floating-legend" id="floatingLegend">
+        <div class="legend-header">
+            <h3>Map Legend</h3>
+            <button class="legend-close" onclick="toggleFloatingLegend()">×</button>
+        </div>
+        
+        <!-- Flood Detection Legend (Most Important) -->
+        <div class="legend-group">
+            <h4 class="legend-title">Flood Detection</h4>
+            <div class="legend-item">
+                <div class="legend-color flood-high"></div>
+                <span class="legend-label">High Confidence (>90%)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color flood-medium"></div>
+                <span class="legend-label">Medium (70-90%)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color flood-low"></div>
+                <span class="legend-label">Low (50-70%)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color flood-uncertain"></div>
+                <span class="legend-label">Uncertain (<50%)</span>
+            </div>
+        </div>
+
+        <!-- SAR Imagery Legend -->
+        <div class="legend-group">
+            <h4 class="legend-title">SAR Imagery</h4>
+            <div class="legend-item">
+                <div class="legend-color sar-before"></div>
+                <span class="legend-label">Before Flood</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color sar-after"></div>
+                <span class="legend-label">After Flood</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color sar-difference"></div>
+                <span class="legend-label">Change Detection</span>
+            </div>
+        </div>
+
+        <!-- Terrain Features -->
+        <div class="legend-group">
+            <h4 class="legend-title">Terrain</h4>
+            <div class="legend-item">
+                <div class="legend-color water-permanent"></div>
+                <span class="legend-label">Permanent Water</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color slope-high"></div>
+                <span class="legend-label">High Slope</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color urban"></div>
+                <span class="legend-label">Urban Areas</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legend Toggle Button -->
+    <button class="legend-toggle" onclick="toggleFloatingLegend()" title="Toggle Legend">
+        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        </svg>
+    </button>
 
     <button class="sidebar-toggle" onclick="toggleSidebar()">
         <span></span>
@@ -576,53 +1251,301 @@
         </div>
 
         <div class="sidebar-section">
-            <div class="section-title">Detection Settings</div>
+            <div class="section-title">Advanced Detection Settings</div>
+            
+            <!-- SAR Processing Parameters -->
+            <div class="input-group">
+                <label class="input-label">Polarization Mode</label>
+                <select id="polarizationMode">
+                    <option value="VH">VH Only (Default)</option>
+                    <option value="VV">VV Only</option>
+                    <option value="dual">Dual (VH+VV)</option>
+                    <option value="combined">Combined Analysis</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Speckle Filter</label>
+                <select id="speckleFilter">
+                    <option value="focal_mean">Focal Mean (Default)</option>
+                    <option value="lee">Lee Filter</option>
+                    <option value="frost">Frost Filter</option>
+                    <option value="kuan">Kuan Filter</option>
+                    <option value="gamma_map">Gamma Map</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Filter Window Size (meters)</label>
+                <input type="range" id="filterWindow" min="20" max="100" value="50" step="10">
+                <div class="range-value" id="filterWindowValue">50m</div>
+            </div>
+
+            <!-- Adaptive Thresholding -->
+            <div class="input-group">
+                <label class="input-label">Threshold Method</label>
+                <select id="thresholdMethod">
+                    <option value="fixed">Fixed Threshold</option>
+                    <option value="adaptive">Adaptive (Local Statistics)</option>
+                    <option value="otsu">Otsu's Method</option>
+                    <option value="kmeans">K-Means Clustering</option>
+                </select>
+            </div>
+
             <div class="input-group">
                 <label class="input-label">Flood Threshold</label>
-                <input type="text" id="threshold" value="1.25" placeholder="1.25">
+                <input type="range" id="threshold" min="0.8" max="2.5" value="1.25" step="0.05">
+                <div class="range-value" id="thresholdValue">1.25</div>
             </div>
+
+            <!-- Quality Control -->
+            <div class="input-group">
+                <label class="input-label">Minimum Flood Area (hectares)</label>
+                <input type="number" id="minFloodArea" value="1" min="0.1" max="100" step="0.1">
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Connectivity Filter</label>
+                <select id="connectivityFilter">
+                    <option value="8">8-connected (Default)</option>
+                    <option value="4">4-connected</option>
+                    <option value="12">12-connected</option>
+                    <option value="disabled">Disabled</option>
+                </select>
+            </div>
+
+            <!-- Advanced Options Toggle -->
+            <div class="input-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="advancedOptions" onchange="toggleAdvancedOptions()">
+                    <span class="checkmark"></span>
+                    Show Advanced Options
+                </label>
+            </div>
+
+            <!-- Advanced Options Panel -->
+            <div id="advancedPanel" class="advanced-panel" style="display: none;">
+                <div class="input-group">
+                    <label class="input-label">Temporal Consistency Check</label>
+                    <select id="temporalCheck">
+                        <option value="disabled">Disabled</option>
+                        <option value="basic">Basic (2 images)</option>
+                        <option value="enhanced">Enhanced (3+ images)</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Edge Detection</label>
+                    <select id="edgeDetection">
+                        <option value="disabled">Disabled</option>
+                        <option value="sobel">Sobel</option>
+                        <option value="canny">Canny</option>
+                        <option value="laplacian">Laplacian</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Morphological Operations</label>
+                    <select id="morphology">
+                        <option value="none">None</option>
+                        <option value="opening">Opening (Noise removal)</option>
+                        <option value="closing">Closing (Gap filling)</option>
+                        <option value="both">Both</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Confidence Threshold (%)</label>
+                    <input type="range" id="confidenceThreshold" min="50" max="99" value="75" step="1">
+                    <div class="range-value" id="confidenceValue">75%</div>
+                </div>
+            </div>
+
             <div class="info-box">
                 <p><strong>South Sudan Flood Season:</strong> Rainy season April-October, peak flooding August-November. Higher threshold = stricter detection.</p>
+                <p><strong>Tip:</strong> Use adaptive thresholding for varying terrain conditions. VH polarization works best for flood detection.</p>
+            </div>
+        </div>
+
+        <!-- Visualization Controls -->
+        <div class="sidebar-section">
+            <div class="section-title">Map Visualization</div>
+            
+            <div class="input-group">
+                <label class="input-label">Base Map</label>
+                <select id="baseMap">
+                    <option value="satellite">Satellite</option>
+                    <option value="terrain">Terrain</option>
+                    <option value="street">Street</option>
+                    <option value="hybrid">Hybrid</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">SAR Layer Opacity</label>
+                <input type="range" id="sarOpacity" min="0" max="100" value="80" step="5">
+                <div class="range-value" id="sarOpacityValue">80%</div>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">Flood Layer Style</label>
+                <select id="floodStyle">
+                    <option value="solid">Solid Fill</option>
+                    <option value="outline">Outline Only</option>
+                    <option value="hatched">Hatched Pattern</option>
+                    <option value="gradient">Gradient Fill</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="showBeforeAfter" checked>
+                    <span class="checkmark"></span>
+                    Show Before/After Comparison
+                </label>
+            </div>
+
+            <div class="input-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="showStatistics" checked>
+                    <span class="checkmark"></span>
+                    Show Statistics Overlay
+                </label>
             </div>
         </div>
 
         <div class="sidebar-section">
-            <div class="section-title">Actions</div>
+            <div class="section-title">Processing Actions</div>
             <div class="alert alert-warning" id="authWarning" style="display: none;">
                 <strong>Not Authenticated</strong><br>
                 Please authenticate with Google Earth Engine first.
             </div>
-            <button class="btn btn-primary" id="display" disabled>
-                <span>Detect Flood</span>
-            </button>
-            <button class="btn btn-secondary" id="download" disabled>
-                <span id="downloadText">Download GeoPackage</span>
-            </button>
-            <button class="btn btn-secondary" id="pauseDownload" disabled style="display: none;">
-                <span>Pause Download</span>
-            </button>
-            <button class="btn btn-secondary" id="resumeDownload" disabled style="display: none;">
-                <span>Resume Download</span>
-            </button>
-            <button class="btn btn-danger" id="undo">
-                <span>Clear Map</span>
-            </button>
-
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <p style="color: #667eea; font-weight: 600;">Processing SAR data...</p>
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressFill"></div>
-                </div>
-                <div class="progress-text" id="progressText">0%</div>
+            
+            <div class="action-buttons">
+                <button class="btn btn-primary" id="display" disabled>
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    <span>Detect Flood</span>
+                </button>
+                
+                <button class="btn btn-secondary" id="download" disabled>
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span id="downloadText">Download GeoPackage</span>
+                </button>
+                
+                <button class="btn btn-secondary" id="pauseDownload" disabled style="display: none;">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Pause Download</span>
+                </button>
+                
+                <button class="btn btn-secondary" id="resumeDownload" disabled style="display: none;">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-6a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Resume Download</span>
+                </button>
+                
+                <button class="btn btn-danger" id="undo">
+                    <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Clear Map</span>
+                </button>
             </div>
 
+            <!-- Enhanced Loading with Steps -->
+            <div class="loading" id="loading">
+                <div class="loading-header">
+                    <div class="spinner"></div>
+                    <h3>Processing SAR Data</h3>
+                </div>
+                
+                <div class="processing-steps">
+                    <div class="step" id="step1">
+                        <div class="step-icon">1</div>
+                        <div class="step-text">Loading satellite imagery</div>
+                        <div class="step-status" id="step1Status">⏳</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-icon">2</div>
+                        <div class="step-text">Applying speckle filtering</div>
+                        <div class="step-status" id="step2Status">⏳</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-icon">3</div>
+                        <div class="step-text">Computing change detection</div>
+                        <div class="step-status" id="step3Status">⏳</div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-icon">4</div>
+                        <div class="step-text">Generating flood extent</div>
+                        <div class="step-status" id="step4Status">⏳</div>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+                
+                <div class="processing-info" id="processingInfo">
+                    <div class="info-item">
+                        <span class="info-label">Processing Time:</span>
+                        <span class="info-value" id="processingTime">0s</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Images Processed:</span>
+                        <span class="info-value" id="imagesProcessed">0/0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Results Panel -->
             <div class="result-panel" id="result">
-                <div class="result-title">Flood Detected</div>
-                <div class="result-value" id="floodArea">0</div>
-                <div class="result-unit">hectares affected</div>
+                <div class="result-header">
+                    <div class="result-icon">🌊</div>
+                    <div class="result-title">Flood Detection Results</div>
+                </div>
+                
+                <div class="result-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="floodArea">0</div>
+                        <div class="stat-label">Hectares Affected</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="confidence">0%</div>
+                        <div class="stat-label">Confidence</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="floodCount">0</div>
+                        <div class="stat-label">Flood Patches</div>
+                    </div>
+                </div>
+                
+                <div class="result-details" id="resultDetails">
+                    <div class="detail-item">
+                        <span class="detail-label">Detection Method:</span>
+                        <span class="detail-value" id="detectionMethod">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Processing Time:</span>
+                        <span class="detail-value" id="finalProcessingTime">-</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Data Quality:</span>
+                        <span class="detail-value" id="dataQuality">-</span>
+                    </div>
+                </div>
             </div>
         </div>
+
 
         <div class="sidebar-section">
             <div class="section-title">Keyboard Shortcuts</div>
@@ -630,6 +1553,7 @@
                 <div><strong>Ctrl+M</strong> - Toggle Menu</div>
                 <div><strong>Ctrl+D</strong> - Detect Flood</div>
                 <div><strong>Ctrl+C</strong> - Clear Drawing</div>
+                <div><strong>Ctrl+L</strong> - Toggle Legend</div>
                 <div><strong>Esc</strong> - Close Modal</div>
             </div>
         </div>

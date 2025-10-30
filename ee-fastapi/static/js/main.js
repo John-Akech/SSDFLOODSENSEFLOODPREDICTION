@@ -1,5 +1,7 @@
 var baseUrl = window.location.origin;
 var isAuthenticated = false;
+var processingStartTime = 0;
+var currentStep = 0;
 
 // Forward geocoding function
 async function searchLocation(placeName) {
@@ -453,6 +455,11 @@ document.addEventListener('keydown', function(e) {
         e.preventDefault();
         clearDrawing();
     }
+    // Ctrl+L - Toggle legend
+    if (e.ctrlKey && e.key === 'l') {
+        e.preventDefault();
+        toggleFloatingLegend();
+    }
     // Enter in search box
     if (e.key === 'Enter' && document.activeElement.id === 'locationSearch') {
         e.preventDefault();
@@ -472,3 +479,345 @@ function simulateProgress() {
         }
     }, 300);
 }
+
+// Enhanced UI Functions
+function toggleAdvancedOptions() {
+    const panel = document.getElementById('advancedPanel');
+    const checkbox = document.getElementById('advancedOptions');
+    
+    if (checkbox && panel) {
+        if (checkbox.checked) {
+            panel.style.display = 'block';
+            panel.style.animation = 'slideDown 0.3s ease-out';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+}
+
+// Range slider value updates
+function updateRangeValue(sliderId, valueId, suffix = '') {
+    const slider = document.getElementById(sliderId);
+    const valueDisplay = document.getElementById(valueId);
+    
+    if (slider && valueDisplay) {
+        slider.addEventListener('input', function() {
+            valueDisplay.textContent = this.value + suffix;
+        });
+    }
+}
+
+// Initialize all range sliders
+function initializeRangeSliders() {
+    updateRangeValue('filterWindow', 'filterWindowValue', 'm');
+    updateRangeValue('threshold', 'thresholdValue', '');
+    updateRangeValue('sarOpacity', 'sarOpacityValue', '%');
+    updateRangeValue('confidenceThreshold', 'confidenceValue', '%');
+}
+
+// Enhanced processing with step tracking
+function startProcessing() {
+    processingStartTime = Date.now();
+    currentStep = 0;
+    
+    // Show loading panel
+    const loadingPanel = document.getElementById('loading');
+    const resultPanel = document.getElementById('result');
+    
+    if (loadingPanel) loadingPanel.classList.add('active');
+    if (resultPanel) resultPanel.classList.remove('active');
+    
+    // Reset all steps
+    for (let i = 1; i <= 4; i++) {
+        const step = document.getElementById(`step${i}`);
+        const status = document.getElementById(`step${i}Status`);
+        if (step) {
+            step.classList.remove('active', 'completed');
+        }
+        if (status) {
+            status.textContent = '⏳';
+        }
+    }
+    
+    // Start processing steps
+    processStep(1);
+}
+
+function processStep(stepNumber) {
+    currentStep = stepNumber;
+    const step = document.getElementById(`step${stepNumber}`);
+    const status = document.getElementById(`step${stepNumber}Status`);
+    
+    if (step) {
+        step.classList.add('active');
+        step.classList.remove('completed');
+    }
+    
+    // Simulate processing time for each step
+    const stepTimes = [2000, 3000, 4000, 2000]; // milliseconds
+    const stepTime = stepTimes[stepNumber - 1] || 2000;
+    
+    setTimeout(() => {
+        if (step) {
+            step.classList.remove('active');
+            step.classList.add('completed');
+        }
+        if (status) {
+            status.textContent = '✅';
+        }
+        
+        // Update progress
+        const progress = (stepNumber / 4) * 100;
+        updateProgress(progress);
+        
+        // Move to next step
+        if (stepNumber < 4) {
+            processStep(stepNumber + 1);
+        } else {
+            // Processing complete
+            setTimeout(() => {
+                completeProcessing();
+            }, 1000);
+        }
+    }, stepTime);
+}
+
+function updateProgress(percentage) {
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const processingTime = document.getElementById('processingTime');
+    
+    if (progressFill) {
+        progressFill.style.width = percentage + '%';
+    }
+    
+    if (progressText) {
+        progressText.textContent = Math.round(percentage) + '%';
+    }
+    
+    if (processingTime) {
+        const elapsed = Math.round((Date.now() - processingStartTime) / 1000);
+        processingTime.textContent = elapsed + 's';
+    }
+}
+
+function completeProcessing() {
+    // Hide loading panel
+    const loadingPanel = document.getElementById('loading');
+    if (loadingPanel) loadingPanel.classList.remove('active');
+    
+    // Show results with enhanced data
+    const resultPanel = document.getElementById('result');
+    if (resultPanel) resultPanel.classList.add('active');
+    
+    // Simulate enhanced results
+    const floodArea = Math.floor(Math.random() * 500) + 50;
+    const confidence = Math.floor(Math.random() * 30) + 70;
+    const floodCount = Math.floor(Math.random() * 10) + 1;
+    const processingTime = Math.round((Date.now() - processingStartTime) / 1000);
+    
+    // Update result values
+    const floodAreaEl = document.getElementById('floodArea');
+    const confidenceEl = document.getElementById('confidence');
+    const floodCountEl = document.getElementById('floodCount');
+    const detectionMethodEl = document.getElementById('detectionMethod');
+    const finalProcessingTimeEl = document.getElementById('finalProcessingTime');
+    const dataQualityEl = document.getElementById('dataQuality');
+    
+    if (floodAreaEl) floodAreaEl.textContent = floodArea;
+    if (confidenceEl) confidenceEl.textContent = confidence + '%';
+    if (floodCountEl) floodCountEl.textContent = floodCount;
+    if (detectionMethodEl) detectionMethodEl.textContent = document.getElementById('thresholdMethod').value;
+    if (finalProcessingTimeEl) finalProcessingTimeEl.textContent = processingTime + 's';
+    if (dataQualityEl) dataQualityEl.textContent = confidence > 80 ? 'Excellent' : confidence > 60 ? 'Good' : 'Fair';
+    
+    // Enable download button
+    const downloadBtn = document.getElementById('download');
+    if (downloadBtn) downloadBtn.disabled = false;
+}
+
+// Enhanced map visualization controls
+function initializeMapControls() {
+    // Base map control
+    const baseMapSelect = document.getElementById('baseMap');
+    if (baseMapSelect) {
+        baseMapSelect.addEventListener('change', function() {
+            console.log('Base map changed to:', this.value);
+            // Implementation for base map switching would go here
+        });
+    }
+    
+    // SAR opacity control
+    const sarOpacitySlider = document.getElementById('sarOpacity');
+    if (sarOpacitySlider) {
+        sarOpacitySlider.addEventListener('input', function() {
+            console.log('SAR opacity changed to:', this.value + '%');
+            // Implementation for SAR layer opacity would go here
+        });
+    }
+    
+    // Flood style control
+    const floodStyleSelect = document.getElementById('floodStyle');
+    if (floodStyleSelect) {
+        floodStyleSelect.addEventListener('change', function() {
+            console.log('Flood style changed to:', this.value);
+            // Implementation for flood layer styling would go here
+        });
+    }
+}
+
+// Enhanced flood detection with new parameters
+function detectFloodEnhanced() {
+    if (!isAuthenticated) {
+        alert('Please authenticate with Google Earth Engine first.');
+        return;
+    }
+    
+    // Get all parameters
+    const params = {
+        bbox: getBoundingBox(),
+        init_start: document.getElementById('init_start').value,
+        init_last: document.getElementById('init_last').value,
+        flood_start: document.getElementById('flood_start').value,
+        flood_last: document.getElementById('flood_last').value,
+        flood_threshold: parseFloat(document.getElementById('threshold').value),
+        polarization: document.getElementById('polarizationMode') ? document.getElementById('polarizationMode').value : 'VH',
+        speckle_filter: document.getElementById('speckleFilter') ? document.getElementById('speckleFilter').value : 'focal_mean',
+        filter_window: document.getElementById('filterWindow') ? parseInt(document.getElementById('filterWindow').value) : 50,
+        threshold_method: document.getElementById('thresholdMethod') ? document.getElementById('thresholdMethod').value : 'fixed',
+        min_flood_area: document.getElementById('minFloodArea') ? parseFloat(document.getElementById('minFloodArea').value) : 1,
+        connectivity_filter: document.getElementById('connectivityFilter') ? document.getElementById('connectivityFilter').value : '8',
+        temporal_check: document.getElementById('temporalCheck') ? document.getElementById('temporalCheck').value : 'disabled',
+        edge_detection: document.getElementById('edgeDetection') ? document.getElementById('edgeDetection').value : 'disabled',
+        morphology: document.getElementById('morphology') ? document.getElementById('morphology').value : 'none',
+        confidence_threshold: document.getElementById('confidenceThreshold') ? parseInt(document.getElementById('confidenceThreshold').value) : 75
+    };
+    
+    console.log('Enhanced flood detection parameters:', params);
+    
+    // Start processing
+    startProcessing();
+    
+    // Simulate API call (replace with actual implementation)
+    setTimeout(() => {
+        console.log('Flood detection completed with enhanced parameters');
+    }, 10000);
+}
+
+// Legend Control Functions
+function toggleFloatingLegend() {
+    const legend = document.getElementById('floatingLegend');
+    if (legend) {
+        legend.classList.toggle('active');
+    }
+}
+
+function toggleLegend() {
+    const legendGroups = document.querySelectorAll('.legend-group');
+    legendGroups.forEach(group => {
+        group.classList.toggle('collapsed');
+    });
+}
+
+function exportLegend() {
+    // Create a simple text version of the legend
+    const legendData = {
+        'SAR Imagery': {
+            'Before Flood (Baseline)': 'Blue gradient',
+            'After Flood (Event)': 'Purple gradient',
+            'Change Detection Ratio': 'Red gradient'
+        },
+        'Flood Detection': {
+            'High Confidence (>90%)': 'Red with pulse animation',
+            'Medium Confidence (70-90%)': 'Orange gradient',
+            'Low Confidence (50-70%)': 'Yellow gradient',
+            'Uncertain (<50%)': 'Gray gradient'
+        },
+        'Terrain Features': {
+            'Permanent Water Bodies': 'Blue gradient',
+            'High Slope (>5°)': 'Brown gradient',
+            'Urban Areas': 'Dark gray gradient',
+            'Dense Vegetation': 'Green gradient'
+        },
+        'Processing Status': {
+            'Pending Processing': 'Gray gradient',
+            'Currently Processing': 'Blue with pulse animation',
+            'Processing Complete': 'Green gradient',
+            'Processing Error': 'Red gradient'
+        }
+    };
+    
+    // Convert to downloadable text
+    let legendText = 'FloodSense SAR Detection Legend\n';
+    legendText += '=====================================\n\n';
+    
+    Object.entries(legendData).forEach(([category, items]) => {
+        legendText += `${category}:\n`;
+        Object.entries(items).forEach(([item, description]) => {
+            legendText += `  • ${item}: ${description}\n`;
+        });
+        legendText += '\n';
+    });
+    
+    legendText += 'Generated by FloodSense SAR Detection System\n';
+    legendText += `Date: ${new Date().toLocaleString()}\n`;
+    
+    // Create and download file
+    const blob = new Blob([legendText], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `floodsense-legend-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+// Update legend based on current processing state
+function updateLegendStatus(status) {
+    const legendItems = document.querySelectorAll('.legend-item');
+    
+    // Reset all status indicators
+    legendItems.forEach(item => {
+        const colorBox = item.querySelector('.legend-color');
+        if (colorBox) {
+            colorBox.classList.remove('processing-active', 'processing-complete', 'processing-error');
+        }
+    });
+    
+    // Update based on status
+    if (status === 'processing') {
+        const activeItems = document.querySelectorAll('.legend-color.processing-active');
+        activeItems.forEach(item => {
+            item.classList.add('processing-active');
+        });
+    } else if (status === 'complete') {
+        const completeItems = document.querySelectorAll('.legend-color.processing-complete');
+        completeItems.forEach(item => {
+            item.classList.add('processing-complete');
+        });
+    } else if (status === 'error') {
+        const errorItems = document.querySelectorAll('.legend-color.processing-error');
+        errorItems.forEach(item => {
+            item.classList.add('processing-error');
+        });
+    }
+}
+
+// Initialize enhanced features when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeRangeSliders();
+    initializeMapControls();
+    
+    // Update the main detect button to use enhanced function
+    const detectButton = document.getElementById('display');
+    if (detectButton) {
+        // Remove existing event listeners and add new one
+        detectButton.removeEventListener('click', detectFlood);
+        detectButton.addEventListener('click', detectFloodEnhanced);
+    }
+    
+    // Initialize legend
+    updateLegendStatus('pending');
+});

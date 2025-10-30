@@ -25,7 +25,7 @@ const Sidebar: React.FC = () => {
   }
 
   return (
-    <aside className="w-64 bg-white/80 backdrop-blur-xl border-r border-white/30 min-h-screen fixed left-0 top-16 bottom-0 overflow-y-auto shadow-xl">
+    <aside className="w-64 bg-white/95 backdrop-blur-xl border-r border-gray-200/50 min-h-screen fixed left-0 top-16 bottom-0 overflow-y-auto shadow-2xl">
       <nav className="p-6 space-y-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -36,16 +36,16 @@ const Sidebar: React.FC = () => {
               href={item.path}
               target="_blank"
               rel="noopener noreferrer"
-              className={`group flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${
-                active
-                  ? 'bg-gradient-to-r from-ocean-500 to-cyan-600 text-white shadow-xl scale-105'
-                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:scale-105'
-              }`}
+                className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${
+                  active
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105'
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
+                }`}
             >
-              <div className={`p-2 rounded-xl ${active ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`}`}>
+              <div className={`p-2 rounded-lg ${active ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`}`}>
                 <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-white'}`} />
               </div>
-              <span className="font-bold">{item.label}</span>
+              <span className="font-semibold text-sm">{item.label}</span>
               {active && (
                 <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
               )}
@@ -54,16 +54,16 @@ const Sidebar: React.FC = () => {
             <Link
               key={item.path}
               to={item.path}
-              className={`group flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 ${
-                active
-                  ? 'bg-gradient-to-r from-ocean-500 to-cyan-600 text-white shadow-xl scale-105'
-                  : 'text-gray-700 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:scale-105'
-              }`}
+                className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${
+                  active
+                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105'
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
+                }`}
             >
-              <div className={`p-2 rounded-xl ${active ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`}`}>
+              <div className={`p-2 rounded-lg ${active ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`}`}>
                 <Icon className={`w-5 h-5 ${active ? 'text-white' : 'text-white'}`} />
               </div>
-              <span className="font-bold">{item.label}</span>
+              <span className="font-semibold text-sm">{item.label}</span>
               {active && (
                 <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
               )}
@@ -72,24 +72,24 @@ const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      <div className="p-6 mt-8 space-y-4">
+      <div className="p-6 mt-8 space-y-6">
         <div className="flex justify-center">
           <LanguageSwitcher />
         </div>
         
-        <div className="glass-card bg-gradient-to-br from-ocean-50 to-cyan-50 border-2 border-ocean-200">
-          <div className="flex items-start gap-3 mb-3">
-            <div className="p-2 bg-gradient-to-br from-ocean-500 to-cyan-600 rounded-xl">
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="card p-6 bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <div>
-              <h4 className="text-sm font-black text-ocean-900 mb-1">{t('needHelp')}</h4>
-              <p className="text-xs text-ocean-700 mb-3 leading-relaxed">{t('contactSupport')}</p>
+            <div className="flex-1">
+              <h4 className="text-sm font-bold text-blue-900 mb-2">{t('needHelp')}</h4>
+              <p className="text-xs text-blue-700 mb-4 leading-relaxed">{t('contactSupport')}</p>
               <a 
                 href="mailto:j.akech@alustudent.com" 
-                className="inline-block text-xs bg-gradient-to-r from-ocean-600 to-cyan-600 text-white font-bold px-4 py-2 rounded-lg hover:from-ocean-700 hover:to-cyan-700 transition-all hover:scale-105 transform shadow-md"
+                className="btn btn-primary text-xs px-4 py-2 shadow-lg hover:shadow-xl"
               >
                 {t('getSupport')}
               </a>
