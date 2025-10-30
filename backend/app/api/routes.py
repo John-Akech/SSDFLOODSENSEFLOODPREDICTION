@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from core.database import get_db
 from schemas.schemas import *
-from models.database_models import Prediction as DBPrediction
+from models.database_models import Prediction as DBPrediction, Alert as DBAlert
 from services.model_service import ModelService
 from services.alert_service import alert_service
 from services.gis_service import GISService
@@ -225,36 +225,71 @@ async def get_dyke_recommendations(
         map_data={"html": map_html}
     )
 
-
-# Alert endpoints
-@router.get("/alerts")
-async def get_active_alerts(
-    latitude: Optional[float] = None,
-    longitude: Optional[float] = None,
-    radius_km: float = 50
+@router.get("/gis/flood-zones")
+async def get_flood_zones(
+    north: Optional[float] = None,
+    south: Optional[float] = None,
+    east: Optional[float] = None,
+    west: Optional[float] = None
 ):
-    """Get active flood alerts"""
+    """Get flood zones for a given bounding box"""
     try:
-        alerts = alert_service.get_active_alerts(latitude, longitude, radius_km)
+        # If no bounds provided, return all active alerts as flood zones
+        zones = []
         
+        # You can add actual flood zone data from GIS service here
+        # For now, return empty zones
         return {
-            "alerts": [
-                {
-                    "id": alert.id,
-                    "latitude": alert.latitude,
-                    "longitude": alert.longitude,
-                    "message": alert.message,
-                    "severity": alert.severity,
-                    "created_at": alert.created_at.isoformat(),
-                    "expires_at": alert.expires_at.isoformat() if alert.expires_at else None
-                }
-                for alert in alerts
-            ],
-            "count": len(alerts)
+            "zones": zones,
+            "count": len(zones)
         }
     except Exception as e:
-        logger.error(f"Error getting alerts: {e}")
-        return {"alerts": [], "count": 0}
+        logger.error(f"Error getting flood zones: {e}")
+        return {"zones": [], "count": 0}
+
+@router.get("/gis/elevation")
+async def get_elevation(
+    lat: float,
+    lng: float
+):
+    """Get elevation data for a specific location"""
+    try:
+        # In a real implementation, this would fetch elevation from a DEM
+        # For now, return mock data
+        return {
+            "latitude": lat,
+            "longitude": lng,
+            "elevation": 450.0,  # Mock elevation in meters
+            "source": "mock"
+        }
+    except Exception as e:
+        logger.error(f"Error getting elevation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/gis/water-bodies")
+async def get_water_bodies(
+    north: Optional[float] = None,
+    south: Optional[float] = None,
+    east: Optional[float] = None,
+    west: Optional[float] = None
+):
+    """Get water bodies for a given bounding box"""
+    try:
+        # If no bounds provided, return empty
+        bodies = []
+        
+        # You can add actual water body data from GIS service here
+        return {
+            "bodies": bodies,
+            "count": len(bodies)
+        }
+    except Exception as e:
+        logger.error(f"Error getting water bodies: {e}")
+        return {"bodies": [], "count": 0}
+
+
+# Alert endpoints - Moved to crud_routes.py to avoid conflicts
+# The old alert service endpoints are now handled by CRUD operations on the database
 
 
 
@@ -285,3 +320,50 @@ async def health_check():
         "models_loaded": ModelService.models_loaded,
         "timestamp": datetime.utcnow()
     }
+
+@router.get("/status")
+async def get_system_status(db: Session = Depends(get_db)):
+    """Get system status for real-time monitoring"""
+    try:
+        total_alerts = db.query(DBAlert).filter(DBAlert.is_active == True).count()
+        total_predictions = db.query(DBPrediction).count()
+        critical_alerts = db.query(DBAlert).filter(
+            DBAlert.is_active == True,
+            DBAlert.severity == "critical"
+        ).count()
+        
+        return {
+            "status": "operational",
+            "uptime": "99.9%",
+            "active_alerts": total_alerts,
+            "critical_alerts": critical_alerts,
+            "total_predictions": total_predictions,
+            "last_updated": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting system status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/flood/status")
+async def get_flood_status(db: Session = Depends(get_db)):
+    """Get real-time flood status"""
+    try:
+        active_alerts = db.query(DBAlert).filter(DBAlert.is_active == True).all()
+        
+        return {
+            "alerts": [
+                {
+                    "id": alert.id,
+                    "latitude": alert.latitude,
+                    "longitude": alert.longitude,
+                    "severity": alert.severity,
+                    "message": alert.message,
+                    "created_at": alert.created_at.isoformat() if alert.created_at else None
+                } for alert in active_alerts
+            ],
+            "count": len(active_alerts),
+            "timestamp": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting flood status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))

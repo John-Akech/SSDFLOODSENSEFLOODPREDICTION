@@ -17,7 +17,23 @@ const Login: React.FC = () => {
     setLoading(true);
     try {
       await apiService.login({ email, password });
-      navigate('/home');
+      // After successful login, always fetch user info with new token to get accurate role
+      let user;
+      try {
+        user = await apiService.getCurrentUser(); // This gets /auth/me, which should always have the role
+        localStorage.setItem('user', JSON.stringify(user)); // Keep localStorage fresh with latest user data
+      } catch {
+        // Fallback if getCurrentUser fails
+        const storedUser = localStorage.getItem('user');
+        user = storedUser ? JSON.parse(storedUser) : null;
+      }
+      
+      // Redirect based on user role
+      if (user && user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/home');
+      }
     } catch (error: any) {
       alert(error.response?.data?.detail || 'Login failed. Check credentials.');
     } finally {

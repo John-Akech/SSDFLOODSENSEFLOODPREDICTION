@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloodSense - Offline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .features {
+            text-align: left;
+            margin: 2rem 0;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .features h3 {
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+        
+        .features ul {
+            list-style: none;
+        }
+        
+        .features li {
+            margin-bottom: 0.5rem;
+            padding-left: 20px;
+            position: relative;
+        }
+        
+        .features li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #4ade80;
+            font-weight: bold;
+        }
+        
+        .retry-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+        
+        .retry-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .cached-data {
+            margin-top: 2rem;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            text-align: left;
+        }
+        
+        .cached-data h4 {
+            margin-bottom: 1rem;
+            color: #4ade80;
+        }
+        
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            p {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🌊</div>
+        <h1>FloodSense</h1>
+        <p>You're currently offline, but don't worry! You can still access cached flood data and basic features.</p>
+        
+        <div class="status">
+            <div class="status-dot"></div>
+            <span>No internet connection detected</span>
+        </div>
+        
+        <div class="features">
+            <h3>Available Offline Features:</h3>
+            <ul>
+                <li>View cached flood alerts and predictions</li>
+                <li>Access previously loaded map data</li>
+                <li>Browse saved reports and analytics</li>
+                <li>Use basic navigation and UI features</li>
+                <li>View emergency contact information</li>
+            </ul>
+        </div>
+        
+        <div class="cached-data">
+            <h4>📊 Cached Data Available</h4>
+            <div class="data-item">
+                <span>Flood Alerts:</span>
+                <span id="cached-alerts">Loading...</span>
+            </div>
+            <div class="data-item">
+                <span>Predictions:</span>
+                <span id="cached-predictions">Loading...</span>
+            </div>
+            <div class="data-item">
+                <span>Last Update:</span>
+                <span id="last-update">Loading...</span>
+            </div>
+        </div>
+        
+        <button class="retry-btn" onclick="window.location.reload()">
+            🔄 Try Again
+        </button>
+        <button class="retry-btn" onclick="window.location.href = '/'">
+            🏠 Go to Home
+        </button>
+    </div>
+
+    <script>
+        // Load cached data information
+        document.addEventListener('DOMContentLoaded', function() {
+            // Try to get cached data from IndexedDB or localStorage
+            const cachedAlerts = localStorage.getItem('cachedAlerts');
+            const cachedPredictions = localStorage.getItem('cachedPredictions');
+            const lastUpdate = localStorage.getItem('lastUpdate');
+            
+            if (cachedAlerts) {
+                const alerts = JSON.parse(cachedAlerts);
+                document.getElementById('cached-alerts').textContent = alerts.length + ' alerts';
+            } else {
+                document.getElementById('cached-alerts').textContent = 'No data';
+            }
+            
+            if (cachedPredictions) {
+                const predictions = JSON.parse(cachedPredictions);
+                document.getElementById('cached-predictions').textContent = predictions.length + ' predictions';
+            } else {
+                document.getElementById('cached-predictions').textContent = 'No data';
+            }
+            
+            if (lastUpdate) {
+                document.getElementById('last-update').textContent = new Date(lastUpdate).toLocaleString();
+            } else {
+                document.getElementById('last-update').textContent = 'Unknown';
+            }
+        });
+        
+        // Check for online status
+        window.addEventListener('online', function() {
+            window.location.reload();
+        });
+        
+        // Periodic connection check
+        setInterval(function() {
+            if (navigator.onLine) {
+                window.location.reload();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

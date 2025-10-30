@@ -1,8 +1,21 @@
 {
+  "name": "FloodSense - Flood Prediction System",
   "short_name": "FloodSense",
-  "name": "FloodSense - AI Flood Prediction for South Sudan",
-  "description": "Award-winning AI-powered flood prediction and early warning system protecting communities across South Sudan",
+  "description": "Real-time flood prediction and monitoring system for South Sudan",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["weather", "utilities", "productivity"],
   "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
     {
       "src": "/images/FloodSenseLogo.png",
       "sizes": "192x192",
@@ -16,38 +29,64 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": "/",
-  "scope": "/",
-  "display": "standalone",
-  "orientation": "portrait-primary",
-  "theme_color": "#0891b2",
-  "background_color": "#f0f9ff",
-  "categories": ["weather", "utilities", "productivity", "news"],
-  "lang": "en-US",
-  "dir": "ltr",
-  "prefer_related_applications": false,
-  "shortcuts": [
-    {
-      "name": "View Map",
-      "short_name": "Map",
-      "description": "View live flood risk map",
-      "url": "/map",
-      "icons": [{ "src": "/images/FloodSenseLogo.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Active Alerts",
-      "short_name": "Alerts",
-      "description": "Check active flood alerts",
-      "url": "/home",
-      "icons": [{ "src": "/images/FloodSenseLogo.png", "sizes": "192x192" }]
-    }
-  ],
   "screenshots": [
     {
-      "src": "/images/map.jpg",
+      "src": "/images/screenshot1.png",
       "sizes": "1280x720",
-      "type": "image/jpeg",
-      "label": "FloodSense Dashboard"
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/images/screenshot2.png",
+      "sizes": "750x1334",
+      "type": "image/png",
+      "form_factor": "narrow"
     }
-  ]
+  ],
+  "shortcuts": [
+    {
+      "name": "Flood Map",
+      "short_name": "Map",
+      "description": "View flood risk map",
+      "url": "/map",
+      "icons": [
+        {
+          "src": "/images/map-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Report Flood",
+      "short_name": "Report",
+      "description": "Report a flood event",
+      "url": "/report",
+      "icons": [
+        {
+          "src": "/images/report-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "short_name": "Analytics",
+      "description": "View flood analytics",
+      "url": "/analytics",
+      "icons": [
+        {
+          "src": "/images/analytics-icon.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
 }

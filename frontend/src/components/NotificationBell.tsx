@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BellIcon } from './Icons';
 import { apiService } from '../services/api';
 import { reverseGeocode } from '../services/geocoding';
+import '../styles/flood-colors.css';
 
 const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -9,40 +10,92 @@ const NotificationBell: React.FC = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [dismissedIds, setDismissedIds] = useState<Set<number>>(new Set(JSON.parse(localStorage.getItem('dismissedNotifications') || '[]')));
   const [locationNames, setLocationNames] = useState<Record<number, string>>({});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
+        setLoading(true);
         const data = await apiService.getActiveAlerts();
         const alerts = data.alerts || [];
         const filtered = alerts.filter((a: any) => !dismissedIds.has(a.id));
         setNotifications(filtered);
         setUnreadCount(filtered.length);
         
-        alerts.forEach(async (alert: any) => {
-          const name = await reverseGeocode(alert.latitude, alert.longitude);
-          setLocationNames(prev => ({ ...prev, [alert.id]: name }));
+        // Get location names for all alerts
+        const locationPromises = alerts.map(async (alert: any) => {
+          try {
+            const name = await reverseGeocode(alert.latitude, alert.longitude);
+            return { id: alert.id, name };
+          } catch (error) {
+            console.warn('Failed to get location name:', error);
+            return { id: alert.id, name: 'Unknown Location' };
+          }
         });
+        
+        const locationResults = await Promise.all(locationPromises);
+        const newLocationNames = locationResults.reduce((acc, { id, name }) => {
+          acc[id] = name;
+          return acc;
+        }, {} as Record<number, string>);
+        
+        setLocationNames(prev => ({ ...prev, ...newLocationNames }));
       } catch (error) {
-        console.error('Failed to fetch notifications');
+        console.error('Failed to fetch notifications:', error);
+      } finally {
+        setLoading(false);
       }
     };
+    
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, [dismissedIds]);
 
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'var(--risk-critical)';
+      case 'high': return 'var(--risk-high)';
+      case 'medium': return 'var(--risk-medium)';
+      case 'low': return 'var(--risk-low)';
+      default: return 'var(--risk-minimal)';
+    }
+  };
+
+  const getSeverityText = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'Critical Alert';
+      case 'high': return 'High Risk';
+      case 'medium': return 'Medium Risk';
+      case 'low': return 'Low Risk';
+      default: return 'Information';
+    }
+  };
+
+  const dismissNotification = (id: number) => {
+    const newDismissed = new Set(dismissedIds).add(id);
+    setDismissedIds(newDismissed);
+    localStorage.setItem('dismissedNotifications', JSON.stringify([...newDismissed]));
+  };
+
+  const markAllAsRead = () => {
+    const allIds = notifications.map(n => n.id);
+    const newDismissed = new Set([...dismissedIds, ...allIds]);
+    setDismissedIds(newDismissed);
+    localStorage.setItem('dismissedNotifications', JSON.stringify([...newDismissed]));
+  };
+
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+        className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
         aria-label="Notifications"
       >
-        <BellIcon className="w-6 h-6" />
+        <BellIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
-            {unreadCount}
+          <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse shadow-lg">
+            {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
@@ -50,54 +103,114 @@ const NotificationBell: React.FC = () => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-y-auto">
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Flood Alerts</h3>
-              <p className="text-sm text-gray-500">{unreadCount} active warnings</p>
+          <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-cyan-50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold text-flood-title">Flood Alerts</h3>
+                  <p className="text-sm text-water-subtitle">
+                    {unreadCount} active {unreadCount === 1 ? 'warning' : 'warnings'}
+                  </p>
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={markAllAsRead}
+                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 hover:bg-blue-100 rounded"
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="divide-y divide-gray-100">
-              {notifications.length === 0 ? (
+
+            {/* Notifications List */}
+            <div className="max-h-80 overflow-y-auto">
+              {loading ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-500">Loading notifications...</p>
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
-                  <BellIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                  <p>No active alerts</p>
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                  </div>
+                  <p className="font-medium">No active alerts</p>
+                  <p className="text-sm">All monitored areas are safe</p>
                 </div>
               ) : (
                 notifications.map((notif) => (
-                  <div key={notif.id} className="p-4 hover:bg-gray-50 transition-colors group relative">
+                  <div key={notif.id} className="p-4 hover:bg-gray-50 transition-colors group relative border-b border-gray-100 last:border-b-0">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        const newDismissed = new Set(dismissedIds).add(notif.id);
-                        setDismissedIds(newDismissed);
-                        localStorage.setItem('dismissedNotifications', JSON.stringify([...newDismissed]));
+                        dismissNotification(notif.id);
                       }}
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded-full"
-                      title="Dismiss"
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded-full"
+                      title="Dismiss notification"
                     >
                       <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
-                    <div className="flex items-start gap-3">
-                      <div className={`w-2 h-2 mt-2 rounded-full flex-shrink-0 ${
-                        notif.severity === 'critical' ? 'bg-red-500' :
-                        notif.severity === 'high' ? 'bg-red-500' :
-                        notif.severity === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                      }`} />
-                      <div className="flex-1 pr-6">
-                        <p className="text-sm font-medium text-gray-900">{notif.message}</p>
-                        <p className="text-xs text-gray-600 mt-1 font-semibold">
-                          {locationNames[notif.id] || `${notif.latitude.toFixed(3)}, ${notif.longitude.toFixed(3)}`}
+                    
+                    <div className="flex items-start gap-3 pr-8">
+                      <div 
+                        className="w-3 h-3 mt-2 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: getSeverityColor(notif.severity) }}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span 
+                            className="text-xs font-bold px-2 py-1 rounded-full text-white"
+                            style={{ backgroundColor: getSeverityColor(notif.severity) }}
+                          >
+                            {getSeverityText(notif.severity)}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(notif.created_at || notif.predicted_date).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        
+                        <p className="text-sm font-medium text-gray-900 mb-1">
+                          {notif.message || `Flood ${notif.severity} risk detected`}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(notif.created_at).toLocaleString()}
+                        
+                        <p className="text-xs text-gray-600 font-medium flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                          </svg>
+                          {locationNames[notif.id] || `${notif.latitude.toFixed(4)}, ${notif.longitude.toFixed(4)}`}
                         </p>
+                        
+                        {notif.confidence && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Confidence: {Math.round(notif.confidence * 100)}%
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
                 ))
               )}
             </div>
+
+            {/* Footer */}
+            {notifications.length > 0 && (
+              <div className="p-3 border-t border-gray-200 bg-gray-50">
+                <div className="flex items-center justify-between text-xs text-gray-500">
+                  <span>Last updated: {new Date().toLocaleTimeString()}</span>
+                  <span className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    Live updates
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         </>
       )}

@@ -25,9 +25,10 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
         start_time = time.time()
         
         # Log request
+        ip = request.client.host if request.client else "testclient"
         logger.info(
             f"Request: {request.method} {request.url.path} | "
-            f"IP: {request.client.host} | "
+            f"IP: {ip} | "
             f"User-Agent: {request.headers.get('user-agent', 'Unknown')}"
         )
         

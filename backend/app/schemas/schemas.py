@@ -171,6 +171,7 @@ class Alert(BaseModel):
     severity: str
     created_at: datetime
     expires_at: Optional[datetime]
+    is_active: bool = True
 
 
 # GIS schemas

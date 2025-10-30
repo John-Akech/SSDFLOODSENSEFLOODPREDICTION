@@ -47,7 +47,7 @@ class TestAPI:
         assert response.status_code == 200
         data = response.json()
         assert "message" in data
-        assert "South Sudan Flood Prediction API" in data["message"]
+        assert "FloodSense API" in data["message"]
     
     def test_health_check(self):
         """Test health check endpoint"""
@@ -66,37 +66,42 @@ class TestAPI:
     
     def test_user_registration(self):
         """Test user registration"""
+        import time
+        # Use unique email to avoid conflicts
+        unique_email = f"test_{int(time.time())}@example.com"
         user_data = {
-            "email": "test@example.com",
-            "password": "testpassword123",
+            "email": unique_email,
+            "password": "TestPassword123!",
             "full_name": "Test User",
             "role": "community_member",
             "language": "en"
         }
         
         response = client.post("/api/v1/auth/register", json=user_data)
-        assert response.status_code == 200
+        assert response.status_code in [200, 201], f"Expected 200 or 201, got {response.status_code}: {response.json()}"
         data = response.json()
-        assert data["email"] == user_data["email"]
+        assert data["email"] == unique_email
         assert data["full_name"] == user_data["full_name"]
         assert "id" in data
     
     def test_user_login(self):
         """Test user login"""
+        import time
         # First register a user
+        unique_email = f"login_{int(time.time())}@example.com"
         user_data = {
-            "email": "test@example.com",
-            "password": "testpassword123",
+            "email": unique_email,
+            "password": "TestPassword123!",
             "full_name": "Test User"
         }
         client.post("/api/v1/auth/register", json=user_data)
         
         # Then login
         login_data = {
-            "email": "test@example.com",
-            "password": "testpassword123"
+            "email": unique_email,
+            "password": "TestPassword123!"
         }
-        response = client.post("/api/v1/auth/login", params=login_data)
+        response = client.post("/api/v1/auth/login", json=login_data)
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data

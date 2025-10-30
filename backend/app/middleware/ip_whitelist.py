@@ -25,7 +25,7 @@ class IPWhitelistMiddleware(BaseHTTPMiddleware):
         
         # Only check admin endpoints in production
         if request.url.path.startswith("/api/v1/admin"):
-            client_ip = request.client.host
+            client_ip = request.client.host if request.client else "unknown"
             
             if client_ip not in self.whitelist:
                 raise HTTPException(

@@ -28,7 +28,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
             "img-src 'self' data: https:; "
             "font-src 'self' data: https://cdn.jsdelivr.net; "
-            "connect-src 'self' http://localhost:* https:;"
+            "connect-src 'self' http://localhost:* https: http://127.0.0.1:*;"
         )
         
         # Referrer Policy

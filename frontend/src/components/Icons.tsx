@@ -65,3 +65,11 @@ export const LogoutIcon = ({ className = "w-6 h-6" }: { className?: string }) =>
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
   </svg>
 );
+
+export const ChevronDownIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M6 8l4 4 4-4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+);
+
+export const ChevronRightIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M8 6l4 4-4 4" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+);

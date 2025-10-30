@@ -16,7 +16,8 @@ class RateLimiter(BaseHTTPMiddleware):
         if request.url.path in ["/health", "/docs", "/redoc", "/openapi.json"]:
             return await call_next(request)
             
-        client_ip = request.client.host
+        # Use 'testclient' as fallback when request.client is None (e.g. in test)
+        client_ip = request.client.host if request.client else "testclient"
         now = datetime.now()
         
         # Clean old requests

@@ -41,17 +41,25 @@ app = FastAPI(
 )
 
 # Security Middleware (order matters!)
-app.add_middleware(SecurityHeadersMiddleware)
-app.add_middleware(RequestLoggerMiddleware)
-app.add_middleware(IPWhitelistMiddleware)
+# Middleware executes in REVERSE ORDER (last added = first to execute)
+# So add them in the order you want them to execute
+
+# Rate Limiter (most outer layer)
+app.add_middleware(RateLimiter, requests=100, window=3600)
 
 # Trusted Host Middleware
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["localhost", "127.0.0.1", "*.floodsense.org"]
+    allowed_hosts=[
+        "localhost", "127.0.0.1", "*.floodsense.org", "testserver"
+    ]
 )
 
-# CORS Middleware
+app.add_middleware(IPWhitelistMiddleware)
+app.add_middleware(RequestLoggerMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# CORS must be LAST (most inner layer) to handle preflight OPTIONS requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -64,22 +72,19 @@ app.add_middleware(
         "http://localhost"
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
     max_age=3600
 )
 
-# Rate Limiter
-app.add_middleware(RateLimiter, requests=100, window=3600)
-
 # app.add_exception_handler(SQLAlchemyError, database_error_handler)
 
 # Include API routes
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(crud_router, prefix="/api/v1")
-
-app.include_router(router, prefix="/api/v1")
+# Order matters - more specific routes should be included first
 app.include_router(admin_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(router, prefix="/api/v1")
+app.include_router(crud_router, prefix="/api/v1")  # CRUD routes last
 
 
 @app.get("/")
