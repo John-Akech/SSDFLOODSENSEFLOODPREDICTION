@@ -13,6 +13,10 @@ const Analytics: React.FC = () => {
   const { t } = useLanguage();
   const [timeFilter, setTimeFilter] = useState('monthly');
   const [stats, setStats] = useState<any>(null);
+  const [stateStats, setStateStats] = useState<any>({});
+  const [modelWindow, setModelWindow] = useState<number>(300);
+  const [liveModels, setLiveModels] = useState<any>({});
+  const [liveModelsTimestamp, setLiveModelsTimestamp] = useState<string | null>(null);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [predictions, setPredictions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,15 +27,21 @@ const Analytics: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [systemStats, alertData, predData] = await Promise.all([
+        const [systemStats, alertData, predData, stateData] = await Promise.all([
           apiService.getSystemStats(),
           apiService.getActiveAlerts(),
-          apiService.getPredictions()
+          apiService.getPredictions(),
+          apiService.getStateStats()
         ]);
         
         setStats(systemStats);
         setAlerts(alertData.alerts || []);
         setPredictions(predData.predictions || []);
+        setStateStats(stateData || {});
+        // Seed live models from system if available
+        if (systemStats?.live_models) {
+          setLiveModels(systemStats.live_models);
+        }
       } catch (error) {
         console.error('Failed to fetch stats:', error);
       } finally {
@@ -40,6 +50,20 @@ const Analytics: React.FC = () => {
     };
     fetchData();
   }, []);
+
+  // Fetch live model stats whenever window changes
+  useEffect(() => {
+    const fetchModelStats = async () => {
+      try {
+        const ms = await apiService.getModelStats(modelWindow);
+        setLiveModels(ms?.models || {});
+        setLiveModelsTimestamp(ms?.timestamp || null);
+      } catch (e) {
+        console.error('Failed to fetch model stats:', e);
+      }
+    };
+    fetchModelStats();
+  }, [modelWindow]);
 
   // All 10 states of South Sudan
   const allStates = [
@@ -149,18 +173,14 @@ const Analytics: React.FC = () => {
 
   // State data based on actual alerts and predictions
   const stateData = allStates.map(state => {
-    const stateAlerts = alerts.filter(a => {
-      // Simple geographic approximation
-      return Math.random() > 0.5; // Will be improved with actual location mapping
-    });
-    
+    const s = stateStats?.[state];
     return {
       state: state.split(' ')[0],
       fullName: state,
-      population: stats?.population_by_state?.[state] || Math.floor(Math.random() * 200000) + 50000,
-      floodEvents: stateAlerts.length,
-      riskLevel: stateAlerts.length > 5 ? 'High' : stateAlerts.length > 2 ? 'Medium' : 'Low',
-      lastEvent: stateAlerts.length > 0 ? new Date(stateAlerts[0].created_at).toLocaleDateString() : 'None'
+      population: s?.population_at_risk ?? stats?.population_by_state?.[state] ?? 0,
+      floodEvents: s?.flood_events ?? 0,
+      riskLevel: s?.risk_level ?? 'Low',
+      lastEvent: s?.last_event ?? 'None'
     };
   });
 
@@ -429,30 +449,51 @@ const Analytics: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Model Performance */}
-        {stats && stats.model_performance && (
+        {/* Model Performance (live) */}
+        {stats && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
             className="flood-card p-6 mt-8"
           >
-            <h3 className="text-flood-title text-xl font-bold mb-6">Prediction Model Performance</h3>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+              <h3 className="text-flood-title text-xl font-bold">Prediction Model Performance</h3>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600">Window:</span>
+                <div className="flex items-center gap-2">
+                  {[100, 300, 1000].map((n) => (
+                    <button
+                      key={n}
+                      onClick={() => setModelWindow(n)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                        modelWindow === n ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      Last {n}
+                    </button>
+                  ))}
+                </div>
+                {liveModelsTimestamp && (
+                  <span className="text-xs text-gray-500 ml-2">Updated: {new Date(liveModelsTimestamp).toLocaleString()}</span>
+                )}
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {Object.entries(stats.model_performance).map(([model, metrics]: [string, any]) => (
+              {Object.entries((liveModels || {})).map(([model, metrics]: [string, any]) => (
                 <div key={model} className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-100">
                   <h4 className="font-semibold text-blue-900 mb-2 capitalize">{model.replace('_', ' ')}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-blue-700">Accuracy:</span>
                       <span className="font-bold text-blue-900">
-                        {Math.round((metrics.accuracy || 0) * 100)}%
+                        {Math.round(((metrics.avg_probability || 0)) * 100)}%
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-700">F1 Score:</span>
+                      <span className="text-blue-700">F1 Score (proxy):</span>
                       <span className="font-bold text-blue-900">
-                        {Math.round((metrics.f1_score || 0) * 100)}%
+                        {Math.round(((metrics.avg_confidence || 0)) * 100)}%
                       </span>
                     </div>
                   </div>

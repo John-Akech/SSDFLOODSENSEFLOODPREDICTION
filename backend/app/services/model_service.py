@@ -109,6 +109,81 @@ class ModelService:
             cls.models_loaded = False
 
     @classmethod
+    def get_model_metadata(cls) -> Dict[str, Any]:
+        """Return lightweight metadata about loaded models (no large tensors)."""
+        meta: Dict[str, Any] = {
+            "rf": None,
+            "tcn": None,
+            "models_loaded": cls.models_loaded,
+        }
+        if cls.rf_model is not None:
+            rf = cls.rf_model
+            try:
+                meta["rf"] = {
+                    "type": rf.__class__.__name__,
+                    "n_features": getattr(rf, "n_features_in_", None),
+                    "n_estimators": getattr(rf, "n_estimators", None),
+                    "classes": [int(c) if isinstance(c, (int, float)) else c for c in getattr(rf, "classes_", [])],
+                }
+            except Exception as e:
+                meta["rf"] = {"error": str(e)}
+        if cls.tcn_model is not None:
+            tcn = cls.tcn_model
+            try:
+                num_params = sum(p.numel() for p in tcn.parameters())
+                meta["tcn"] = {
+                    "type": tcn.__class__.__name__,
+                    "num_parameters": int(num_params),
+                    "layers": [
+                        {
+                            "name": name,
+                            "shape": list(param.shape),
+                            "trainable": bool(param.requires_grad),
+                        }
+                        for name, param in list(tcn.named_parameters())[:6]  # cap for brevity
+                    ],
+                }
+            except Exception as e:
+                meta["tcn"] = {"error": str(e)}
+        return meta
+
+    @classmethod
+    def sanity_predict_from_dataset(cls, dataset_path: str) -> Dict[str, Any]:
+        """Run a quick prediction using the first row of a dataset to verify feature ordering.
+        Returns per-model probabilities and confidence along with used features.
+        """
+        if not Path(dataset_path).exists():
+            return {"error": f"Dataset not found: {dataset_path}"}
+        df = pd.read_csv(dataset_path)
+        # Build features dict in expected order
+        row = df.iloc[0].to_dict()
+        features = {col: row.get(col) for col in cls.feature_columns}
+        out: Dict[str, Any] = {"features_used": features}
+        try:
+            if cls.rf_model is not None:
+                p, c, t = cls.predict_rf(features)
+                out["rf"] = {"probability": p, "confidence": c, "inference_time_ms": t}
+        except Exception as e:
+            out["rf"] = {"error": str(e)}
+        try:
+            if cls.tcn_model is not None:
+                p, c, t = cls.predict_tcn(features)
+                out["tcn"] = {"probability": p, "confidence": c, "inference_time_ms": t}
+        except Exception as e:
+            out["tcn"] = {"error": str(e)}
+        try:
+            p, c, model_probs, t = cls.predict_ensemble(features)
+            out["ensemble"] = {
+                "probability": p,
+                "confidence": c,
+                "model_probabilities": model_probs,
+                "inference_time_ms": t,
+            }
+        except Exception as e:
+            out["ensemble"] = {"error": str(e)}
+        return out
+
+    @classmethod
     def preprocess_features(cls, features: Dict[str, Any]) -> np.ndarray:
         """Preprocess input features for model prediction"""
         # Create feature vector in correct order

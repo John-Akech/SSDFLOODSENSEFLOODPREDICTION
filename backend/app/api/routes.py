@@ -82,6 +82,8 @@ async def create_prediction(
             confidence_score=confidence,
             risk_level=risk_level
         )
+        # Record inference latency
+        db_prediction.inference_time_ms = float(inference_time)
         db.add(db_prediction)
         db.commit()
         db.refresh(db_prediction)
@@ -135,7 +137,8 @@ async def create_prediction(
 
 @router.post("/predictions/batch", response_model=BatchPredictionResponse)
 async def create_batch_predictions(
-    request: BatchPredictionRequest
+    request: BatchPredictionRequest,
+    db: Session = Depends(get_db)
 ):
     """Create predictions for multiple locations"""
     predictions = []
@@ -152,11 +155,11 @@ async def create_batch_predictions(
             
             # Make prediction
             if request.model_type == ModelType.RANDOM_FOREST:
-                probability, confidence, _ = ModelService.predict_rf(features)
+                probability, confidence, inf_ms = ModelService.predict_rf(features)
             elif request.model_type == ModelType.TCN:
-                probability, confidence, _ = ModelService.predict_tcn(features)
+                probability, confidence, inf_ms = ModelService.predict_tcn(features)
             elif request.model_type == ModelType.ENSEMBLE:
-                probability, confidence, _, _ = ModelService.predict_ensemble(features)
+                probability, confidence, _, inf_ms = ModelService.predict_ensemble(features)
             else:
                 continue
             
@@ -166,6 +169,21 @@ async def create_batch_predictions(
             if risk_level in ["high", "critical"]:
                 high_risk_count += 1
             
+            # Persist batch prediction (lightweight record)
+            db_pred = DBPrediction(
+                latitude=lat,
+                longitude=lon,
+                flood_probability=probability,
+                model_type=request.model_type,
+                lead_time_hours=request.lead_time_hours,
+                confidence_score=confidence,
+                risk_level=risk_level,
+                inference_time_ms=float(inf_ms)
+            )
+            db.add(db_pred)
+            db.commit()
+            db.refresh(db_pred)
+
             predictions.append(PredictionResponse(
                 id=0,
                 latitude=lat,
@@ -320,6 +338,24 @@ async def health_check():
         "models_loaded": ModelService.models_loaded,
         "timestamp": datetime.utcnow()
     }
+
+
+@router.get("/models/info")
+async def get_models_info():
+    """Return lightweight metadata about loaded models (types, sizes, basic attributes)."""
+    try:
+        return ModelService.get_model_metadata()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/models/sanity")
+async def models_sanity(dataset: str = "data/south_sudan_flood_combined_data.csv"):
+    """Run a quick sanity prediction using the first row of a dataset."""
+    try:
+        return ModelService.sanity_predict_from_dataset(dataset)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/status")
 async def get_system_status(db: Session = Depends(get_db)):

@@ -105,6 +105,8 @@ export const apiService = {
   getSystemStats: async () => (await api.get('/stats/system')).data,
   getFloodStats: async (params?: any) => (await api.get('/stats/flood', { params })).data,
   getPredictionStats: async (params?: any) => (await api.get('/stats/predictions', { params })).data,
+  getStateStats: async (state?: string) => state ? (await api.get('/stats/state', { params: { state } })).data : (await api.get('/stats/state')).data,
+  getModelStats: async (n: number = 500) => (await api.get('/stats/models', { params: { n } })).data,
   getAlertStats: async (params?: any) => (await api.get('/stats/alerts', { params })).data,
   getStateStats: async (state?: string) => (await api.get('/stats/state', { params: { state } })).data,
   

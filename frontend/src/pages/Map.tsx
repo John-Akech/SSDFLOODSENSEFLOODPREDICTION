@@ -74,6 +74,23 @@ const MapController: React.FC<{
   return null;
 };
 
+// Ensure Leaflet correctly sizes after animations/layout changes
+const MapSizeInvalidator: React.FC = () => {
+  const map = useMap();
+  React.useEffect(() => {
+    const invalidate = () => {
+      try { map.invalidateSize(false); } catch {}
+    };
+    const t = setTimeout(invalidate, 300);
+    window.addEventListener('resize', invalidate);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('resize', invalidate);
+    };
+  }, [map]);
+  return null;
+};
+
 const Map: React.FC = () => {
   const { } = useLanguage();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
@@ -339,12 +356,12 @@ const Map: React.FC = () => {
         </motion.div>
 
         {/* Map Container */}
-        <div className="flex-1 relative" style={{ minHeight: '60vh' }}>
+        <div className="relative w-full" style={{ minHeight: '70vh' }}>
           <MapContainer
             key={mapKey} // Force re-render when needed
             center={mapCenter || [7.5, 30.0]}
             zoom={6}
-            style={{ height: '100%', width: '100%', zIndex: 1 }}
+            style={{ height: '70vh', width: '100%', zIndex: 1 }}
             bounds={southSudanBounds}
             boundsOptions={{ padding: [20, 20] }}
           >
@@ -352,6 +369,7 @@ const Map: React.FC = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
+            <MapSizeInvalidator />
             
             <MapClickHandler onMapClick={handleMapClick} disabled={predicting} />
             <MapController 

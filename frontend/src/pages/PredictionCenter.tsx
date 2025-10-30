@@ -16,15 +16,17 @@ const PredictionCenter: React.FC = () => {
   const [selectedModel, setSelectedModel] = useState('ensemble');
   const [timeRange, setTimeRange] = useState('7d');
   const [predictionHistory, setPredictionHistory] = useState<any[]>([]);
+  const [modelLatency, setModelLatency] = useState<any>({});
 
   // Fetch prediction data
   const fetchPredictionData = useCallback(async () => {
     try {
       setLoading(true);
-      const [predData, modelData, accuracyData] = await Promise.all([
+      const [predData, modelData, accuracyData, modelStats] = await Promise.all([
         apiService.getPredictions({ time_range: timeRange }),
         apiService.getFloodStats(),
-        apiService.getPredictionStats()
+        apiService.getPredictionStats(),
+        apiService.getModelStats(300)
       ]);
       
       const preds = predData.predictions || [];
@@ -42,37 +44,18 @@ const PredictionCenter: React.FC = () => {
         { time: 'Now', ensemble: 0.87, rf: 0.85, tcn: 0.83, lstm: 0.86 }
       ]);
       
-      // Generate model data from actual stats
-      const systemStats = await apiService.getSystemStats();
-      const modelPerf = systemStats?.model_performance || {};
-      
-      setModels([
-        { 
-          name: 'Random Forest', 
-          accuracy: Math.round((modelPerf.random_forest?.accuracy || 0.87) * 100), 
-          confidence: modelPerf.random_forest?.f1_score || 0.85, 
-          lastUpdate: 'Just now' 
-        },
-        { 
-          name: 'Temporal CNN', 
-          accuracy: Math.round((modelPerf.tcn?.accuracy || 0.83) * 100), 
-          confidence: modelPerf.tcn?.f1_score || 0.82, 
-          lastUpdate: 'Just now' 
-        },
-        { 
-          name: 'LSTM', 
-          accuracy: Math.round((modelPerf.ensemble?.accuracy || 0.89) * 100), 
-          confidence: modelPerf.ensemble?.f1_score || 0.87, 
-          lastUpdate: 'Just now' 
-        },
-        { 
-          name: 'Ensemble', 
-          accuracy: Math.round((modelPerf.ensemble?.accuracy || 0.89) * 100), 
-          confidence: modelPerf.ensemble?.f1_score || 0.87, 
-          lastUpdate: 'Just now' 
-        }
-      ]);
+      // Build model cards from live /stats/models (no hardcoding)
+      const liveModels = modelStats?.models || {};
+      const normalizeName = (key: string) => (key === 'rf' ? 'Random Forest' : key === 'tcn' ? 'Temporal CNN' : key.charAt(0).toUpperCase() + key.slice(1));
+      const cards = Object.entries(liveModels).map(([key, s]: any) => ({
+        name: normalizeName(key),
+        accuracy: Math.round((s?.avg_probability || 0) * 100),
+        confidence: s?.avg_confidence || 0,
+        lastUpdate: 'Just now'
+      }));
+      setModels(cards);
       setAccuracy(accuracyData);
+      setModelLatency(modelStats?.models || {});
     } catch (error) {
       console.error('Failed to fetch prediction data:', error);
     } finally {
@@ -389,6 +372,44 @@ const PredictionCenter: React.FC = () => {
                   />
                 </AreaChart>
               </ResponsiveContainer>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Inference Latency Percentiles */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="mb-12"
+        >
+          <h2 className="text-2xl font-bold text-flood-title mb-6">Model Inference Latency (ms)</h2>
+          <div className="flood-card p-6">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-slate-200">
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Model</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Count</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">p50</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">p90</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">p95</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">p99</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(modelLatency).map(([name, stats]: any, idx) => (
+                    <tr key={name} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 font-medium capitalize text-slate-700">{name}</td>
+                      <td className="py-3 px-4 text-slate-600">{stats.count}</td>
+                      <td className="py-3 px-4 text-slate-600">{stats.latency_ms?.p50 ?? '-'}</td>
+                      <td className="py-3 px-4 text-slate-600">{stats.latency_ms?.p90 ?? '-'}</td>
+                      <td className="py-3 px-4 text-slate-600">{stats.latency_ms?.p95 ?? '-'}</td>
+                      <td className="py-3 px-4 text-slate-600">{stats.latency_ms?.p99 ?? '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         </motion.div>

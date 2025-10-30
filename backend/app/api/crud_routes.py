@@ -360,3 +360,126 @@ async def get_prediction_stats(db: Session = Depends(get_db)):
         "f1_score": 0.85,
         "last_updated": datetime.now().isoformat()
     }
+
+
+@router.get("/stats/state")
+async def get_state_stats(state: str | None = None, db: Session = Depends(get_db)):
+    """State-by-state analysis derived from predictions and alerts using state bounding boxes.
+    Returns per state: population_at_risk, flood_events (alerts count), risk_level, last_event date.
+    If `state` is provided, returns one state; otherwise returns all states in a dict.
+    """
+    # Keep state boxes in sync with get_system_stats
+    state_coords = {
+        "Jonglei": {"lat_range": (5.5, 8.5), "lon_range": (30.5, 34.0), "population": 1358602},
+        "Unity": {"lat_range": (8.0, 10.5), "lon_range": (28.5, 31.0), "population": 799343},
+        "Upper Nile": {"lat_range": (8.5, 11.0), "lon_range": (31.0, 34.5), "population": 964353},
+        "Central Equatoria": {"lat_range": (3.5, 5.5), "lon_range": (30.0, 32.5), "population": 1193130},
+        "Eastern Equatoria": {"lat_range": (3.5, 6.0), "lon_range": (32.5, 35.5), "population": 906126},
+        "Western Equatoria": {"lat_range": (3.5, 6.0), "lon_range": (27.0, 30.0), "population": 619029},
+        "Lakes": {"lat_range": (6.0, 8.0), "lon_range": (28.5, 31.0), "population": 833000},
+        "Warrap": {"lat_range": (7.5, 9.5), "lon_range": (27.5, 30.0), "population": 1044000},
+        # Two states not included above; add approximate boxes
+        "Northern Bahr el Ghazal": {"lat_range": (8.0, 10.5), "lon_range": (26.0, 29.0), "population": 720898},
+        "Western Bahr el Ghazal": {"lat_range": (7.0, 9.5), "lon_range": (24.0, 27.5), "population": 458492},
+    }
+
+    def summarize_for(name: str):
+        box = state_coords.get(name)
+        if not box:
+            return {"state": name, "population_at_risk": 0, "flood_events": 0, "risk_level": "Low", "last_event": None}
+        lat0, lat1 = box["lat_range"]
+        lon0, lon1 = box["lon_range"]
+        # Alerts in box
+        alerts = db.query(DBAlert).filter(
+            DBAlert.latitude >= lat0,
+            DBAlert.latitude <= lat1,
+            DBAlert.longitude >= lon0,
+            DBAlert.longitude <= lon1,
+        ).all()
+        # High-risk predictions in box
+        preds = db.query(DBPrediction).filter(
+            DBPrediction.latitude >= lat0,
+            DBPrediction.latitude <= lat1,
+            DBPrediction.longitude >= lon0,
+            DBPrediction.longitude <= lon1,
+            DBPrediction.risk_level.in_(["high", "critical"])
+        ).all()
+        # Population at risk: fraction of population based on signal strength
+        risk_factor = len(preds) * 0.10 + len([a for a in alerts if a.is_active and a.severity in ["high", "critical"]]) * 0.15
+        population_at_risk = int(min(box["population"] * risk_factor, box["population"]))
+        # Flood events = number of alerts in the box (can be adjusted to use FloodEvent if populated)
+        flood_events = len(alerts)
+        # Risk level
+        risk_level = "High" if flood_events >= 5 else ("Medium" if flood_events >= 3 else "Low")
+        # Last event date
+        last_event = None
+        if alerts:
+            latest = max((a.created_at for a in alerts if a.created_at), default=None)
+            last_event = latest.date().isoformat() if latest else None
+        return {
+            "state": name,
+            "population_at_risk": population_at_risk,
+            "flood_events": flood_events,
+            "risk_level": risk_level,
+            "last_event": last_event,
+        }
+
+    if state:
+        return summarize_for(state)
+    return {name: summarize_for(name) for name in state_coords.keys()}
+
+
+@router.get("/stats/models")
+async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
+    """Live model metrics aggregated over the last N predictions.
+    Returns per-model counts, avg probability, avg confidence, and latency percentiles.
+    """
+    try:
+        # Fetch last N predictions
+        recent = db.query(DBPrediction).order_by(DBPrediction.created_at.desc()).limit(n).all()
+        by_model = {}
+        for p in recent:
+            key = (p.model_type or "unknown").lower()
+            by_model.setdefault(key, []).append(p)
+
+        def percentiles(values, ps=(50, 90, 95, 99)):
+            arr = sorted([v for v in values if v is not None])
+            if not arr:
+                return {f"p{p}": None for p in ps}
+            res = {}
+            for p in ps:
+                k = max(0, min(len(arr) - 1, int(round((p / 100.0) * (len(arr) - 1)))))
+                res[f"p{p}"] = float(arr[k])
+            return res
+
+        aggregates = {}
+        for model_type, preds in by_model.items():
+            cnt = len(preds)
+            avg_prob = sum((p.flood_probability or 0.0) for p in preds) / cnt if cnt else 0.0
+            avg_conf = sum((p.confidence_score or 0.0) for p in preds) / cnt if cnt else 0.0
+            latencies = [float(p.inference_time_ms) for p in preds if p.inference_time_ms is not None]
+            pct = percentiles(latencies)
+            aggregates[model_type] = {
+                "count": cnt,
+                "avg_probability": round(avg_prob, 4),
+                "avg_confidence": round(avg_conf, 4),
+                "latency_ms": pct,
+            }
+
+        return {
+            "window_size": n,
+            "models": aggregates,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        return {"window_size": n, "models": {}, "error": str(e)}
+
+
+@router.get("/stats/system")
+async def get_system_stats(db: Session = Depends(get_db)):
+    # existing implementation above has been moved earlier in file; we also include live model metrics for UI convenience
+    base = await get_flood_stats(db)  # type: ignore
+    model_stats = await get_model_stats(db=db)  # type: ignore
+    # Attach live models to system stats for frontend cards
+    base["live_models"] = model_stats.get("models", {})
+    return base

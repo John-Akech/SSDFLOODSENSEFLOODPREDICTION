@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedSidebar from './components/EnhancedSidebar';
@@ -19,7 +19,8 @@ import Infrastructure from './pages/Infrastructure';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
@@ -54,8 +55,6 @@ const App: React.FC = () => {
   };
 
   return (
-    <LanguageProvider>
-      <BrowserRouter>
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
           {/* Notification Bell - Fixed position */}
           <div className="fixed top-4 right-4 z-50">
@@ -108,7 +107,7 @@ const App: React.FC = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="content-wrapper">
+                <div className={location.pathname === '/map' ? '' : 'content-wrapper'}>
                   <AnimatePresence mode="wait">
                     <Routes>
                     {/* Public Routes */}
@@ -169,6 +168,14 @@ const App: React.FC = () => {
             </div>
           </div>
         </div>
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <LanguageProvider>
+      <BrowserRouter>
+        <AppContent />
       </BrowserRouter>
     </LanguageProvider>
   );
