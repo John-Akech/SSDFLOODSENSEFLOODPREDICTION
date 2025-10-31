@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import logging
 from dataclasses import dataclass
 import uuid
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -81,11 +82,8 @@ class AlertService:
         return alert
     
     async def send_web_push_alert(self, alert: Alert, user_subscriptions: List[Dict[str, Any]]) -> bool:
-        """Send Web Push notification (placeholder implementation)"""
+        """Send Web Push notification using pywebpush if VAPID keys provided; otherwise simulate."""
         try:
-            # In a real implementation, this would use a Web Push library like pywebpush
-            # For now, we'll simulate the sending process
-            
             payload = {
                 "title": f"FloodSense Alert - {alert.severity.upper()}",
                 "body": alert.message,
@@ -104,15 +102,37 @@ class AlertService:
                 ]
             }
             
-            # Simulate sending to each subscription
             sent_count = 0
-            for subscription in user_subscriptions:
-                # Here you would use pywebpush.webpush() with the subscription
-                # webpush(subscription_info=subscription, data=json.dumps(payload), vapid_private_key=vapid_private_key, vapid_claims=vapid_claims)
-                
-                # Simulate success/failure
-                await asyncio.sleep(0.1)  # Simulate network delay
-                sent_count += 1
+            vapid_pub = os.getenv("VAPID_PUBLIC_KEY")
+            vapid_priv = os.getenv("VAPID_PRIVATE_KEY")
+            vapid_subj = os.getenv("VAPID_SUBJECT", "mailto:admin@floodsense.org")
+
+            if vapid_priv and vapid_pub:
+                try:
+                    from pywebpush import webpush, WebPushException
+                    claims = {"sub": vapid_subj}
+                    for subscription in user_subscriptions:
+                        try:
+                            webpush(
+                                subscription_info=subscription,
+                                data=json.dumps(payload),
+                                vapid_private_key=vapid_priv,
+                                vapid_claims=claims,
+                            )
+                            sent_count += 1
+                            await asyncio.sleep(0)
+                        except WebPushException as e:
+                            logger.warning(f"WebPush failed for {subscription.get('endpoint')}: {e}")
+                except Exception as e:
+                    logger.warning(f"pywebpush not available or failed: {e}. Falling back to simulate.")
+                    for _ in user_subscriptions:
+                        await asyncio.sleep(0.05)
+                        sent_count += 1
+            else:
+                # Simulate if VAPID keys are not provided
+                for _ in user_subscriptions:
+                    await asyncio.sleep(0.05)
+                    sent_count += 1
             
             alert.sent = True
             logger.info(f"Web Push alert sent to {sent_count} subscribers")

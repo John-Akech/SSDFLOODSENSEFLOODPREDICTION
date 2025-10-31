@@ -25,13 +25,8 @@ const RealTimeMonitoring: React.FC = () => {
       ]);
       
       setAlerts(alertData.alerts || []);
-      setSensors([
-        { id: 1, name: 'Juba River Station', level: 2.3, status: 'normal', lastUpdate: '2 min ago' },
-        { id: 2, name: 'Nile River Station', level: 4.1, status: 'warning', lastUpdate: '1 min ago' },
-        { id: 3, name: 'Bahr el Ghazal Station', level: 1.8, status: 'normal', lastUpdate: '3 min ago' },
-        { id: 4, name: 'Sobat River Station', level: 5.2, status: 'critical', lastUpdate: '1 min ago' },
-        { id: 5, name: 'Pibor River Station', level: 3.7, status: 'alert', lastUpdate: '2 min ago' }
-      ]);
+      // No sensors - using satellite data and predictions instead
+      setSensors([]);
       setSystemStatus(statusData);
       setLastUpdate(new Date());
     } catch (error) {
@@ -111,7 +106,7 @@ const RealTimeMonitoring: React.FC = () => {
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -121,7 +116,7 @@ const RealTimeMonitoring: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-flood-title text-4xl font-bold mb-2">
-                Real-time Monitoring
+                Live Flood Tracking
               </h1>
               <p className="text-water-subtitle text-lg">
                 Live flood monitoring and early warning system
@@ -150,11 +145,11 @@ const RealTimeMonitoring: React.FC = () => {
               icon: 'Alert'
             },
             { 
-              title: 'Monitoring Stations', 
-              value: sensors.length, 
-              change: '100%',
+              title: 'Active Predictions', 
+              value: alerts.length || 0, 
+              change: '+5%',
               color: 'var(--flood-medium)',
-              icon: 'Station'
+              icon: 'Prediction'
             },
             { 
               title: 'System Uptime', 
@@ -193,16 +188,16 @@ const RealTimeMonitoring: React.FC = () => {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-10 mb-8 sm:mb-10 lg:mb-12">
           {/* Water Level Chart */}
           <div className="lg:col-span-2">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="flood-card p-6"
+              className="flood-card p-6 sm:p-8"
             >
-              <h3 className="text-flood-title text-xl font-bold mb-6">Water Level Monitoring</h3>
+              <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Water Level Monitoring</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={waterLevelData}>
@@ -255,50 +250,56 @@ const RealTimeMonitoring: React.FC = () => {
             </motion.div>
           </div>
 
-          {/* Sensor Status */}
+          {/* Recent Alerts */}
           <div className="lg:col-span-1">
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
-              className="flood-card p-6"
+              className="flood-card p-6 sm:p-8"
             >
-              <h3 className="text-flood-title text-xl font-bold mb-6">Sensor Status</h3>
-              <div className="space-y-4">
-                {sensors.map((sensor, idx) => (
-                  <motion.div
-                    key={sensor.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 + idx * 0.1 }}
-                    className="p-4 rounded-lg border border-slate-200 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold text-slate-900 text-sm">{sensor.name}</h4>
-                      <span 
-                        className="px-2 py-1 rounded-full text-xs font-semibold text-white"
-                        style={{ backgroundColor: getStatusColor(sensor.status) }}
-                      >
-                        {getStatusText(sensor.status)}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">Level: {sensor.level}m</span>
-                      <span className="text-slate-500">{sensor.lastUpdate}</span>
-                    </div>
-                    <div className="mt-2">
-                      <div className="w-full bg-slate-200 rounded-full h-2">
-                        <div 
-                          className="h-2 rounded-full transition-all duration-300"
+              <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Recent Alerts</h3>
+              <div className="space-y-5">
+                {alerts.length > 0 ? (
+                  alerts.slice(0, 5).map((alert, idx) => (
+                    <motion.div
+                      key={alert.id || idx}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5 + idx * 0.1 }}
+                      className="p-5 rounded-lg border border-slate-200 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex items-center justify-between mb-3 gap-3">
+                        <h4 className="font-semibold text-slate-900 text-sm flex-1 min-w-0">
+                          Alert #{alert.id || idx + 1}
+                        </h4>
+                        <span 
+                          className="px-3 py-1.5 rounded-full text-xs font-semibold text-white flex-shrink-0"
                           style={{ 
-                            width: `${Math.min((sensor.level / 6) * 100, 100)}%`,
-                            backgroundColor: getStatusColor(sensor.status)
+                            backgroundColor: alert.severity === 'critical' ? 'var(--risk-critical)' :
+                                            alert.severity === 'high' ? 'var(--risk-high)' :
+                                            alert.severity === 'medium' ? 'var(--risk-medium)' :
+                                            'var(--risk-low)'
                           }}
-                        ></div>
+                        >
+                          {alert.severity || 'Unknown'}
+                        </span>
                       </div>
-                    </div>
-                  </motion.div>
-                ))}
+                      <div className="flex items-center justify-between text-sm gap-3">
+                        <span className="text-slate-600 flex-1 min-w-0">
+                          {alert.message || 'Flood risk detected'}
+                        </span>
+                        <span className="text-slate-500 text-xs flex-shrink-0">
+                          {alert.created_at ? new Date(alert.created_at).toLocaleTimeString() : 'Just now'}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="text-center py-8 text-slate-500">
+                    <p className="text-sm">No active alerts at this time</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

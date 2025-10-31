@@ -84,7 +84,7 @@ document.getElementById('authenticateBtn').addEventListener('click', async funct
         }
     } catch (error) {
         document.getElementById('authAlert').className = 'alert alert-error';
-        document.getElementById('authAlert').innerHTML = `<strong>❌ Error</strong><br>${error.message}`;
+        document.getElementById('authAlert').innerHTML = `<strong>[ERROR] Error</strong><br>${error.message}`;
         btn.disabled = false;
         btn.innerHTML = originalText;
     }
@@ -304,7 +304,7 @@ document.getElementById('download').addEventListener('click', function () {
 
 document.getElementById('display').addEventListener('click', function () {
     if (!isAuthenticated) {
-        alert('⚠️ Please authenticate with Google Earth Engine first');
+        alert('[WARNING] Please authenticate with Google Earth Engine first');
         document.getElementById('authModal').classList.add('active');
         return;
     }
@@ -316,7 +316,7 @@ document.getElementById('display').addEventListener('click', function () {
     
     var features = source.getFeatures();
     if (features.length === 0) {
-        alert('⚠️ Please draw a rectangle on the map first');
+        alert('[WARNING] Please draw a rectangle on the map first');
         document.getElementById('loading').classList.remove('active');
         document.getElementById('display').disabled = false;
         return;
@@ -395,7 +395,7 @@ document.getElementById('display').addEventListener('click', function () {
     })
     .catch(error => {
         console.error(error);
-        alert('❌ Detection failed: ' + error.message);
+        alert('[ERROR] Detection failed: ' + error.message);
         document.getElementById('loading').classList.remove('active');
         document.getElementById('display').disabled = false;
     });
@@ -643,7 +643,7 @@ function detectFloodEnhanced() {
     
     var features = source.getFeatures();
     if (features.length === 0) {
-        alert('⚠️ Please draw a rectangle on the map first');
+        alert('[WARNING] Please draw a rectangle on the map first');
         return;
     }
     
@@ -734,7 +734,7 @@ function detectFloodEnhanced() {
         } else if (message === 'Failed to fetch') {
             message = 'Network error or server unavailable. Ensure backend is running and GEE is authenticated.';
         }
-        alert('❌ Detection failed: ' + message);
+        alert('[ERROR] Detection failed: ' + message);
         document.getElementById('loading').classList.remove('active');
         document.getElementById('display').disabled = false;
     });

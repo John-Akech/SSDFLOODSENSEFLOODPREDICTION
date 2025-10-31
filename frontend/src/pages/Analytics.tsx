@@ -101,7 +101,7 @@ const Analytics: React.FC = () => {
         
         data.push({
           period: `Week ${i + 1}`,
-          rainfall: Math.round(Math.random() * 50) + 20, // Simulated for now
+          rainfall: 0, // Will be fetched from API if available
           floodRisk: Math.round(avgRisk * 100),
           alerts: weekAlerts.length,
           population: weekAlerts.length * 5000
@@ -132,11 +132,11 @@ const Analytics: React.FC = () => {
         
         data.push({
           period: monthName,
-          rainfall: monthIndex < 4 || monthIndex > 9 ? Math.round(Math.random() * 30) + 40 : Math.round(Math.random() * 150) + 80,
+          rainfall: 0, // Will be fetched from CHIRPS API if available
           floodRisk: Math.round(avgRisk * 100),
           alerts: monthAlerts.length,
           population: monthAlerts.length * 12000,
-          temperature: monthIndex >= 2 && monthIndex <= 4 ? 32 : monthIndex >= 9 && monthIndex <= 11 ? 29 : 27
+          temperature: 0 // Will be fetched from weather API if available
         });
       }
     } else { // yearly
@@ -157,11 +157,11 @@ const Analytics: React.FC = () => {
         
         data.push({
           period: year.toString(),
-          rainfall: Math.round(Math.random() * 300) + 1200,
+          rainfall: 0, // Will be fetched from CHIRPS API if available
           floodRisk: Math.round(avgRisk * 100),
           alerts: yearAlerts.length,
           population: yearAlerts.length * 50000,
-          events: Math.floor(yearAlerts.length / 15) + 10
+          events: Math.max(yearAlerts.length, 0) // Use actual alert count
         });
       }
     }
@@ -222,7 +222,8 @@ const Analytics: React.FC = () => {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 w-full overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 w-full">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -298,15 +299,15 @@ const Analytics: React.FC = () => {
         </motion.div>
 
         {/* Main Charts Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-10 mb-8 sm:mb-10 lg:mb-12">
           {/* Rainfall vs Flood Risk */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="flood-card p-6"
+            className="flood-card p-6 sm:p-8"
           >
-            <h3 className="text-flood-title text-xl font-bold mb-6">Risk Trends</h3>
+            <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Risk Trends</h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={timeSeriesData}>
@@ -362,10 +363,10 @@ const Analytics: React.FC = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
-            className="flood-card p-6"
+            className="flood-card p-6 sm:p-8"
           >
-            <h3 className="text-flood-title text-xl font-bold mb-6">Alert Severity Distribution</h3>
-            <div className="h-80">
+            <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Alert Severity Distribution</h3>
+            <div className="h-80 mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -386,15 +387,15 @@ const Analytics: React.FC = () => {
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-4 space-y-2">
+            <div className="mt-6 space-y-3">
               {severityDistribution.map((item) => (
-                <div key={item.name} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div key={item.name} className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
                     <div 
-                      className="w-3 h-3 rounded-full" 
+                      className="w-4 h-4 rounded-full flex-shrink-0" 
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm text-gray-700">{item.name}</span>
+                    <span className="text-sm font-medium text-gray-700">{item.name}</span>
                   </div>
                   <span className="text-sm font-bold text-gray-800">{item.value} alerts</span>
                 </div>
@@ -408,31 +409,31 @@ const Analytics: React.FC = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="flood-card p-6"
+          className="flood-card p-6 sm:p-8 overflow-x-auto"
         >
-          <h3 className="text-flood-title text-xl font-bold mb-6">State-by-State Analysis</h3>
-          <div className="overflow-x-auto">
+          <h3 className="text-flood-title text-lg sm:text-xl font-bold mb-6 sm:mb-8">State-by-State Analysis</h3>
+          <div className="overflow-x-auto -mx-6 sm:-mx-8 sm:mx-0">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-gray-200">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">State</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Population at Risk</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700">Flood Events</th>
-                  <th className="text-center py-3 px-4 font-semibold text-gray-700">Risk Level</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Last Event</th>
+                  <th className="text-left py-4 px-5 font-semibold text-gray-700">State</th>
+                  <th className="text-right py-4 px-5 font-semibold text-gray-700">Population at Risk</th>
+                  <th className="text-right py-4 px-5 font-semibold text-gray-700">Flood Events</th>
+                  <th className="text-center py-4 px-5 font-semibold text-gray-700">Risk Level</th>
+                  <th className="text-left py-4 px-5 font-semibold text-gray-700">Last Event</th>
                 </tr>
               </thead>
               <tbody>
                 {stateData.map((state, idx) => (
                   <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50 transition">
-                    <td className="py-3 px-4 font-medium text-gray-800">{state.fullName}</td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-700">
+                    <td className="py-4 px-5 font-medium text-gray-800">{state.fullName}</td>
+                    <td className="py-4 px-5 text-right font-semibold text-gray-700">
                       {state.population.toLocaleString()}
                     </td>
-                    <td className="py-3 px-4 text-right font-semibold text-gray-700">{state.floodEvents}</td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-4 px-5 text-right font-semibold text-gray-700">{state.floodEvents}</td>
+                    <td className="py-4 px-5 text-center">
                       <span
-                        className="px-3 py-1 rounded-full text-xs font-semibold"
+                        className="px-4 py-2 rounded-full text-xs font-semibold inline-block"
                         style={{
                           backgroundColor: getRiskColor(state.riskLevel) + '20',
                           color: getRiskColor(state.riskLevel)
@@ -441,7 +442,7 @@ const Analytics: React.FC = () => {
                         {state.riskLevel}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-gray-600 text-sm">{state.lastEvent}</td>
+                    <td className="py-4 px-5 text-gray-600 text-sm">{state.lastEvent}</td>
                   </tr>
                 ))}
               </tbody>
@@ -502,7 +503,8 @@ const Analytics: React.FC = () => {
             </div>
           </motion.div>
         )}
-    </>
+      </div>
+    </div>
   );
 };
 

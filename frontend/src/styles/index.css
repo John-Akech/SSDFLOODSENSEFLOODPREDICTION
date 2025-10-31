@@ -71,7 +71,7 @@
 }
 
 @keyframes glow {
-  0%, 100% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 0 60px rgba(6, 182, 212, 0.2); }
+  0%, 100% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4), 0 0 60px rgba(6, 182, 212, 0.6); }
   50% { box-shadow: 0 0 50px rgba(59, 130, 246, 0.6), 0 0 100px rgba(6, 182, 212, 0.4); }
 }
 
@@ -196,7 +196,7 @@
   }
   
   .content-wrapper {
-    @apply max-w-7xl mx-auto px-4 sm:px-5 lg:px-6 py-6;
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12;
   }
   
   .section-padding {
@@ -290,6 +290,16 @@
   .animate-glow {
     animation: glow 2s ease-in-out infinite alternate;
   }
+  
+  /* Glass Card Effect */
+  .glass-card {
+    @apply bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/30 p-8;
+  }
+  
+  /* Flood Card */
+  .flood-card {
+    @apply bg-white rounded-2xl shadow-lg border border-gray-200/60 p-6 transition-all duration-300 hover:shadow-xl;
+  }
 }
 
 @layer utilities {
@@ -310,6 +320,34 @@
   .glass-effect {
     @apply bg-white/20 backdrop-blur-xl border border-white/30;
   }
+  
+  /* Spacing utilities for consistent layout */
+  .spacing-xs { @apply space-y-2; }
+  .spacing-sm { @apply space-y-4; }
+  .spacing-md { @apply space-y-6; }
+  .spacing-lg { @apply space-y-8; }
+  .spacing-xl { @apply space-y-12; }
+  
+  /* Safe area spacing */
+  .safe-top { @apply pt-safe-top; }
+  .safe-bottom { @apply pb-safe-bottom; }
+  
+  /* Mobile-first responsive utilities */
+  .container-responsive {
+    @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  /* Prevent overflow and edge cutoff */
+  .overflow-safe {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  
+  /* Fix overlapping elements */
+  .clear-overlap {
+    position: relative;
+    z-index: 1;
+  }
 }
 
 /* Leaflet Map Styles */
@@ -321,4 +359,44 @@
 
 .leaflet-tile-container img {
   max-width: none !important;
+}
+
+/* Ensure no overlapping with proper z-index hierarchy */
+.z-base { z-index: 0; }
+.z-dropdown { z-index: 1000; }
+.z-sticky { z-index: 1020; }
+.z-fixed { z-index: 1030; }
+.z-modal-backdrop { z-index: 1040; }
+.z-modal { z-index: 1050; }
+.z-popover { z-index: 1060; }
+.z-tooltip { z-index: 1070; }
+
+/* Fix mobile viewport and prevent zoom issues */
+@supports (-webkit-touch-callout: none) {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* Fix for iOS Safari viewport */
+@supports (-webkit-overflow-scrolling: touch) {
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  #root {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }

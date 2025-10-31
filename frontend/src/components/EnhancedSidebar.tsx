@@ -138,13 +138,6 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
           icon: DocumentIcon,
           description: 'Available data sources and APIs',
           gradient: 'from-blue-500 to-indigo-500'
-        },
-        {
-          path: '/api-docs',
-          label: 'API Documentation',
-          icon: DocumentIcon,
-          description: 'Developer API documentation',
-          gradient: 'from-gray-500 to-gray-600'
         }
       ]
     },

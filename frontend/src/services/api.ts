@@ -107,8 +107,13 @@ export const apiService = {
   getPredictionStats: async (params?: any) => (await api.get('/stats/predictions', { params })).data,
   getStateStats: async (state?: string) => state ? (await api.get('/stats/state', { params: { state } })).data : (await api.get('/stats/state')).data,
   getModelStats: async (n: number = 500) => (await api.get('/stats/models', { params: { n } })).data,
+  getValidatedModelStats: async () => (await api.get('/stats/models/validated')).data,
   getAlertStats: async (params?: any) => (await api.get('/stats/alerts', { params })).data,
-  getStateStats: async (state?: string) => (await api.get('/stats/state', { params: { state } })).data,
+  
+  // Web Push
+  pushSubscribe: async (subscription: any) => (await api.post('/push/subscribe', subscription)).data,
+  pushUnsubscribe: async (endpoint: string) => (await api.post('/push/unsubscribe', { endpoint })).data,
+  pushTest: async () => (await api.post('/push/test')).data,
   
   // Notifications
   getNotifications: async (params?: any) => (await api.get('/notifications', { params })).data,

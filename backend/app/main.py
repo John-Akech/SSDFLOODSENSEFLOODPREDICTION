@@ -15,7 +15,8 @@ from api.admin_routes import router as admin_router
 from api.auth_routes import router as auth_router
 from api.crud_routes import router as crud_router
 
-from core.database import init_db
+from core.database import init_db, SessionLocal
+from core.config import settings
 from services.model_service import ModelService
 from middleware.error_handler import database_error_handler
 from middleware.rate_limiter import RateLimiter
@@ -60,19 +61,22 @@ app.add_middleware(RequestLoggerMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 
 # CORS must be LAST (most inner layer) to handle preflight OPTIONS requests
+# Ensure frontend, admin dashboard, and all clients can communicate
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
+    allow_origins=settings.CORS_ORIGINS if hasattr(settings, "CORS_ORIGINS") else [
         "http://localhost:3000",
-        "http://127.0.0.1:3000",
         "http://localhost:5173",
-        "http://localhost:8080",
+        "http://localhost:80",
+        "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
-        "http://127.0.0.1:8080",
-        "http://localhost"
+        "http://127.0.0.1:80",
+        "http://localhost",
+        "https://floodsense.org",
+        "https://www.floodsense.org"
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     max_age=3600
 )
@@ -96,6 +100,31 @@ async def root():
         "student": "John Akech",
         "supervisor": "Samiratu Ntohsi"
     }
+
+
+# Simple audit log for write operations
+@app.middleware("http")
+async def audit_write_requests(request: Request, call_next):
+    response = await call_next(request)
+    try:
+        if request.method in ("POST", "PUT", "DELETE", "PATCH"):
+            from models.database_models import SystemLog
+            db = SessionLocal()
+            try:
+                log = SystemLog(
+                    log_level="INFO",
+                    message=f"{request.method} {request.url.path}",
+                    endpoint=request.url.path,
+                    user_id=None,
+                    ip_address=request.client.host if request.client else None,
+                )
+                db.add(log)
+                db.commit()
+            finally:
+                db.close()
+    except Exception:
+        pass
+    return response
 
 
 @app.get("/health")

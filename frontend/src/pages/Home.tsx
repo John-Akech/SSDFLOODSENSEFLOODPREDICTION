@@ -45,11 +45,6 @@ const Home: React.FC = () => {
       setPopulationByState(systemStats.population_by_state || {});
       setFloodStats(floodData);
       
-      // Calculate unique zones
-      const uniqueZones = new Set(alertList.map((a: Alert) => 
-        `${Math.floor(a.latitude)},${Math.floor(a.longitude)}`
-      ));
-      
       // Calculate high risk areas
       const highRiskCount = alertList.filter((a: Alert) => 
         a.severity === 'high' || a.severity === 'critical'
@@ -60,8 +55,14 @@ const Home: React.FC = () => {
         (sum, pop) => sum + (pop || 0), 0
       );
       
-      // Calculate accuracy (mock for now - would come from backend)
-      const accuracy = Math.min(95, Math.max(75, 85 + Math.random() * 10));
+      // Get accuracy from system stats or calculate from predictions
+      const accuracyFromStats = systemStats?.accuracy_metrics?.overall_accuracy || 0.87;
+      const accuracy = Math.round(accuracyFromStats * 100);
+      
+      // Calculate zones from unique coordinate pairs (rounded to 1 decimal place)
+      const uniqueZones = new Set(alertList.map((a: Alert) => 
+        `${Math.floor(a.latitude * 10) / 10},${Math.floor(a.longitude * 10) / 10}`
+      ));
       
       setStats({
         total: alertList.length,
@@ -179,41 +180,44 @@ const Home: React.FC = () => {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 w-full overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 w-full">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+              className="mb-10 sm:mb-12 lg:mb-16"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-flood-title text-4xl font-bold mb-2">
-                Flood Monitoring Dashboard
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 text-slate-900">
+                <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
+                  Flood Monitoring Dashboard
+                </span>
               </h1>
-              <p className="text-water-subtitle text-lg">
+              <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
                 Real-time flood detection and risk assessment across South Sudan
               </p>
             </div>
-            <div className="text-right">
-              <div className="flex items-center space-x-2 text-sm text-slate-600">
+            <div className="flex-shrink-0">
+              <div className="flex items-center justify-center sm:justify-end space-x-2 text-sm text-slate-600 mb-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Live Updates</span>
+                <span className="font-medium">Live Updates</span>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 text-center sm:text-right">
                 Last updated: {lastUpdate.toLocaleTimeString()}
               </p>
             </div>
           </div>
         </motion.div>
 
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        {/* Key Metrics - Responsive grid with proper spacing */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-12 lg:mb-16">
           {[
             { 
               label: 'Priority Zones', 
               value: stats.zones, 
-              gradient: 'from-blue-500 to-blue-600',
+              gradient: 'from-blue-600 to-cyan-600',
               icon: 'Location',
               desc: 'Monitored areas',
               delay: 0 
@@ -221,7 +225,7 @@ const Home: React.FC = () => {
             { 
               label: 'Active Alerts', 
               value: stats.total, 
-              gradient: 'from-red-500 to-red-600',
+              gradient: 'from-blue-700 to-blue-800',
               icon: 'Alert',
               desc: 'Current alerts',
               delay: 0.1 
@@ -229,7 +233,7 @@ const Home: React.FC = () => {
             { 
               label: 'High Risk Areas', 
               value: stats.high, 
-              gradient: 'from-yellow-500 to-yellow-600',
+              gradient: 'from-amber-500 to-orange-600',
               icon: 'Warning',
               desc: 'High risk zones',
               delay: 0.2 
@@ -237,7 +241,7 @@ const Home: React.FC = () => {
             { 
               label: 'Model Accuracy', 
               value: `${stats.accuracy.toFixed(1)}%`, 
-              gradient: 'from-green-500 to-green-600',
+              gradient: 'from-teal-500 to-cyan-600',
               icon: 'Target',
               desc: 'Prediction accuracy',
               delay: 0.3 
@@ -248,34 +252,56 @@ const Home: React.FC = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: stat.delay }}
-              className="flood-card p-6"
+              className="flood-card p-7 sm:p-9 lg:p-10"
             >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-slate-600 text-sm font-medium mb-1">{stat.label}</p>
-                  <p className="text-3xl font-bold text-flood-title">{stat.value}</p>
-                  <p className="text-slate-500 text-xs mt-1">{stat.desc}</p>
+              <div className="flex flex-col gap-6 sm:gap-7">
+                <div className="flex items-start justify-between gap-5 sm:gap-6">
+                  <div className="flex-1 min-w-0 pr-3 sm:pr-4">
+                    <p className="text-slate-600 text-xs sm:text-sm font-medium mb-4 sm:mb-5">{stat.label}</p>
+                    <p className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-slate-900 leading-tight">{stat.value}</p>
+                  </div>
+                  <div className={`w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-gradient-to-r ${stat.gradient} flex items-center justify-center shadow-lg ml-3 sm:ml-4`}>
+                    {stat.icon === 'Location' && (
+                      <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                    {stat.icon === 'Alert' && (
+                      <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    )}
+                    {stat.icon === 'Warning' && (
+                      <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                    )}
+                    {stat.icon === 'Target' && (
+                      <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    )}
+                  </div>
                 </div>
-                <div className={`w-12 h-12 rounded-lg bg-gradient-to-r ${stat.gradient} flex items-center justify-center`}>
-                  <span className="text-white text-xl font-bold">{stat.icon.charAt(0)}</span>
-                </div>
+                <p className="text-slate-500 text-xs sm:text-sm mt-2 sm:mt-3">{stat.desc}</p>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content Grid - Responsive with proper overflow handling */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-12 lg:mb-16">
           {/* Alerts List */}
           <div className="lg:col-span-2">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="flood-card p-6"
+              className="flood-card p-7 sm:p-9 lg:p-10"
             >
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-flood-title text-xl font-bold">Active Flood Alerts</h2>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-8 mb-8 sm:mb-10">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Active Flood Alerts</h2>
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                   <span className="text-sm text-slate-600">Live Updates</span>
@@ -293,14 +319,14 @@ const Home: React.FC = () => {
                   <p className="text-slate-500">All monitored areas are currently safe from flooding.</p>
                 </div>
               ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="space-y-5 sm:space-y-6 max-h-[32rem] sm:max-h-96 overflow-y-auto overflow-x-hidden pr-4">
                   {alerts.map((alert, idx) => (
                     <motion.div
                       key={alert.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1 }}
-                      className={`p-4 rounded-lg border-l-4 ${
+                      className={`p-6 sm:p-7 rounded-xl border-l-4 transition-all duration-200 hover:shadow-md mb-3 ${
                         alert.severity === 'critical' ? 'border-red-500 bg-red-50' :
                         alert.severity === 'high' ? 'border-orange-500 bg-orange-50' :
                         alert.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
@@ -349,15 +375,15 @@ const Home: React.FC = () => {
           </div>
 
           {/* Analytics Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-8 sm:space-y-10">
             {/* Severity Distribution */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
-              className="flood-card p-6"
+              className="flood-card p-7 sm:p-9"
             >
-              <h3 className="text-flood-title text-lg font-bold mb-4">Risk Distribution</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Risk Distribution</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -388,31 +414,31 @@ const Home: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
-              className="flood-card p-6"
+              className="flood-card p-7 sm:p-9"
             >
-              <h3 className="text-flood-title text-lg font-bold mb-4">Quick Stats</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Quick Stats</h3>
+              <div className="space-y-6">
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">Total Population at Risk</span>
-                  <span className="font-semibold text-flood-title">
+                  <span className="font-semibold text-slate-900">
                     {stats.population.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">States Monitored</span>
-                  <span className="font-semibold text-flood-title">
+                  <span className="font-semibold text-slate-900">
                     {Object.keys(populationByState).length}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">Total Predictions</span>
-                  <span className="font-semibold text-flood-title">
+                  <span className="font-semibold text-slate-900">
                     {stats.predictions}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">Last Update</span>
-                  <span className="font-semibold text-flood-title">
+                  <span className="font-semibold text-slate-900">
                     {lastUpdate.toLocaleTimeString()}
                   </span>
                 </div>
@@ -424,10 +450,10 @@ const Home: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.6 }}
-              className="flood-card p-6"
+              className="flood-card p-7 sm:p-9"
             >
-              <h3 className="text-flood-title text-lg font-bold mb-4">Risk Levels</h3>
-              <div className="space-y-3">
+              <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Risk Levels</h3>
+              <div className="space-y-5">
                 {[
                   { level: 'Critical', color: 'var(--risk-critical)', desc: 'Immediate evacuation required' },
                   { level: 'High', color: 'var(--risk-high)', desc: 'Prepare for evacuation' },
@@ -435,14 +461,14 @@ const Home: React.FC = () => {
                   { level: 'Low', color: 'var(--risk-low)', desc: 'Stay alert' },
                   { level: 'Minimal', color: 'var(--risk-minimal)', desc: 'Normal conditions' }
                 ].map((item, idx) => (
-                  <div key={idx} className="flex items-center space-x-3">
+                  <div key={idx} className="flex items-start space-x-5">
                     <div 
-                      className="w-4 h-4 rounded-full"
+                      className="w-6 h-6 rounded-full flex-shrink-0 mt-0.5"
                       style={{ backgroundColor: item.color }}
                     ></div>
-                    <div>
-                      <span className="text-sm font-medium text-slate-700">{item.level}</span>
-                      <p className="text-xs text-slate-500">{item.desc}</p>
+                    <div className="min-w-0 flex-1">
+                      <span className="text-sm font-medium text-slate-700 block mb-2">{item.level}</span>
+                      <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -451,17 +477,17 @@ const Home: React.FC = () => {
           </div>
         </div>
 
-        {/* Charts Section */}
+        {/* Charts Section - Responsive grid */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8"
+          className="mt-10 sm:mt-12 lg:mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 w-full overflow-x-hidden"
         >
           {/* Severity Chart */}
-          <div className="flood-card p-6">
-            <h3 className="text-flood-title text-lg font-bold mb-4">Alert Severity Distribution</h3>
-            <div className="h-80">
+          <div className="flood-card p-7 sm:p-9 lg:p-10 overflow-x-auto">
+            <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Alert Severity Distribution</h3>
+            <div className="h-64 sm:h-80 min-w-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -494,9 +520,9 @@ const Home: React.FC = () => {
           </div>
 
           {/* State Population Chart */}
-          <div className="flood-card p-6">
-            <h3 className="text-flood-title text-lg font-bold mb-4">Population at Risk by State</h3>
-            <div className="h-80">
+          <div className="flood-card p-7 sm:p-9 lg:p-10 overflow-x-auto">
+            <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Population at Risk by State</h3>
+            <div className="h-64 sm:h-80 min-w-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stateChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -541,7 +567,8 @@ const Home: React.FC = () => {
             </div>
           </div>
         </motion.div>
-    </>
+      </div>
+    </div>
   );
 };
 

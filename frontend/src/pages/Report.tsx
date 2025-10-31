@@ -71,7 +71,7 @@ const Report: React.FC = () => {
 
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 pb-16">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

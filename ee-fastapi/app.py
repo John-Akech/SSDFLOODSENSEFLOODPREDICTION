@@ -164,7 +164,7 @@ async def gee_authenticate(project_id: Optional[str] = None):
         
         gee_initialized = True
         gee_error = None
-        logger.info(f"✓ Earth Engine initialized with project: {project_id or 'default'}")
+        logger.info(f"[OK] Earth Engine initialized with project: {project_id or 'default'}")
         
         return {
             "success": True,
@@ -173,7 +173,7 @@ async def gee_authenticate(project_id: Optional[str] = None):
         }
     except Exception as e:
         gee_error = str(e)
-        logger.error(f"✗ Authentication failed: {e}")
+        logger.error(f"[FAIL] Authentication failed: {e}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Authentication failed: {str(e)}"

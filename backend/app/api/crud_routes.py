@@ -8,10 +8,12 @@ from schemas.schemas import *
 from models.database_models import (
     User as DBUser, FloodEvent as DBFloodEvent, 
     Prediction as DBPrediction, Feedback as DBFeedback,
-    Alert as DBAlert, Recommendation as DBRecommendation
+    Alert as DBAlert, Recommendation as DBRecommendation, PushSubscription as DBPush
 )
 from services.recommendation_service import RecommendationService
 from middleware.auth_middleware import get_current_user, require_admin
+from services.alert_service import alert_service
+from fastapi import Body
 
 router = APIRouter(tags=["crud"])
 
@@ -429,6 +431,43 @@ async def get_state_stats(state: str | None = None, db: Session = Depends(get_db
     return {name: summarize_for(name) for name in state_coords.keys()}
 
 
+# --- Web Push subscriptions ---
+@router.post("/push/subscribe")
+async def push_subscribe(payload: dict = Body(...), db: Session = Depends(get_db)):
+    endpoint = payload.get('endpoint')
+    keys = payload.get('keys', {})
+    if not endpoint:
+        raise HTTPException(status_code=400, detail="Missing endpoint")
+    sub = db.query(DBPush).filter(DBPush.endpoint == endpoint).first()
+    if not sub:
+        sub = DBPush(endpoint=endpoint, p256dh=keys.get('p256dh'), auth=keys.get('auth'))
+        db.add(sub)
+    else:
+        sub.p256dh = keys.get('p256dh')
+        sub.auth = keys.get('auth')
+    db.commit()
+    return {"status": "subscribed"}
+
+
+@router.post("/push/unsubscribe")
+async def push_unsubscribe(payload: dict = Body(...), db: Session = Depends(get_db)):
+    endpoint = payload.get('endpoint')
+    if not endpoint:
+        raise HTTPException(status_code=400, detail="Missing endpoint")
+    sub = db.query(DBPush).filter(DBPush.endpoint == endpoint).first()
+    if sub:
+        db.delete(sub)
+        db.commit()
+    return {"status": "unsubscribed"}
+
+
+@router.post("/push/test")
+async def push_test(db: Session = Depends(get_db)):
+    subs = db.query(DBPush).all()
+    # Placeholder: we just report count; actual sending uses pywebpush (not wired here)
+    return {"subscriptions": len(subs)}
+
+
 @router.get("/stats/models")
 async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
     """Live model metrics aggregated over the last N predictions.
@@ -473,6 +512,19 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
         }
     except Exception as e:
         return {"window_size": n, "models": {}, "error": str(e)}
+
+
+@router.get("/stats/models/validated")
+async def get_validated_model_metrics():
+    """Return last validated metrics from ModelService (if available)."""
+    try:
+        from services.model_service import ModelService
+        return {
+            "last_validated_unix": ModelService.last_validated,
+            "metrics": ModelService.last_metrics or {},
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @router.get("/stats/system")

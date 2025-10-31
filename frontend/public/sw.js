@@ -1,3 +1,41 @@
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener('push', (event) => {
+  try {
+    const data = event.data ? event.data.json() : {};
+    const title = data.title || 'FloodSense Alert';
+    const options = {
+      body: data.body || 'New flood alert',
+      icon: data.icon || '/icons/flood-warning.png',
+      badge: data.badge || '/icons/badge.png',
+      data: data.data || {},
+      actions: data.actions || []
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (e) {
+    event.waitUntil(self.registration.showNotification('FloodSense Alert', { body: 'New alert' }));
+  }
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification && event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(url);
+    })
+  );
+});
+
 const CACHE_NAME = 'floodsense-v1.0.0';
 const OFFLINE_URL = '/offline.html';
 
@@ -201,7 +239,7 @@ async function handleNavigationRequest(request) {
         </head>
         <body>
           <div class="container">
-            <h1>🌊 FloodSense</h1>
+            <h1>FloodSense</h1>
             <p>You're currently offline. Some features may be limited, but you can still view cached flood data.</p>
             <button class="retry-btn" onclick="window.location.reload()">
               Try Again

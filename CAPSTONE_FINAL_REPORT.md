@@ -876,79 +876,79 @@ The project adopted an **Agile methodology** with 3-week sprints, enabling:
 | ID | Requirement | Priority | Status |
 |----|-------------|----------|--------|
 | **FR1** | **User Management** | | |
-| FR1.1 | System shall allow user registration with email and password | High | ✓ Implemented |
-| FR1.2 | System shall authenticate users using JWT tokens | High | ✓ Implemented |
-| FR1.3 | System shall support role-based access (admin, NGO, community) | High | ✓ Implemented |
-| FR1.4 | System shall allow users to update their profiles | Medium | ✓ Implemented |
-| FR1.5 | System shall enforce password complexity requirements | High | ✓ Implemented |
+| FR1.1 | System shall allow user registration with email and password | High | Implemented |
+| FR1.2 | System shall authenticate users using JWT tokens | High | Implemented |
+| FR1.3 | System shall support role-based access (admin, NGO, community) | High | Implemented |
+| FR1.4 | System shall allow users to update their profiles | Medium | Implemented |
+| FR1.5 | System shall enforce password complexity requirements | High | Implemented |
 | **FR2** | **Flood Prediction** | | |
-| FR2.1 | System shall predict flood probability for given coordinates | Critical | ✓ Implemented |
-| FR2.2 | System shall support multiple ML models (RF, TCN, Ensemble) | High | ✓ Implemented |
-| FR2.3 | System shall provide confidence scores with predictions | High | ✓ Implemented |
-| FR2.4 | System shall categorize risk levels (low/medium/high/critical) | High | ✓ Implemented |
-| FR2.5 | System shall support batch predictions for multiple locations | Medium | ✓ Implemented |
-| FR2.6 | System shall allow lead time specification (1-168 hours) | Medium | ✓ Implemented |
+| FR2.1 | System shall predict flood probability for given coordinates | Critical | Implemented |
+| FR2.2 | System shall support multiple ML models (RF, TCN, Ensemble) | High | Implemented |
+| FR2.3 | System shall provide confidence scores with predictions | High | Implemented |
+| FR2.4 | System shall categorize risk levels (low/medium/high/critical) | High | Implemented |
+| FR2.5 | System shall support batch predictions for multiple locations | Medium | Implemented |
+| FR2.6 | System shall allow lead time specification (1-168 hours) | Medium | Implemented |
 | **FR3** | **Alert Management** | | |
-| FR3.1 | System shall automatically generate alerts for high flood risk | High | ✓ Implemented |
-| FR3.2 | System shall categorize alert severity based on probability | High | ✓ Implemented |
-| FR3.3 | System shall allow users to view active alerts | High | ✓ Implemented |
-| FR3.4 | System shall filter alerts by location and radius | Medium | ✓ Implemented |
-| FR3.5 | System shall expire alerts after predicted event time | Medium | ✓ Implemented |
+| FR3.1 | System shall automatically generate alerts for high flood risk | High | Implemented |
+| FR3.2 | System shall categorize alert severity based on probability | High | Implemented |
+| FR3.3 | System shall allow users to view active alerts | High | Implemented |
+| FR3.4 | System shall filter alerts by location and radius | Medium | Implemented |
+| FR3.5 | System shall expire alerts after predicted event time | Medium | Implemented |
 | **FR4** | **GIS and Recommendations** | | |
-| FR4.1 | System shall recommend dyke placement locations | Medium | ✓ Implemented |
-| FR4.2 | System shall generate interactive flood risk maps | Medium | ✓ Implemented |
-| FR4.3 | System shall estimate infrastructure costs | Low | ✓ Implemented |
-| FR4.4 | System shall provide material lists for construction | Low | ✓ Implemented |
+| FR4.1 | System shall recommend dyke placement locations | Medium | Implemented |
+| FR4.2 | System shall generate interactive flood risk maps | Medium | Implemented |
+| FR4.3 | System shall estimate infrastructure costs | Low | Implemented |
+| FR4.4 | System shall provide material lists for construction | Low | Implemented |
 | **FR5** | **SAR Detection** | | |
-| FR5.1 | System shall detect flood areas using SAR imagery | High | ✓ Implemented |
-| FR5.2 | System shall generate before/after comparison maps | Medium | ✓ Implemented |
-| FR5.3 | System shall export flood extent as GeoPackage | Medium | ✓ Implemented |
-| FR5.4 | System shall calculate flood area statistics | Low | ✓ Implemented |
+| FR5.1 | System shall detect flood areas using SAR imagery | High | Implemented |
+| FR5.2 | System shall generate before/after comparison maps | Medium | Implemented |
+| FR5.3 | System shall export flood extent as GeoPackage | Medium | Implemented |
+| FR5.4 | System shall calculate flood area statistics | Low | Implemented |
 | **FR6** | **Data Management** | | |
-| FR6.1 | System shall store prediction history | Medium | ✓ Implemented |
-| FR6.2 | System shall allow feedback submission on predictions | Low | ✓ Implemented |
-| FR6.3 | System shall provide CRUD operations for all entities | Medium | ✓ Implemented |
+| FR6.1 | System shall store prediction history | Medium | Implemented |
+| FR6.2 | System shall allow feedback submission on predictions | Low | Implemented |
+| FR6.3 | System shall provide CRUD operations for all entities | Medium | Implemented |
 | **FR7** | **Reporting and Analytics** | | |
-| FR7.1 | System shall provide prediction accuracy metrics | Low | ✓ Implemented |
-| FR7.2 | System shall generate alert statistics | Low | ✓ Implemented |
+| FR7.1 | System shall provide prediction accuracy metrics | Low | Implemented |
+| FR7.2 | System shall generate alert statistics | Low | Implemented |
 
 ### Non-functional Requirements
 
 | ID | Requirement | Target | Status |
 |----|-------------|--------|--------|
 | **NFR1** | **Performance** | | |
-| NFR1.1 | Prediction response time shall be <500ms | <500ms | ✓ Achieved (avg 250ms) |
-| NFR1.2 | System shall handle 100+ concurrent users | 100+ | ✓ Tested |
-| NFR1.3 | API startup time shall be <10 seconds | <10s | ✓ Achieved (5s) |
-| NFR1.4 | Batch predictions shall process 10+ locations/second | 10+/s | ✓ Achieved |
+| NFR1.1 | Prediction response time shall be <500ms | <500ms | Achieved (avg 250ms) |
+| NFR1.2 | System shall handle 100+ concurrent users | 100+ | Tested |
+| NFR1.3 | API startup time shall be <10 seconds | <10s | Achieved (5s) |
+| NFR1.4 | Batch predictions shall process 10+ locations/second | 10+/s | Achieved |
 | **NFR2** | **Reliability** | | |
-| NFR2.1 | System uptime shall be >99% | >99% | ✓ Designed for |
-| NFR2.2 | System shall gracefully handle model loading failures | - | ✓ Implemented |
-| NFR2.3 | System shall log all errors for debugging | - | ✓ Implemented |
+| NFR2.1 | System uptime shall be >99% | >99% | Designed for |
+| NFR2.2 | System shall gracefully handle model loading failures | - | Implemented |
+| NFR2.3 | System shall log all errors for debugging | - | Implemented |
 | **NFR3** | **Security** | | |
-| NFR3.1 | All API endpoints shall require authentication | - | ✓ Implemented |
-| NFR3.2 | Passwords shall be hashed using bcrypt | - | ✓ Implemented |
-| NFR3.3 | System shall implement rate limiting (100 req/hour) | 100/hr | ✓ Implemented |
-| NFR3.4 | System shall sanitize all user inputs | - | ✓ Implemented |
-| NFR3.5 | System shall use HTTPS in production | - | ✓ Configured |
-| NFR3.6 | System shall implement CORS restrictions | - | ✓ Implemented |
+| NFR3.1 | All API endpoints shall require authentication | - | Implemented |
+| NFR3.2 | Passwords shall be hashed using bcrypt | - | Implemented |
+| NFR3.3 | System shall implement rate limiting (100 req/hour) | 100/hr | Implemented |
+| NFR3.4 | System shall sanitize all user inputs | - | Implemented |
+| NFR3.5 | System shall use HTTPS in production | - | Configured |
+| NFR3.6 | System shall implement CORS restrictions | - | Implemented |
 | **NFR4** | **Scalability** | | |
-| NFR4.1 | System shall support horizontal scaling | - | ✓ Docker-ready |
-| NFR4.2 | Database shall support migration to PostgreSQL | - | ✓ SQLAlchemy ORM |
-| NFR4.3 | System shall cache frequent predictions | - | ✓ LRU cache |
+| NFR4.1 | System shall support horizontal scaling | - | Docker-ready |
+| NFR4.2 | Database shall support migration to PostgreSQL | - | SQLAlchemy ORM |
+| NFR4.3 | System shall cache frequent predictions | - | LRU cache |
 | **NFR5** | **Usability** | | |
-| NFR5.1 | API shall provide comprehensive documentation | - | ✓ Swagger/OpenAPI |
-| NFR5.2 | Error messages shall be clear and actionable | - | ✓ Implemented |
-| NFR5.3 | System shall support multiple languages (future) | - | ⚠ Prepared |
+| NFR5.1 | API shall provide comprehensive documentation | - | Swagger/OpenAPI |
+| NFR5.2 | Error messages shall be clear and actionable | - | Implemented |
+| NFR5.3 | System shall support multiple languages (future) | - | [WARNING] Prepared |
 | **NFR6** | **Maintainability** | | |
-| NFR6.1 | Code shall follow PEP 8 style guidelines | - | ✓ Enforced |
-| NFR6.2 | System shall have >90% test coverage | >90% | ✓ Achieved (95%) |
-| NFR6.3 | All functions shall have docstrings | - | ✓ Implemented |
-| NFR6.4 | System shall use dependency injection | - | ✓ FastAPI DI |
+| NFR6.1 | Code shall follow PEP 8 style guidelines | - | Enforced |
+| NFR6.2 | System shall have >90% test coverage | >90% | Achieved (95%) |
+| NFR6.3 | All functions shall have docstrings | - | Implemented |
+| NFR6.4 | System shall use dependency injection | - | FastAPI DI |
 | **NFR7** | **Portability** | | |
-| NFR7.1 | System shall run on Windows, Linux, macOS | - | ✓ Docker |
-| NFR7.2 | System shall be containerized | - | ✓ Docker Compose |
-| NFR7.3 | System shall have minimal external dependencies | - | ✓ Optimized |
+| NFR7.1 | System shall run on Windows, Linux, macOS | - | Docker |
+| NFR7.2 | System shall be containerized | - | Docker Compose |
+| NFR7.3 | System shall have minimal external dependencies | - | Optimized |
 
 ### System Constraints
 
@@ -1657,7 +1657,7 @@ The system was implemented using a modern technology stack optimized for perform
 │  FloodSense - Register                              [X]    │
 ├────────────────────────────────────────────────────────────┤
 │                                                             │
-│              🌊 FloodSense Registration                     │
+│              FloodSense Registration                     │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐  │
 │  │ Full Name:                                          │  │
@@ -1673,10 +1673,10 @@ The system was implemented using a modern technology stack optimized for perform
 │  │ Password:                                           │  │
 │  │ [••••••••••••                                     ]  │  │
 │  └─────────────────────────────────────────────────────┘  │
-│  ✓ At least 8 characters                                  │
-│  ✓ Contains uppercase letter                              │
-│  ✓ Contains number                                        │
-│  ✓ Contains special character                             │
+│  At least 8 characters                                  │
+│  Contains uppercase letter                              │
+│  Contains number                                        │
+│  Contains special character                             │
 │                                                             │
 │  ┌─────────────────────────────────────────────────────┐  │
 │  │ Role:                                               │  │
@@ -1737,11 +1737,11 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 │  │                                                                  │  │
 │  │  Model Type: [Ensemble ▼]  Lead Time: [24 hours ▼]            │  │
 │  │                                                                  │  │
-│  │  [  🔍 Predict Flood Risk  ]                                    │  │
+│  │  [  Predict Flood Risk  ]                                    │  │
 │  └─────────────────────────────────────────────────────────────────┘  │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │  📊 Prediction Results                                          │  │
+│  │  Prediction Results                                          │  │
 │  │                                                                  │  │
 │  │  Flood Probability: 68.5%                                       │  │
 │  │  ┌────────────────────────────────────────────────────────┐    │  │
@@ -1752,14 +1752,14 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
 │  │  Confidence: 89.2%                                              │  │
 │  │  Model: Ensemble (RF: 70%, TCN: 67%)                           │  │
 │  │                                                                  │  │
-│  │  ⚠️  Alert Generated: High flood risk detected                  │  │
+│  │  [WARNING]  Alert Generated: High flood risk detected                  │  │
 │  │      Recommended action: Prepare for evacuation                 │  │
 │  │                                                                  │  │
 │  │  [View Recommendations] [View on Map] [Submit Feedback]        │  │
 │  └─────────────────────────────────────────────────────────────────┘  │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │  📈 Recent Predictions                                          │  │
+│  │  Recent Predictions                                          │  │
 │  │  ┌──────────┬──────────┬────────────┬──────────┬──────────┐   │  │
 │  │  │ Location │ Prob.    │ Risk Level │ Model    │ Date     │   │  │
 │  │  ├──────────┼──────────┼────────────┼──────────┼──────────┤   │  │
@@ -1827,7 +1827,7 @@ async def create_prediction(request: PredictionRequest, background_tasks: Backgr
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │  🗺️  Interactive Flood Risk Map                                 │  │
+│  │   Interactive Flood Risk Map                                 │  │
 │  │                                                                  │  │
 │  │  ┌────────────────────────────────────────────────────────────┐ │  │
 │  │  │                                                             │ │  │
@@ -1847,7 +1847,7 @@ async def create_prediction(request: PredictionRequest, background_tasks: Backgr
 │  │  │                                                             │ │  │
 │  │  │         🔵 Dyke Recommendation                              │ │  │
 │  │  │                                                             │ │  │
-│  │  │  [+] [-] 🏠                                                 │ │  │
+│  │  │  [+] [-]                                                 │ │  │
 │  │  └────────────────────────────────────────────────────────────┘ │  │
 │  │                                                                  │  │
 │  │  Legend:                                                         │  │
@@ -1915,7 +1915,7 @@ def create_flood_risk_map(center_lat, center_lon, predictions, recommendations):
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │  🏗️  Dyke Placement Recommendations                             │  │
+│  │   Dyke Placement Recommendations                             │  │
 │  │                                                                  │  │
 │  │  Location: Juba (6.877, 31.307)                                 │  │
 │  │  Flood Probability: 68.5% (HIGH)                                │  │
@@ -1933,9 +1933,9 @@ def create_flood_risk_map(center_lat, center_lon, predictions, recommendations):
 │  │  │ • Construction Time: 30 days                                │ │  │
 │  │  │                                                             │ │  │
 │  │  │ Materials Needed:                                           │ │  │
-│  │  │ ✓ Sandbags (5,000 units)                                    │ │  │
-│  │  │ ✓ Geotextile fabric (600 m²)                                │ │  │
-│  │  │ ✓ Concrete blocks (200 units)                               │ │  │
+│  │  │ Sandbags (5,000 units)                                    │ │  │
+│  │  │ Geotextile fabric (600 m²)                                │ │  │
+│  │  │ Concrete blocks (200 units)                               │ │  │
 │  │  │                                                             │ │  │
 │  │  │ [View on Map] [Download Plan] [Request Quote]              │ │  │
 │  │  └────────────────────────────────────────────────────────────┘ │  │
@@ -2017,7 +2017,7 @@ def generate_dyke_recommendations(latitude, longitude, flood_probability,
 ├────────────────────────────────────────────────────────────────────────┤
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐  │
-│  │  🚨 Active Flood Alerts                                          │  │
+│  │  Active Flood Alerts                                          │  │
 │  │                                                                  │  │
 │  │  Showing alerts within 50km of your location                    │  │
 │  │                                                                  │  │
@@ -2220,7 +2220,7 @@ def test_invalid_login():
     assert "Incorrect email or password" in response.json()["detail"]
 ```
 
-**Test Results:** ✓ All authentication tests passed (8/8)
+**Test Results:** All authentication tests passed (8/8)
 
 **2. Prediction Tests:**
 
@@ -2281,7 +2281,7 @@ def test_invalid_coordinates():
     assert response.status_code == 422  # Validation error
 ```
 
-**Test Results:** ✓ All prediction tests passed (12/12)
+**Test Results:** All prediction tests passed (12/12)
 
 **3. Model Service Tests:**
 
@@ -2313,7 +2313,7 @@ def test_ensemble_prediction():
     assert inference_time > 0
 ```
 
-**Test Results:** ✓ All model service tests passed (15/15)
+**Test Results:** All model service tests passed (15/15)
 
 ### 4.3.4 Validation Testing Outputs
 
@@ -2323,16 +2323,16 @@ Validation testing ensured data integrity and input validation across the system
 
 | Test Case | Input | Expected Result | Actual Result | Status |
 |-----------|-------|-----------------|---------------|--------|
-| Valid email | test@example.com | Accepted | Accepted | ✓ Pass |
-| Invalid email | testexample.com | Rejected | Rejected | ✓ Pass |
-| Weak password | pass123 | Rejected | Rejected | ✓ Pass |
-| Strong password | TestPass123! | Accepted | Accepted | ✓ Pass |
-| Valid latitude | 6.877 | Accepted | Accepted | ✓ Pass |
-| Invalid latitude | 95.0 | Rejected | Rejected | ✓ Pass |
-| Valid longitude | 31.307 | Accepted | Accepted | ✓ Pass |
-| Invalid longitude | 200.0 | Rejected | Rejected | ✓ Pass |
-| Valid lead time | 24 | Accepted | Accepted | ✓ Pass |
-| Invalid lead time | -5 | Rejected | Rejected | ✓ Pass |
+| Valid email | test@example.com | Accepted | Accepted | Pass |
+| Invalid email | testexample.com | Rejected | Rejected | Pass |
+| Weak password | pass123 | Rejected | Rejected | Pass |
+| Strong password | TestPass123! | Accepted | Accepted | Pass |
+| Valid latitude | 6.877 | Accepted | Accepted | Pass |
+| Invalid latitude | 95.0 | Rejected | Rejected | Pass |
+| Valid longitude | 31.307 | Accepted | Accepted | Pass |
+| Invalid longitude | 200.0 | Rejected | Rejected | Pass |
+| Valid lead time | 24 | Accepted | Accepted | Pass |
+| Invalid lead time | -5 | Rejected | Rejected | Pass |
 
 **Password Complexity Validation:**
 
@@ -2422,12 +2422,12 @@ def test_database_integration():
 
 | Component Integration | Test Cases | Passed | Failed | Status |
 |----------------------|------------|--------|--------|--------|
-| Auth + Database | 5 | 5 | 0 | ✓ Pass |
-| Prediction + ML Models | 4 | 4 | 0 | ✓ Pass |
-| Alert + Prediction | 3 | 3 | 0 | ✓ Pass |
-| GIS + Prediction | 2 | 2 | 0 | ✓ Pass |
-| Frontend + Backend API | 6 | 6 | 0 | ✓ Pass |
-| **TOTAL** | **20** | **20** | **0** | **✓ Pass** |
+| Auth + Database | 5 | 5 | 0 | Pass |
+| Prediction + ML Models | 4 | 4 | 0 | Pass |
+| Alert + Prediction | 3 | 3 | 0 | Pass |
+| GIS + Prediction | 2 | 2 | 0 | Pass |
+| Frontend + Backend API | 6 | 6 | 0 | Pass |
+| **TOTAL** | **20** | **20** | **0** | **Pass** |
 
 ### 4.3.6 Functional and System Testing Results
 
@@ -2453,12 +2453,12 @@ Functional testing verified that all features meet specified requirements.
 
 | Metric | Target | Achieved | Status |
 |--------|--------|----------|--------|
-| API Startup Time | <10s | 5.2s | ✓ Pass |
-| Prediction Response Time | <500ms | 250ms avg | ✓ Pass |
-| Batch Processing Rate | 10+ loc/s | 12 loc/s | ✓ Pass |
-| Concurrent Users | 100+ | 150 tested | ✓ Pass |
-| Memory Usage | <500MB | 380MB | ✓ Pass |
-| Database Query Time | <100ms | 45ms avg | ✓ Pass |
+| API Startup Time | <10s | 5.2s | Pass |
+| Prediction Response Time | <500ms | 250ms avg | Pass |
+| Batch Processing Rate | 10+ loc/s | 12 loc/s | Pass |
+| Concurrent Users | 100+ | 150 tested | Pass |
+| Memory Usage | <500MB | 380MB | Pass |
+| Database Query Time | <100ms | 45ms avg | Pass |
 
 **Load Testing Results:**
 
@@ -2473,20 +2473,20 @@ Average Response Time: 245ms
 99th Percentile: 520ms
 Max Response Time: 650ms
 
-Result: ✓ PASS - System handles load within acceptable parameters
+Result: PASS - System handles load within acceptable parameters
 ```
 
 **Security Testing:**
 
 | Security Feature | Test | Result | Status |
 |-----------------|------|--------|--------|
-| JWT Authentication | Token validation | Correct | ✓ Pass |
-| Password Hashing | Bcrypt verification | Secure | ✓ Pass |
-| SQL Injection | Malicious input | Blocked | ✓ Pass |
-| XSS Prevention | Script injection | Sanitized | ✓ Pass |
-| Rate Limiting | 150 req/hour | Enforced | ✓ Pass |
-| CORS Policy | Cross-origin requests | Restricted | ✓ Pass |
-| Input Sanitization | Special characters | Cleaned | ✓ Pass |
+| JWT Authentication | Token validation | Correct | Pass |
+| Password Hashing | Bcrypt verification | Secure | Pass |
+| SQL Injection | Malicious input | Blocked | Pass |
+| XSS Prevention | Script injection | Sanitized | Pass |
+| Rate Limiting | 150 req/hour | Enforced | Pass |
+| CORS Policy | Cross-origin requests | Restricted | Pass |
+| Input Sanitization | Special characters | Cleaned | Pass |
 
 ### 4.3.7 Acceptance Testing Report
 
@@ -2496,44 +2496,29 @@ Acceptance testing validated that the system meets user requirements and busines
 
 | Requirement | Acceptance Criteria | Test Result | Status |
 |-------------|-------------------|-------------|--------|
-| **FR1: User Management** | Users can register, login, update profiles | All operations work | ✓ Accepted |
-| **FR2: Flood Prediction** | System predicts floods with >80% accuracy | 88% accuracy achieved | ✓ Accepted |
-| **FR3: Multiple Models** | RF, TCN, Ensemble models available | All models functional | ✓ Accepted |
-| **FR4: Risk Categorization** | 4 risk levels (low/med/high/critical) | Correctly categorized | ✓ Accepted |
-| **FR5: Alert Generation** | Automatic alerts for high risk | Alerts generated correctly | ✓ Accepted |
-| **FR6: GIS Recommendations** | Dyke placement suggestions | Recommendations generated | ✓ Accepted |
-| **FR7: Interactive Maps** | Visual flood risk display | Maps render correctly | ✓ Accepted |
-| **FR8: Batch Predictions** | Multiple locations at once | Batch processing works | ✓ Accepted |
-| **NFR1: Performance** | Response time <500ms | 250ms average | ✓ Accepted |
-| **NFR2: Security** | Authentication, encryption | All security features work | ✓ Accepted |
-| **NFR3: Scalability** | Handle 100+ concurrent users | 150 users tested | ✓ Accepted |
-| **NFR4: Reliability** | >99% uptime | No crashes in testing | ✓ Accepted |
+| **FR1: User Management** | Users can register, login, update profiles | All operations work | Accepted |
+| **FR2: Flood Prediction** | System predicts floods with >80% accuracy | 88% accuracy achieved | Accepted |
+| **FR3: Multiple Models** | RF, TCN, Ensemble models available | All models functional | Accepted |
+| **FR4: Risk Categorization** | 4 risk levels (low/med/high/critical) | Correctly categorized | Accepted |
+| **FR5: Alert Generation** | Automatic alerts for high risk | Alerts generated correctly | Accepted |
+| **FR6: GIS Recommendations** | Dyke placement suggestions | Recommendations generated | Accepted |
+| **FR7: Interactive Maps** | Visual flood risk display | Maps render correctly | Accepted |
+| **FR8: Batch Predictions** | Multiple locations at once | Batch processing works | Accepted |
+| **NFR1: Performance** | Response time <500ms | 250ms average | Accepted |
+| **NFR2: Security** | Authentication, encryption | All security features work | Accepted |
+| **NFR3: Scalability** | Handle 100+ concurrent users | 150 users tested | Accepted |
+| **NFR4: Reliability** | >99% uptime | No crashes in testing | Accepted |
 
 **User Acceptance Testing (UAT) Scenarios:**
 
 **Scenario 1: Community Member Checks Flood Risk**
-- User registers account ✓
-- User logs in ✓
-- User selects location on map ✓
-- User requests prediction ✓
-- System displays flood probability and risk level ✓
-- User views recommendations ✓
-- **Result: ACCEPTED**
+- User registers account - User logs in - User selects location on map - User requests prediction - System displays flood probability and risk level - User views recommendations - **Result: ACCEPTED**
 
 **Scenario 2: NGO Worker Plans Infrastructure**
-- NGO worker logs in ✓
-- Worker requests batch predictions for multiple villages ✓
-- System generates predictions for all locations ✓
-- Worker views dyke placement recommendations ✓
-- Worker exports recommendations report ✓
-- **Result: ACCEPTED**
+- NGO worker logs in - Worker requests batch predictions for multiple villages - System generates predictions for all locations - Worker views dyke placement recommendations - Worker exports recommendations report - **Result: ACCEPTED**
 
 **Scenario 3: Administrator Manages System**
-- Admin logs in with admin credentials ✓
-- Admin views all users ✓
-- Admin views system analytics ✓
-- Admin manages alerts ✓
-- **Result: ACCEPTED**
+- Admin logs in with admin credentials - Admin views all users - Admin views system analytics - Admin manages alerts - **Result: ACCEPTED**
 
 **Final Acceptance Test Summary:**
 
@@ -2541,7 +2526,7 @@ Acceptance testing validated that the system meets user requirements and busines
 - **Passed:** 15
 - **Failed:** 0
 - **Pass Rate:** 100%
-- **Overall Status:** ✓ **SYSTEM ACCEPTED FOR DEPLOYMENT**
+- **Overall Status:** **SYSTEM ACCEPTED FOR DEPLOYMENT**
 
 **Testing Conclusion:**
 
@@ -2699,8 +2684,7 @@ Confidence-Accuracy Correlation: 0.78 (strong positive)
 
 ```
 Backend Service:
-- Memory Usage: 380MB (target: <500MB) ✓
-- CPU Usage: 15-25% (single core)
+- Memory Usage: 380MB (target: <500MB) - CPU Usage: 15-25% (single core)
 - Disk I/O: Minimal (SQLite)
 - Network: <1MB/s
 
@@ -2968,7 +2952,7 @@ Model Prediction (retrospective):
 - Confidence: 86%
 - Lead Time: 24 hours before event
 
-Outcome: ✓ Correct prediction (True Positive)
+Outcome: Correct prediction (True Positive)
 ```
 
 **Case Study: 2021 Bor County**
@@ -2982,7 +2966,7 @@ Model Prediction (retrospective):
 - Confidence: 82%
 - Lead Time: 48 hours before event
 
-Outcome: ✓ Correct prediction (True Positive)
+Outcome: Correct prediction (True Positive)
 ```
 
 **Validation Summary:**
@@ -3007,7 +2991,7 @@ This project successfully developed and deployed FloodSense, a production-ready 
 
 ### 6.1.1 Achievement of Objectives
 
-**Main Objective: ACHIEVED ✓**
+**Main Objective: ACHIEVED **
 
 The project delivered a fully functional flood prediction system that:
 - Provides accurate flood forecasts (88% accuracy) using only satellite data
@@ -3016,51 +3000,51 @@ The project delivered a fully functional flood prediction system that:
 - Offers community-accessible interfaces and alerts
 - Includes actionable infrastructure recommendations
 
-**Specific Objectives: ALL ACHIEVED ✓**
+**Specific Objectives: ALL ACHIEVED **
 
-1. **Data Collection and Processing:** ✓ COMPLETE
+1. **Data Collection and Processing:** COMPLETE
    - Collected and processed Sentinel-1 SAR data via Google Earth Engine
    - Integrated Dartmouth Flood Observatory historical records
    - Created comprehensive dataset with 16 environmental features
    - Achieved 90 samples covering 2012-2025 period
 
-2. **Machine Learning Model Development:** ✓ COMPLETE
+2. **Machine Learning Model Development:** COMPLETE
    - Developed Random Forest classifier (87% accuracy, F1: 0.85)
    - Implemented Temporal Convolutional Network (83% accuracy, F1: 0.82)
    - Created Prototypical Network for few-shot learning (80% accuracy, F1: 0.80)
    - Built ensemble model achieving superior performance (88% accuracy, F1: 0.87)
 
-3. **Backend API Development:** ✓ COMPLETE
+3. **Backend API Development:** COMPLETE
    - Designed and implemented RESTful API using FastAPI
    - Implemented JWT authentication and role-based access control
    - Created comprehensive CRUD operations for all entities
    - Achieved <500ms response time (250ms average)
 
-4. **GIS and Infrastructure Recommendations:** ✓ COMPLETE
+4. **GIS and Infrastructure Recommendations:** COMPLETE
    - Implemented intelligent dyke placement recommendation system
    - Created interactive flood risk maps using Folium
    - Developed cost estimation and material planning features
    - Generated actionable recommendations for NGOs and government
 
-5. **Alert and Notification System:** ✓ COMPLETE
+5. **Alert and Notification System:** COMPLETE
    - Built automated alert generation based on probability thresholds
    - Implemented severity-based categorization (4 levels)
    - Created alert delivery infrastructure (Web Push ready, SMS prepared)
    - Achieved real-time alert processing
 
-6. **Security Implementation:** ✓ COMPLETE
+6. **Security Implementation:** COMPLETE
    - Implemented comprehensive security measures (rate limiting, input sanitization)
    - Added security headers (XSS protection, clickjacking prevention)
    - Created IP whitelisting and request logging middleware
    - Achieved zero security vulnerabilities in testing
 
-7. **Testing and Validation:** ✓ COMPLETE
+7. **Testing and Validation:** COMPLETE
    - Conducted comprehensive unit testing (96% code coverage, 45/45 tests passed)
    - Performed integration testing (20/20 tests passed)
    - Executed performance benchmarking (all targets met)
    - Achieved 100% acceptance test pass rate
 
-8. **Deployment and Documentation:** ✓ COMPLETE
+8. **Deployment and Documentation:** COMPLETE
    - Containerized application using Docker and Docker Compose
    - Created comprehensive API documentation (Swagger/OpenAPI)
    - Deployed production-ready system with health monitoring
@@ -3150,14 +3134,14 @@ This project makes several significant contributions:
 
 "An AI-powered system using freely available SAR satellite data can provide accurate flood predictions for South Sudan without requiring ground-based infrastructure, achieving >80% accuracy with actionable lead times."
 
-**Validation: CONFIRMED ✓**
+**Validation: CONFIRMED **
 
 The project results validate the hypothesis:
-- ✓ Achieved 88% accuracy (exceeds 80% target)
-- ✓ Uses only freely available SAR satellite data (Sentinel-1)
-- ✓ Operates without ground-based infrastructure
-- ✓ Provides actionable lead times (12-168 hours)
-- ✓ Delivers community-accessible predictions and alerts
+- Achieved 88% accuracy (exceeds 80% target)
+- Uses only freely available SAR satellite data (Sentinel-1)
+- Operates without ground-based infrastructure
+- Provides actionable lead times (12-168 hours)
+- Delivers community-accessible predictions and alerts
 
 The hypothesis is conclusively validated, demonstrating that satellite-based AI systems can effectively address flood prediction challenges in infrastructure-limited developing nations.
 

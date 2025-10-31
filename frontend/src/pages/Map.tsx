@@ -298,19 +298,24 @@ const Map: React.FC = () => {
 
   return (
     <div className="min-h-[70vh] flex flex-col">
+      <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flood-card p-4 mb-4"
+          className="flood-card p-4 sm:p-6 mb-4 sm:mb-6"
         >
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-            <div>
-              <h1 className="text-flood-title text-2xl font-bold">Flood Risk Map</h1>
-              <p className="text-water-subtitle">Interactive flood prediction and monitoring</p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-slate-900">
+                <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
+                  Flood Risk Map
+                </span>
+              </h1>
+              <p className="text-sm sm:text-base text-slate-600">Interactive flood prediction and monitoring</p>
             </div>
             
-            <div className="flex flex-row items-center gap-4">
+            <div className="flex flex-row items-center gap-3 sm:gap-4 flex-wrap">
               {/* Search */}
               <div className="flex items-center space-x-2">
                 <input
@@ -356,12 +361,12 @@ const Map: React.FC = () => {
         </motion.div>
 
         {/* Map Container */}
-        <div className="relative w-full" style={{ minHeight: '70vh' }}>
+        <div className="relative flex-1 w-full min-h-0 m-4 sm:m-6 mt-0 sm:mt-0" style={{ minHeight: 'calc(70vh - 120px)' }}>
           <MapContainer
-            key={mapKey} // Force re-render when needed
+            key={mapKey}
             center={mapCenter || [7.5, 30.0]}
             zoom={6}
-            style={{ height: '70vh', width: '100%', zIndex: 1 }}
+            style={{ height: '100%', width: '100%', zIndex: 1 }}
             bounds={southSudanBounds}
             boundsOptions={{ padding: [20, 20] }}
           >
@@ -462,9 +467,9 @@ const Map: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="absolute top-4 right-4 flood-card p-4 max-w-xs z-10"
+              className="absolute top-4 right-4 flood-card p-4 sm:p-5 max-w-xs z-[100] shadow-xl"
             >
-              <h3 className="text-flood-title font-bold mb-3">Risk Levels</h3>
+              <h3 className="text-lg font-bold mb-4 text-slate-900">Risk Levels</h3>
               <div className="space-y-2">
                 {[
                   { level: 'Critical', color: '#dc2626', desc: 'Immediate evacuation' },
@@ -529,6 +534,7 @@ const Map: React.FC = () => {
             </div>
           </div>
         </motion.div>
+      </div>
     </div>
   );
 };

@@ -53,4 +53,4 @@ print(f"ROC-AUC: {roc_auc_score(y_test, y_proba):.3f}")
 
 # Save
 joblib.dump(rf_calibrated, '../models/random_forest.pkl')
-print("\n✓ Model saved to models/random_forest.pkl")
+print("\n[OK] Model saved to models/random_forest.pkl")

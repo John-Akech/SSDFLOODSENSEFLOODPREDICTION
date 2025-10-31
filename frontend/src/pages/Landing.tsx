@@ -24,7 +24,7 @@ const Landing: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 w-full overflow-x-hidden">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center">
         {/* Subtle Background Pattern */}
@@ -54,8 +54,8 @@ const Landing: React.FC = () => {
           />
         </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-20 w-full">
+          <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 lg:gap-16 items-center">
             {/* Left Column - Content */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
@@ -79,9 +79,9 @@ const Landing: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3, duration: 0.8 }}
-                className="space-y-6"
+                className="space-y-4 sm:space-y-5"
               >
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
                   <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
                     FloodSense
                   </span>
@@ -89,7 +89,7 @@ const Landing: React.FC = () => {
                   <span className="text-slate-900">Protecting South Sudan</span>
                 </h1>
                 
-                <p className="text-xl text-slate-600 leading-relaxed max-w-2xl">
+                <p className="text-base sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl">
                   AI-Powered Flood Prediction & Early Warning System leveraging advanced machine learning and real-time satellite data to protect communities across South Sudan.
                 </p>
               </motion.div>
@@ -99,11 +99,11 @@ const Landing: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.4, duration: 0.8 }}
-                className="flex flex-col sm:flex-row gap-4"
+                className="flex flex-col sm:flex-row gap-4 sm:gap-6"
               >
                 <Link to="/home">
                   <motion.button
-                    className="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+                    className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105 w-full sm:w-auto"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -115,7 +115,7 @@ const Landing: React.FC = () => {
                 </Link>
                 <Link to="/map">
                   <motion.button
-                    className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-700 font-semibold rounded-xl border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:scale-105"
+                    className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-white text-blue-700 font-semibold rounded-xl border-2 border-blue-200 hover:bg-blue-50 hover:border-blue-300 transition-all duration-200 hover:scale-105 w-full sm:w-auto"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
@@ -135,14 +135,14 @@ const Landing: React.FC = () => {
               transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
               className="relative"
             >
-              <div className="bg-white rounded-3xl shadow-xl p-8 border border-slate-200">
-                <div className="space-y-6">
+              <div className="bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-200">
+                <div className="space-y-4 sm:space-y-6">
                   {/* Predictions Card */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.6, duration: 0.6 }}
-                    className="flex items-center justify-between p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border border-blue-200"
+                    className="flex items-center justify-between p-5 sm:p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border border-blue-200 gap-4"
                   >
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Predictions Made</p>
@@ -207,26 +207,26 @@ const Landing: React.FC = () => {
 
 
       {/* Features Section */}
-      <section className="py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-12 sm:py-16 lg:py-24 bg-white w-full overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
               <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
                 Powerful Features
               </span>
             </h2>
-            <p className="text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed px-4">
               Cutting-edge technology meets humanitarian impact. Our advanced AI system delivers life-saving predictions with unprecedented accuracy.
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {[
               { 
                 title: 'AI-Powered Predictions', 
@@ -272,9 +272,9 @@ const Landing: React.FC = () => {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1, duration: 0.6 }}
                 whileHover={{ y: -8, scale: 1.02 }}
-                className="group relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200 h-full"
+                className="group relative bg-white rounded-2xl p-5 sm:p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-slate-200 h-full"
               >
-                <div className="space-y-4 h-full flex flex-col">
+                <div className="space-y-3 sm:space-y-4 h-full flex flex-col">
                   <div className="flex items-start gap-4">
                     <div className={`w-12 h-12 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0`}>
                       {feature.icon === 'Brain' && (
@@ -348,7 +348,7 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Impact Section */}
-      <section className="py-24 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 relative overflow-hidden">
+      <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 relative overflow-hidden w-full">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-0 left-0 w-full h-full" style={{ 
@@ -363,15 +363,15 @@ const Landing: React.FC = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">Making Real Impact</h2>
-            <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-white">Making Real Impact</h2>
+            <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto leading-relaxed px-4">
               Every prediction saves lives. Every alert protects families. Every day, we're building a safer South Sudan through cutting-edge technology and community collaboration.
             </p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12 lg:mb-16">
             {[
               { 
                 value: stats.predictions > 0 ? `${stats.predictions}+` : 'Loading...', 
@@ -398,7 +398,7 @@ const Landing: React.FC = () => {
                 whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.2, duration: 0.6 }}
-                className="text-center p-8 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300"
+                className="text-center p-6 sm:p-8 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300"
               >
                 <div className="flex justify-center mb-4">
                   {stat.icon === 'Analytics' && (
@@ -448,9 +448,9 @@ const Landing: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-300 py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
+      <footer className="bg-slate-900 text-slate-300 py-12 sm:py-16 w-full overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-8 sm:mb-12">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-6">
                 <img src="/images/FloodSenseLogo.png" alt="FloodSense" className="h-12 w-auto" />

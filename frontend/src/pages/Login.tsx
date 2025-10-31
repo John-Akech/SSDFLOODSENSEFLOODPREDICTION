@@ -67,7 +67,7 @@ const Login: React.FC = () => {
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-ocean-500 focus:ring-4 focus:ring-ocean-100 transition-all text-gray-900 font-medium"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-gray-900 font-medium"
               placeholder="admin@floodsense.org"
               required
             />
@@ -79,7 +79,7 @@ const Login: React.FC = () => {
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-ocean-500 focus:ring-4 focus:ring-ocean-100 transition-all text-gray-900 font-medium"
+              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all text-gray-900 font-medium"
               placeholder="••••••••"
               required
             />
@@ -88,7 +88,7 @@ const Login: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-ocean-600 to-cyan-600 text-white py-4 rounded-xl font-bold text-lg hover:from-ocean-700 hover:to-cyan-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-4 rounded-xl font-bold text-lg hover:from-blue-700 hover:to-cyan-700 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">

@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocation } from 'react-router-dom';
 import '../styles/flood-colors.css';
 
 const DataSharing: React.FC = () => {
+  const location = useLocation();
+  const currentPath = location.pathname;
   const [formData, setFormData] = useState({
     dataType: 'flood_observation',
     location: '',
@@ -104,9 +107,153 @@ const DataSharing: React.FC = () => {
     }
   ];
 
+  // Determine which section to show based on route
+  const isDataSources = currentPath === '/data-sources';
+
+  // Render Data Sources page
+  if (isDataSources) {
+    return (
+      <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 pb-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <div className="text-center mb-12">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.8 }}
+                className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 rounded-full text-sm font-semibold mb-6 border border-blue-200 shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                </svg>
+                Data Sources & Integration
+              </motion.div>
+              <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
+                Available Data Sources
+              </h1>
+              <p className="text-xl text-slate-600 max-w-4xl mx-auto leading-relaxed">
+                Explore the comprehensive data sources used by FloodSense for flood prediction and monitoring across South Sudan.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+              {[
+                {
+                  title: 'Satellite Imagery',
+                  provider: 'Google Earth Engine',
+                  description: 'High-resolution satellite data for flood extent detection and monitoring.',
+                  icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z',
+                  color: 'from-purple-500 to-purple-600',
+                  features: ['Sentinel-1 SAR', 'Landsat imagery', 'Real-time updates']
+                },
+                {
+                  title: 'Weather Data',
+                  provider: 'Meteorological Services',
+                  description: 'Rainfall, temperature, and weather forecast data for predictive modeling.',
+                  icon: 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z',
+                  color: 'from-cyan-500 to-cyan-600',
+                  features: ['Historical records', 'Live forecasts', 'Multi-station data']
+                },
+                {
+                  title: 'Hydrological Data',
+                  provider: 'Water Resource Management',
+                  description: 'River levels, water flow measurements, and basin monitoring data.',
+                  icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+                  color: 'from-blue-500 to-blue-600',
+                  features: ['River gauges', 'Water levels', 'Flow rates']
+                },
+                {
+                  title: 'Ground Observations',
+                  provider: 'Community Reports',
+                  description: 'On-the-ground observations and citizen science contributions.',
+                  icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z',
+                  color: 'from-green-500 to-green-600',
+                  features: ['Crowdsourced data', 'Community feedback', 'Field reports']
+                },
+                {
+                  title: 'Infrastructure Data',
+                  provider: 'Government Agencies',
+                  description: 'Roads, buildings, and critical infrastructure locations for risk assessment.',
+                  icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+                  color: 'from-indigo-500 to-indigo-600',
+                  features: ['GIS databases', 'Asset inventories', 'Spatial layers']
+                },
+                {
+                  title: 'DEM & Elevation',
+                  provider: 'Topographic Surveys',
+                  description: 'Digital Elevation Models and terrain data for flood modeling.',
+                  icon: 'M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z',
+                  color: 'from-amber-500 to-amber-600',
+                  features: ['Elevation maps', 'Terrain analysis', 'Slope data']
+                }
+              ].map((source, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="flood-card p-6"
+                >
+                  <div className={`w-12 h-12 bg-gradient-to-r ${source.color} rounded-xl flex items-center justify-center mb-4`}>
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={source.icon} />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">{source.title}</h3>
+                  <p className="text-sm text-blue-600 font-medium mb-3">{source.provider}</p>
+                  <p className="text-slate-600 text-sm mb-4">{source.description}</p>
+                  <ul className="space-y-2">
+                    {source.features.map((feature, fIdx) => (
+                      <li key={fIdx} className="flex items-center gap-2 text-xs text-slate-500">
+                        <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </motion.div>
+              ))}
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flood-card p-8"
+            >
+              <h2 className="text-2xl font-bold text-slate-900 mb-4">Data Integration Process</h2>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[
+                  { step: '01', title: 'Collection', desc: 'Automated data collection from multiple sources' },
+                  { step: '02', title: 'Processing', desc: 'Data cleaning, validation, and standardization' },
+                  { step: '03', title: 'Analysis', desc: 'Integration into ML models and risk algorithms' },
+                  { step: '04', title: 'Visualization', desc: 'Real-time dashboards and map displays' }
+                ].map((item, idx) => (
+                  <div key={idx} className="text-center">
+                    <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-lg mx-auto mb-3">
+                      {item.step}
+                    </div>
+                    <h4 className="font-semibold text-slate-900 mb-2">{item.title}</h4>
+                    <p className="text-sm text-slate-600">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // Default: Data Sharing form
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}

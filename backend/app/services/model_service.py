@@ -3,11 +3,13 @@ import torch
 import numpy as np
 import pandas as pd
 from typing import Dict, Any, Optional, Tuple
+from typing import List
 import logging
 from pathlib import Path
 import sys
 import os
 import time
+from sklearn.metrics import roc_auc_score, f1_score, precision_score, recall_score, average_precision_score
 
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -108,6 +110,175 @@ class ModelService:
             logger.error(f"Error loading models: {e}")
             cls.models_loaded = False
 
+    # ===== Validation and calibration state =====
+    rf_platt_A: Optional[float] = None
+    rf_platt_B: Optional[float] = None
+    tcn_temperature: float = 1.5
+    last_validated: Optional[float] = None
+    last_metrics: Optional[Dict[str, Any]] = None
+
+    @staticmethod
+    def _sigmoid(x: np.ndarray) -> np.ndarray:
+        return 1.0 / (1.0 + np.exp(-x))
+
+    @classmethod
+    def _ece(cls, probs: np.ndarray, labels: np.ndarray, bins: int = 10) -> float:
+        # Expected Calibration Error (simple binning)
+        bin_edges = np.linspace(0, 1, bins + 1)
+        ece = 0.0
+        n = len(labels)
+        for i in range(bins):
+            mask = (probs >= bin_edges[i]) & (probs < bin_edges[i + 1])
+            if not np.any(mask):
+                continue
+            conf = probs[mask].mean()
+            acc = labels[mask].mean()
+            ece += (mask.sum() / n) * abs(acc - conf)
+        return float(ece)
+
+    @classmethod
+    def validate_on_csv(cls, dataset_path: str) -> Dict[str, Any]:
+        if not Path(dataset_path).exists():
+            return {"error": f"Dataset not found: {dataset_path}"}
+        df = pd.read_csv(dataset_path)
+        y = df.get('flood_label')
+        if y is None:
+            return {"error": "flood_label column missing"}
+        y = y.values.astype(int)
+        # Build features in expected order with defaults
+        X_feats: List[Dict[str, Any]] = []
+        for _, row in df.iterrows():
+            feats = {col: row.get(col) for col in cls.feature_columns}
+            X_feats.append(feats)
+
+        # Collect model probabilities
+        probs_rf, probs_tcn, probs_ens = [], [], []
+        for feats in X_feats:
+            # RF
+            try:
+                if cls.rf_model is not None:
+                    p, _, _ = cls.predict_rf(feats)
+                    probs_rf.append(p)
+                else:
+                    probs_rf.append(np.nan)
+            except Exception:
+                probs_rf.append(np.nan)
+            # TCN
+            try:
+                if cls.tcn_model is not None:
+                    p, _, _ = cls.predict_tcn(feats)
+                    probs_tcn.append(p)
+                else:
+                    probs_tcn.append(np.nan)
+            except Exception:
+                probs_tcn.append(np.nan)
+            # Ensemble
+            try:
+                p, _, _, _ = cls.predict_ensemble(feats)
+                probs_ens.append(p)
+            except Exception:
+                probs_ens.append(np.nan)
+
+        def metrics_from_probs(probs: List[float]) -> Dict[str, Any]:
+            p = np.array([x if x == x else 0.0 for x in probs])  # replace NaN with 0
+            y_pred = (p >= 0.5).astype(int)
+            try:
+                auc = roc_auc_score(y, p)
+            except Exception:
+                auc = float('nan')
+            try:
+                from sklearn.metrics import average_precision_score
+                pr_auc = average_precision_score(y, p)
+            except Exception:
+                pr_auc = float('nan')
+            f1 = f1_score(y, y_pred) if len(np.unique(y)) > 1 else float('nan')
+            prec = precision_score(y, y_pred, zero_division=0)
+            rec = recall_score(y, y_pred, zero_division=0)
+            ece = cls._ece(p, y.astype(float))
+            return {"roc_auc": float(auc), "pr_auc": float(pr_auc), "f1": float(f1), "precision": float(prec), "recall": float(rec), "ece": float(ece)}
+
+        results = {
+            "rf": metrics_from_probs(probs_rf),
+            "tcn": metrics_from_probs(probs_tcn),
+            "ensemble": metrics_from_probs(probs_ens),
+            "count": int(len(y)),
+        }
+        cls.last_validated = time.time()
+        cls.last_metrics = results
+        return results
+
+    @classmethod
+    def fit_calibration(cls, dataset_path: str) -> Dict[str, Any]:
+        if not Path(dataset_path).exists():
+            return {"error": f"Dataset not found: {dataset_path}"}
+        df = pd.read_csv(dataset_path)
+        y = df.get('flood_label')
+        if y is None:
+            return {"error": "flood_label column missing"}
+        y = y.values.astype(int)
+        X_feats = [{col: row.get(col) for col in cls.feature_columns} for _, row in df.iterrows()]
+
+        # RF Platt scaling: logistic regression on RF logits
+        rf_probs = []
+        for feats in X_feats:
+            try:
+                if cls.rf_model is not None:
+                    p, _, _ = cls.predict_rf(features=feats)
+                    rf_probs.append(p)
+            except Exception:
+                continue
+        if rf_probs:
+            p = np.clip(np.array(rf_probs), 1e-6, 1 - 1e-6)
+            logits = np.log(p / (1 - p))
+            # Fit A,B in sigmoid(A*x + B) to minimize log loss (closed form is not trivial; use simple linear regression on labels)
+            # Use sklearn logistic regression for stability if available
+            try:
+                from sklearn.linear_model import LogisticRegression
+                lr = LogisticRegression(max_iter=1000)
+                lr.fit(logits.reshape(-1, 1), y[: len(logits)])
+                A = float(lr.coef_[0][0])
+                B = float(lr.intercept_[0])
+                cls.rf_platt_A, cls.rf_platt_B = A, B
+            except Exception:
+                cls.rf_platt_A, cls.rf_platt_B = 1.0, 0.0
+
+        # TCN temperature scaling: search temperature minimizing NLL on validation
+        tcn_probs = []
+        for feats in X_feats:
+            try:
+                if cls.tcn_model is not None:
+                    # get logits by running model without softmax/temperature
+                    device = get_device()
+                    X = cls.preprocess_features(feats)
+                    X_tensor = ensure_tensor_on_device(X, device, dtype=torch.float32)
+                    with torch.no_grad():
+                        output = cls.tcn_model(X_tensor)
+                        logits = output[0].cpu().numpy()
+                        # store positive class logit as difference
+                        tcn_probs.append(logits)
+            except Exception:
+                continue
+        if tcn_probs:
+            logits_arr = np.array(tcn_probs)  # shape (N, 2)
+            pos_logits = logits_arr[:, 1]
+            def nll(temp: float) -> float:
+                q = 1.0 / (1.0 + np.exp(-(pos_logits / max(temp, 1e-3))))
+                q = np.clip(q, 1e-6, 1 - 1e-6)
+                return float(-(y[: len(q)] * np.log(q) + (1 - y[: len(q)]) * np.log(1 - q)).mean())
+            # simple grid search
+            best_t = cls.tcn_temperature
+            best_loss = nll(best_t)
+            for t in [0.5, 0.8, 1.0, 1.2, 1.5, 2.0, 3.0]:
+                loss = nll(t)
+                if loss < best_loss:
+                    best_loss = loss
+                    best_t = t
+            cls.tcn_temperature = best_t
+
+        return {
+            "rf_platt": {"A": cls.rf_platt_A, "B": cls.rf_platt_B},
+            "tcn_temperature": cls.tcn_temperature,
+        }
     @classmethod
     def get_model_metadata(cls) -> Dict[str, Any]:
         """Return lightweight metadata about loaded models (no large tensors)."""
@@ -214,6 +385,10 @@ class ModelService:
         X = cls.preprocess_features(features)
         proba = cls.rf_model.predict_proba(X)[0]
         probability = float(proba[1])
+        # Apply Platt scaling if available
+        if cls.rf_platt_A is not None and cls.rf_platt_B is not None:
+            logit = np.log(max(probability, 1e-6) / max(1 - probability, 1e-6))
+            probability = float(cls._sigmoid(cls.rf_platt_A * logit + cls.rf_platt_B))
         
         entropy = -sum(p * np.log(p + 1e-10) for p in proba)
         confidence = float(1.0 - (entropy / np.log(len(proba))))
@@ -234,7 +409,7 @@ class ModelService:
 
         with torch.no_grad():
             output = cls.tcn_model(X_tensor)
-            temperature = 1.5
+            temperature = cls.tcn_temperature
             probs = torch.softmax(output / temperature, dim=1)
             probability = probs[0, 1].item()
             confidence = float(max(probs[0]).item())

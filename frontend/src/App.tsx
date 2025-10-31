@@ -55,8 +55,8 @@ const AppContent: React.FC = () => {
   };
 
   return (
-        <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
-          {/* Notification Bell - Fixed position */}
+        <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 overflow-hidden">
+          {/* Notification Bell - Fixed position with proper spacing */}
           <div className="fixed top-4 right-4 z-50">
             <NotificationBell />
           </div>
@@ -72,99 +72,92 @@ const AppContent: React.FC = () => {
           )}
 
           {/* Main Layout */}
-          <div className="flex flex-1">
-            {/* Mobile Menu Button */}
-            <button
-              onClick={toggleSidebar}
-              className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gradient-to-r from-blue-700 to-cyan-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all"
-              aria-label="Toggle menu"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
+          <div className="flex flex-1 overflow-hidden flex-col">
+            <div className="flex flex-1 overflow-hidden">
+              {/* Mobile Menu Button - Better positioning */}
+              <button
+                onClick={toggleSidebar}
+                className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gradient-to-r from-blue-700 to-cyan-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all touch-manipulation"
+                aria-label="Toggle menu"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
 
-            {/* Sidebar */}
-            <div className={`fixed lg:static inset-y-0 left-0 z-30 w-56 transform transition-transform duration-300 ease-in-out ${
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
-            }`}>
-              <EnhancedSidebar onToggleSidebar={toggleSidebar} />
+              {/* Sidebar */}
+              <aside className={`fixed lg:static inset-y-0 left-0 z-30 w-56 lg:w-64 transform transition-transform duration-300 ease-in-out ${
+                sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+              }`}>
+                <EnhancedSidebar onToggleSidebar={toggleSidebar} />
+              </aside>
+
+              {/* Sidebar Overlay for mobile */}
+              {sidebarOpen && (
+                <div 
+                  className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+                  onClick={toggleSidebar}
+                />
+              )}
+
+              {/* Main Content - Fixed overflow and spacing */}
+              <div className="flex-1 min-w-0 flex flex-col lg:ml-64 ml-0 transition-all duration-300 overflow-y-auto overflow-x-hidden w-full">
+                <motion.main 
+                  className="flex-1 min-h-0 w-full"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <div className={location.pathname === '/map' ? 'h-full w-full' : 'w-full'}>
+                    <AnimatePresence mode="wait">
+                      <Routes>
+                      {/* Public Routes */}
+                      <Route path="/" element={<Landing />} />
+                      <Route path="/home" element={<Home />} />
+                      <Route path="/map" element={<Map />} />
+                      <Route path="/report" element={<Report />} />
+                      <Route path="/analytics" element={<Analytics />} />
+                      <Route path="/data-sharing" element={<DataSharing />} />
+                      <Route path="/login" element={<Login />} />
+                      
+                      {/* Additional public dashboard routes */}
+                      <Route path="/predictions" element={<PredictionCenter />} />
+                      <Route path="/monitoring" element={<RealTimeMonitoring />} />
+                      <Route path="/reports" element={<Analytics />} />
+                      <Route path="/gis-analysis" element={<GISAnalysis />} />
+                      <Route path="/infrastructure" element={<Infrastructure />} />
+                    <Route path="/data-sources" element={<DataSharing />} />
+                      
+                      {/* Protected Admin Routes Only */}
+                      <Route path="/admin" element={
+                        <ProtectedRoute requireAdmin>
+                          <Admin />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/users" element={
+                        <ProtectedRoute requireAdmin>
+                          <Admin />
+                        </ProtectedRoute>
+                      } />
+                      <Route path="/admin/system" element={
+                        <ProtectedRoute requireAdmin>
+                          <Admin />
+                        </ProtectedRoute>
+                      } />
+                      </Routes>
+                    </AnimatePresence>
+                  </div>
+                </motion.main>
+              </div>
             </div>
 
-            {/* Sidebar Overlay for mobile */}
-            {sidebarOpen && (
-              <div 
-                className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-                onClick={toggleSidebar}
-              />
-            )}
-
-            {/* Main Content */}
-            <div className="flex-1 min-w-0 flex flex-col lg:ml-56 ml-0 transition-all duration-300 overflow-x-hidden">
-              <motion.main 
-                className="flex-1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.3 }}
-              >
-                <div className={location.pathname === '/map' ? '' : 'content-wrapper'}>
-                  <AnimatePresence mode="wait">
-                    <Routes>
-                    {/* Public Routes */}
-                    <Route path="/" element={<Landing />} />
-                    <Route path="/home" element={<Home />} />
-                    <Route path="/map" element={<Map />} />
-                    <Route path="/report" element={<Report />} />
-                    <Route path="/analytics" element={<Analytics />} />
-                    <Route path="/data-sharing" element={<DataSharing />} />
-                    <Route path="/login" element={<Login />} />
-                    
-                    {/* Additional public dashboard routes */}
-                    <Route path="/predictions" element={<PredictionCenter />} />
-                    <Route path="/monitoring" element={<RealTimeMonitoring />} />
-                    <Route path="/reports" element={<Analytics />} />
-                    <Route path="/gis-analysis" element={<GISAnalysis />} />
-                    <Route path="/infrastructure" element={<Infrastructure />} />
-                    <Route path="/data-sources" element={<DataSharing />} />
-                    <Route path="/api-docs" element={<DataSharing />} />
-                    
-                    {/* Protected Admin Routes Only */}
-                    <Route path="/admin" element={
-                      <ProtectedRoute requireAdmin>
-                        <Admin />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/users" element={
-                      <ProtectedRoute requireAdmin>
-                        <Admin />
-                      </ProtectedRoute>
-                    } />
-                    <Route path="/admin/system" element={
-                      <ProtectedRoute requireAdmin>
-                        <Admin />
-                      </ProtectedRoute>
-                    } />
-                    </Routes>
-                  </AnimatePresence>
-                </div>
-              </motion.main>
-
-              {/* Footer - Show on all pages */}
-              <Routes>
-                <Route path="/" element={<Footer />} />
-                <Route path="/home" element={<Footer />} />
-                <Route path="/map" element={<Footer />} />
-                <Route path="/report" element={<Footer />} />
-                <Route path="/analytics" element={<Footer />} />
-                <Route path="/data-sharing" element={<Footer />} />
-                <Route path="/predictions" element={<Footer />} />
-                <Route path="/monitoring" element={<Footer />} />
-                <Route path="/reports" element={<Footer />} />
-                <Route path="/gis-analysis" element={<Footer />} />
-                <Route path="/infrastructure" element={<Footer />} />
-                <Route path="/data-sources" element={<Footer />} />
-                <Route path="/api-docs" element={<Footer />} />
-              </Routes>
+            {/* Footer - Show on all pages - Full width footer outside container */}
+            <div className="w-full" style={{ 
+              width: '100vw',
+              marginLeft: 'calc(-50vw + 50%)',
+              marginRight: 'calc(-50vw + 50%)'
+            }}>
+              <Footer />
             </div>
           </div>
         </div>

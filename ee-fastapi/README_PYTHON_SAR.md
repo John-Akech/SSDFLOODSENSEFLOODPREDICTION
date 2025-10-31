@@ -2,7 +2,7 @@
 
 This Python implementation converts the original JavaScript Google Earth Engine code into a more maintainable, object-oriented Python module for SAR-based flood detection.
 
-## 🚀 Key Improvements Over JavaScript Version
+## Key Improvements Over JavaScript Version
 
 ### 1. **Better Code Organization**
 - **Modular Design**: Separated into logical functions and classes
@@ -32,7 +32,7 @@ ee-fastapi/src/
 └── README_PYTHON_SAR.md   # This documentation
 ```
 
-## 🛠️ Installation & Setup
+## Installation & Setup
 
 ### Prerequisites
 ```bash
@@ -54,7 +54,7 @@ ee.Authenticate()  # Follow the authentication flow
 ee.Initialize()
 ```
 
-## 🎯 Usage Examples
+## Usage Examples
 
 ### Basic Usage
 ```python
@@ -176,7 +176,7 @@ damage_results = damage_assessment(
 - `CLOSING`: Closing (dilation + erosion)
 - `BOTH`: Both opening and closing
 
-## 📊 Output Structure
+## Output Structure
 
 The function returns a comprehensive dictionary with:
 
@@ -226,7 +226,7 @@ The function returns a comprehensive dictionary with:
 }
 ```
 
-## 🌍 Demo: Beira, Mozambique (Cyclone Idai 2019)
+## Demo: Beira, Mozambique (Cyclone Idai 2019)
 
 ```python
 from sar_flood_mapping import run_demo
@@ -242,7 +242,7 @@ if results:
     print(f"Affected urban: {results['damage_results']['affected_urban_ha'].getInfo()} hectares")
 ```
 
-## 🔄 Integration with FastAPI
+## Integration with FastAPI
 
 The Python implementation can be easily integrated with the existing FastAPI backend:
 
@@ -308,7 +308,7 @@ Map.addLayer(results['damage_results']['population_exposed_image'],
              viz_params['population_exposed'], 'Exposed Population')
 ```
 
-## 🚨 Error Handling
+## Error Handling
 
 The implementation includes comprehensive error handling:
 
@@ -322,27 +322,27 @@ except Exception as e:
     logger.error(f"Flood detection failed: {e}")
 ```
 
-## 📈 Performance Optimization
+## Performance Optimization
 
 - **Parallel Processing**: Multiple operations can run in parallel
 - **Memory Management**: Efficient memory usage for large datasets
 - **Caching**: Results can be cached for repeated operations
 - **Batch Processing**: Multiple areas can be processed in batches
 
-## 🔍 Quality Assurance
+## Quality Assurance
 
 - **Confidence Scoring**: Automated confidence assessment
 - **Validation Checks**: Input parameter validation
 - **Logging**: Comprehensive logging for debugging
 - **Testing**: Unit tests for all functions
 
-## 📚 References
+## References
 
 - Original JavaScript implementation: UN-SPIDER December 2019
 - Google Earth Engine documentation: https://developers.google.com/earth-engine
 - SAR flood mapping techniques: Various academic papers and research
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -350,7 +350,7 @@ except Exception as e:
 4. Add tests
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This implementation follows the same license as the original project.
 

@@ -115,6 +115,17 @@ tmp/
 secrets/
 credentials/
 gee-service-account.json
+# Environment files with secrets
+.env.local
+.env.production
+.env.*.local
+*.env
+# Database credentials and configs
+**/pg_hba.conf.local
+**/postgresql.conf.local
+# SSL certificates
+**/server.crt
+**/server.key
 
 # =============================================================================
 # Project Specific

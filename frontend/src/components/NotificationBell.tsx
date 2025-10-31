@@ -85,6 +85,35 @@ const NotificationBell: React.FC = () => {
     localStorage.setItem('dismissedNotifications', JSON.stringify([...newDismissed]));
   };
 
+  const subscribeToPush = async () => {
+    try {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      const reg = await navigator.serviceWorker.ready;
+      // Use VAPID public key if available
+      const vapid = (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: vapid ? urlBase64ToUint8Array(vapid) : undefined,
+      });
+      await apiService.pushSubscribe(sub.toJSON());
+      alert('Push notifications enabled');
+    } catch (e) {
+      console.error('Push subscribe failed', e);
+      alert('Failed to enable notifications');
+    }
+  };
+
+  const urlBase64ToUint8Array = (base64String: string) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
   return (
     <div className="relative">
       <button
@@ -113,14 +142,23 @@ const NotificationBell: React.FC = () => {
                     {unreadCount} active {unreadCount === 1 ? 'warning' : 'warnings'}
                   </p>
                 </div>
-                {unreadCount > 0 && (
+                <div className="flex items-center gap-2">
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 hover:bg-blue-100 rounded"
+                    >
+                      Mark all read
+                    </button>
+                  )}
                   <button
-                    onClick={markAllAsRead}
-                    className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1 hover:bg-blue-100 rounded"
+                    onClick={subscribeToPush}
+                    className="text-xs text-green-700 hover:text-green-900 font-medium px-2 py-1 hover:bg-green-100 rounded"
+                    title="Enable push notifications"
                   >
-                    Mark all read
+                    Enable Push
                   </button>
-                )}
+                </div>
               </div>
             </div>
 

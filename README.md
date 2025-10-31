@@ -12,7 +12,7 @@
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#-overview)
 - [Key Features](#-key-features)
@@ -29,7 +29,7 @@
 
 ---
 
-## 🌍 Overview
+## Overview
 
 The **South Sudan Flood Prediction System** is a production-ready AI platform that predicts floods and provides early warnings to communities in South Sudan.
 
@@ -44,43 +44,43 @@ South Sudan faces recurring devastating floods affecting millions. Traditional f
 ### Our Solution
 
 An AI-powered system that:
-- ✅ Uses freely available satellite data (no ground sensors needed)
-- ✅ Provides predictions 1-168 hours in advance
-- ✅ Delivers community-accessible alerts via API
-- ✅ Recommends flood mitigation infrastructure
-- ✅ Learns from community feedback
+- Uses freely available satellite data (no ground sensors needed)
+- Provides predictions 1-168 hours in advance
+- Delivers community-accessible alerts via API
+- Recommends flood mitigation infrastructure
+- Learns from community feedback
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🤖 AI/ML Capabilities
+### AI/ML Capabilities
 - **3 Production Models**: Random Forest, TCN, Ensemble
 - **Ensemble Learning**: Weighted RF (60%) + TCN (40%) combination (F1: 0.87+)
 - **Real-time Predictions**: Sub-second response times
 - **Batch Processing**: Multiple location predictions
 - **Risk Assessment**: 4-level categorization (low/medium/high/critical)
 
-### 🗺️ GIS & Infrastructure
+### GIS & Infrastructure
 - **Dyke Placement AI**: Intelligent flood barrier recommendations
 - **Interactive Maps**: Folium-based visualizations
 - **Cost Estimation**: Budget planning for interventions
 - **Material Planning**: Construction resource lists
 
-### 🚨 Alert System
+### Alert System
 - **Real-time Warnings**: Automatic flood alerts
 - **Severity Levels**: Risk-based categorization
 - **Geospatial Filtering**: Location-based alert delivery
 - **Alert History**: Track past warnings and outcomes
 
-### 🔒 Security Features
+### Security Features
 - **JWT Authentication**: Secure token-based authorization
 - **Role-Based Access Control**: Admin, NGO, Community roles
 - **Rate Limiting**: Protection against abuse
 - **Input Sanitization**: SQL injection & XSS prevention
 - **Security Headers**: XSS, clickjacking protection
 
-### 📊 Data Management
+### Data Management
 - **Full CRUD Operations**: Users, Events, Predictions, Feedback
 - **Database**: SQLite (development), PostgreSQL (production)
 - **Data Validation**: Pydantic schemas
@@ -88,7 +88,7 @@ An AI-powered system that:
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Docker (Recommended)
 ```bash
@@ -125,14 +125,14 @@ npm run dev
 ```
 
 **Access Points:**
-- 🌐 Main App: http://localhost
-- 🛰️ SAR Detection: http://localhost:8080
-- 📊 Backend API: http://localhost:8000/docs
-- ❤️ Health Check: http://localhost:8000/health
+- Main App: http://localhost
+- SAR Detection: http://localhost:8080
+- Backend API: http://localhost:8000/docs
+- Health Check: http://localhost:8000/health
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -164,7 +164,7 @@ npm run dev
 
 ---
 
-## 🧠 Machine Learning Models
+## Machine Learning Models
 
 ### 1. Ensemble Model (Recommended)
 **Best Performance for Production**
@@ -210,7 +210,7 @@ npm run dev
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### Prerequisites
 - Docker 20.10+ & Docker Compose 2.0+ (for Docker deployment)
@@ -260,7 +260,7 @@ python main.py
 
 ---
 
-## 📚 API Documentation
+## API Documentation
 
 ### Authentication
 
@@ -349,7 +349,7 @@ Visit **http://localhost:8000/docs** for full Swagger UI with:
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend
 - **FastAPI** 0.110.0 - High-performance async API
@@ -382,7 +382,7 @@ Visit **http://localhost:8000/docs** for full Swagger UI with:
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 SSDFLOODSENSEFLOODPREDICTION/
@@ -429,7 +429,7 @@ SSDFLOODSENSEFLOODPREDICTION/
 
 ---
 
-## 📊 Performance Metrics
+## Performance Metrics
 
 ### API Performance
 | Metric | Value |
@@ -453,7 +453,7 @@ SSDFLOODSENSEFLOODPREDICTION/
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 We welcome contributions! Here's how:
 
@@ -478,7 +478,7 @@ We welcome contributions! Here's how:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
@@ -486,7 +486,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Google Earth Engine** for satellite data access
 - **Dartmouth Flood Observatory** for flood event records
@@ -496,7 +496,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 📞 Contact
+## Contact
 
 **Developer**: John Akech  
 **Program**: BSc. Software Engineering  
@@ -506,9 +506,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ---
 
-## 📈 Project Status
+## Project Status
 
-✅ **Production Ready** | ✅ **Fully Documented** | ✅ **Docker Ready**
+**Production Ready** | **Fully Documented** | **Docker Ready**
 
 **Last Updated**: January 2025  
 **Version**: 1.0.0  

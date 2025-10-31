@@ -13,7 +13,9 @@ from schemas.schemas import *
 from models.database_models import Prediction as DBPrediction, Alert as DBAlert
 from services.model_service import ModelService
 from services.alert_service import alert_service
+from models.database_models import PushSubscription as DBPush
 from services.gis_service import GISService
+from fastapi import Body
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -46,13 +48,15 @@ async def create_prediction(
         if not (3 <= request.latitude <= 13 and 24 <= request.longitude <= 36):
             logger.warning(f"Coordinates outside South Sudan: {request.latitude}, {request.longitude}")
         
-        # Generate features if not provided
+        # Realtime-safe feature guard: disallow leak-prone fields
+        forbidden = {"sar_after", "sar_difference", "sar_change"}
         if request.features:
+            if any(k in forbidden for k in request.features.keys()):
+                raise HTTPException(status_code=400, detail="Forbidden realtime features in request. Please omit derived 'after' SAR features.")
             features = request.features
         else:
-            features = ModelService.generate_features_from_location(
-                request.latitude, request.longitude
-            )
+            # TODO: integrate real GEE adapter; for now, generate synthetic features
+            features = ModelService.generate_features_from_location(request.latitude, request.longitude)
         
         # Make prediction based on model type
         model_predictions = None
@@ -98,11 +102,18 @@ async def create_prediction(
                 request.lead_time_hours
             )
             
-            # Send alert in background
+            # Send alert in background (fetch subscriptions)
+            subs = db.query(DBPush).all()
+            subscription_payloads = [
+                {
+                    "endpoint": s.endpoint,
+                    "keys": {"p256dh": s.p256dh, "auth": s.auth}
+                } for s in subs if s.endpoint
+            ]
             background_tasks.add_task(
                 alert_service.send_web_push_alert,
                 alert,
-                []  # Would get user subscriptions from database
+                subscription_payloads
             )
         
         # Prepare response
@@ -354,6 +365,36 @@ async def models_sanity(dataset: str = "data/south_sudan_flood_combined_data.csv
     """Run a quick sanity prediction using the first row of a dataset."""
     try:
         return ModelService.sanity_predict_from_dataset(dataset)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/models/validate")
+async def validate_models(dataset: str = "data/original_gee_data_2019_2024/flood_validation_data_2019_2024.csv"):
+    try:
+        metrics = ModelService.validate_on_csv(dataset)
+        return {"dataset": dataset, "metrics": metrics}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/models/calibrate")
+async def calibrate_models(dataset: str = "data/original_gee_data_2019_2024/flood_validation_data_2019_2024.csv"):
+    try:
+        params = ModelService.fit_calibration(dataset)
+        return {"dataset": dataset, "calibration": params}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/features/from-gee")
+async def features_from_gee(lat: float, lon: float):
+    """Placeholder: returns generated features for the given location.
+    Replace with real GEE adapter integration.
+    """
+    try:
+        feats = ModelService.generate_features_from_location(lat, lon)
+        return {"latitude": lat, "longitude": lon, "features": feats}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
