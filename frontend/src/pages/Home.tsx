@@ -362,46 +362,46 @@ const Home: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
-              className="flood-card p-7 sm:p-9"
+              className="flood-card p-8 sm:p-10"
             >
-              <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Quick Stats</h3>
-              <div className="space-y-6">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Total Population at Risk</span>
-                  <span className="font-semibold text-slate-900">
-                    {stats.population.toLocaleString()}
-                  </span>
+              <h3 className="text-xl sm:text-2xl font-bold mb-8 text-slate-900">Quick Stats</h3>
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600">Total Population at Risk</span>
+                    <span className="font-semibold text-slate-900">
+                      {stats.population.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600">States Monitored</span>
+                    <span className="font-semibold text-slate-900">
+                      {Object.keys(populationByState).length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600">Total Predictions</span>
+                    <span className="font-semibold text-slate-900">
+                      {stats.predictions}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-600">Last Update</span>
+                    <span className="font-semibold text-slate-900">
+                      {lastUpdate.toLocaleTimeString()}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600">States Monitored</span>
-                  <span className="font-semibold text-slate-900">
-                    {Object.keys(populationByState).length}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Total Predictions</span>
-                  <span className="font-semibold text-slate-900">
-                    {stats.predictions}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Last Update</span>
-                  <span className="font-semibold text-slate-900">
-                    {lastUpdate.toLocaleTimeString()}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
+              </motion.div>
 
-            {/* Risk Levels Legend */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6 }}
-              className="flood-card p-7 sm:p-9"
-            >
-              <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Risk Levels</h3>
-              <div className="space-y-5">
+              {/* Risk Levels Legend */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.6 }}
+                className="flood-card p-8 sm:p-10"
+              >
+                <h3 className="text-xl sm:text-2xl font-bold mb-8 text-slate-900">Risk Levels</h3>
+                <div className="space-y-5">
                 {[
                   { level: 'Critical', color: 'var(--risk-critical)', desc: 'Immediate evacuation required' },
                   { level: 'High', color: 'var(--risk-high)', desc: 'Prepare for evacuation' },

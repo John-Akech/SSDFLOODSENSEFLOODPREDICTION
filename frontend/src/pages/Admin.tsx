@@ -701,40 +701,40 @@ const Admin: React.FC = () => {
                   {modelStats.models && Object.entries(modelStats.models).map(([modelName, stats]: [string, any], idx) => {
                     console.log(`[DEBUG] Rendering ${modelName}:`, stats);
                     return (
-                    <motion.div
-                      key={modelName}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.1 * idx }}
-                      className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200"
-                    >
-                      <div className="mb-3">
-                        <h3 className="font-bold text-gray-900 capitalize">{modelName.replace('_', ' ')}</h3>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Accuracy</span>
-                          <span className="text-lg font-bold text-purple-700">
-                            {stats.accuracy ? (stats.accuracy * 100).toFixed(1) : 'N/A'}%
-                          </span>
+                      <motion.div
+                        key={modelName}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.1 * idx }}
+                        className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200"
+                      >
+                        <div className="mb-3">
+                          <h3 className="font-bold text-gray-900 capitalize">{modelName.replace('_', ' ')}</h3>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Confidence</span>
-                          <span className="text-sm font-semibold text-gray-700">
-                            {stats.confidence ? (stats.confidence * 100).toFixed(1) : 'N/A'}%
-                          </span>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Accuracy</span>
+                            <span className="text-lg font-bold text-purple-700">
+                              {stats.accuracy ? (stats.accuracy * 100).toFixed(1) : 'N/A'}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Confidence</span>
+                            <span className="text-sm font-semibold text-gray-700">
+                              {stats.confidence ? (stats.confidence * 100).toFixed(1) : 'N/A'}%
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600">Predictions</span>
+                            <span className="text-sm font-semibold text-gray-700">
+                              {stats.prediction_count || 0}
+                            </span>
+                          </div>
+                          <div className="mt-2 pt-2 border-t border-purple-200">
+                            <span className="text-xs text-gray-500">Last Update: {new Date().toLocaleTimeString()}</span>
+                          </div>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600">Predictions</span>
-                          <span className="text-sm font-semibold text-gray-700">
-                            {stats.prediction_count || 0}
-                          </span>
-                        </div>
-                        <div className="mt-2 pt-2 border-t border-purple-200">
-                          <span className="text-xs text-gray-500">Last Update: {new Date().toLocaleTimeString()}</span>
-                        </div>
-                      </div>
-                    </motion.div>
+                      </motion.div>
                     );
                   })}
                 </div>

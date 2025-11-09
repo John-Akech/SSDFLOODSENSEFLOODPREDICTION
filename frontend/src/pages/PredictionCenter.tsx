@@ -60,12 +60,13 @@ const PredictionCenter: React.FC = () => {
         const lowerKey = key.toLowerCase();
         if (lowerKey.includes('rf') || lowerKey.includes('random_forest')) return 'Random Forest';
         if (lowerKey.includes('tcn') || lowerKey.includes('temporal_cnn')) return 'Temporal CNN';
+        if (lowerKey.includes('lstm')) return 'LSTM';
         if (lowerKey.includes('ensemble')) return 'Ensemble';
         return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
       };
 
-      // Filter to only show rf, tcn, and ensemble models - check multiple possible key names
-      const allowedModelKeys = ['rf', 'random_forest', 'tcn', 'temporal_cnn', 'ensemble', 'bp-ensemble'];
+      // Filter to show rf, tcn, lstm, and ensemble models - all available models
+      const allowedModelKeys = ['rf', 'random_forest', 'tcn', 'temporal_cnn', 'lstm', 'ensemble', 'bp-ensemble'];
       const cards = Object.entries(liveModels)
         .filter(([key]) => {
           const normalizedKey = key.toLowerCase();
@@ -100,6 +101,7 @@ const PredictionCenter: React.FC = () => {
           let normalizedKey = key.toLowerCase();
           if (normalizedKey.includes('rf') || normalizedKey.includes('random_forest')) normalizedKey = 'rf';
           else if (normalizedKey.includes('tcn') || normalizedKey.includes('temporal_cnn')) normalizedKey = 'tcn';
+          else if (normalizedKey.includes('lstm')) normalizedKey = 'lstm';
           else if (normalizedKey.includes('ensemble')) normalizedKey = 'ensemble';
 
           return {
@@ -113,8 +115,8 @@ const PredictionCenter: React.FC = () => {
           };
         })
         .sort((a, b) => {
-          // Sort: ensemble first, then rf, then tcn
-          const order: Record<string, number> = { ensemble: 0, rf: 1, tcn: 2 };
+          // Sort: ensemble first, then rf, then tcn, then lstm
+          const order: Record<string, number> = { ensemble: 0, rf: 1, tcn: 2, lstm: 3 };
           return (order[a.key] ?? 99) - (order[b.key] ?? 99);
         });
 
