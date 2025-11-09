@@ -177,20 +177,35 @@ async def create_prediction(
         # Get risk level
         risk_level = ModelService.get_risk_level(probability)
         
-        # PRODUCTION: Low Confidence Handling (60% threshold)
+        # PRODUCTION: Confidence-Based Risk Adjustment
+        # RULE: Never show "high" or "critical" risk if confidence < 60%
         is_reliable = confidence >= 0.60
         warning_message = None
         
         if not is_reliable:
-            warning_message = (
-                f"Low confidence prediction ({confidence:.1%}). "
-                f"Model uncertainty is high - manual verification recommended. "
-                f"This may indicate: (1) location far from training data regions, "
-                f"(2) unusual environmental conditions, or (3) insufficient satellite data quality."
-            )
+            # Downgrade risk level for low confidence predictions
+            if risk_level in ["critical", "high"]:
+                original_risk = risk_level
+                risk_level = "uncertain"  # Force to uncertain instead of contradicting
+                warning_message = (
+                    f"Low confidence prediction ({confidence:.1%}). "
+                    f"Models suggest {original_risk} risk ({probability:.1%} flood probability), "
+                    f"but prediction reliability is insufficient for alert. "
+                    f"Possible reasons: (1) High model disagreement (RF: {model_predictions.get('rf', 'N/A') if model_predictions else 'N/A':.1%}, "
+                    f"GB: {model_predictions.get('gb', 'N/A') if model_predictions else 'N/A':.1%}), "
+                    f"(2) Location outside training data coverage, or (3) Unusual environmental conditions. "
+                    f"Manual verification strongly recommended."
+                )
+            else:
+                warning_message = (
+                    f"Low confidence prediction ({confidence:.1%}). "
+                    f"Model uncertainty is high - treat result with caution. "
+                    f"Consider collecting more ground truth data for this region."
+                )
+            
             logger.warning(
                 f"Low confidence prediction: {confidence:.1%} at ({request.latitude}, {request.longitude}). "
-                f"Probability: {probability:.2%}"
+                f"Probability: {probability:.2%}, Risk downgraded to: {risk_level}"
             )
         
         # Save to database

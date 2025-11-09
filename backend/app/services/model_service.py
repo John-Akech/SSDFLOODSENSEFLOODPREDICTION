@@ -609,7 +609,19 @@ class ModelService:
     
     @classmethod
     def predict_ensemble(cls, features: Dict[str, Any]) -> Tuple[float, float, Dict[str, float], float]:
-        """Ensemble prediction combining RF, GB, and TCN with weighted averaging"""
+        """Ensemble prediction combining RF, GB, and TCN with weighted averaging
+        
+        CONFIDENCE CALCULATION:
+        - Primary: Model agreement (1.0 - std_deviation of probabilities)
+        - Adjustment: Individual model confidence (entropy-based)
+        - Final: Weighted combination that reflects both agreement and certainty
+        
+        Returns:
+            - probability: Weighted average flood probability
+            - confidence: How certain we are (0-1), based on model agreement and individual confidences
+            - model_predictions: Individual model probabilities
+            - inference_time: Total time in milliseconds
+        """
         start_time = time.time()
         predictions = {}
         weights = {'rf': 0.4, 'gb': 0.4, 'tcn': 0.2}
@@ -654,20 +666,45 @@ class ModelService:
             for m in predictions.keys()
         ) / total_weight
         
-        # Confidence is average of individual confidences weighted by agreement
-        ensemble_conf = sum(
-            predictions[m]['confidence'] * weights[m] 
-            for m in predictions.keys()
-        ) / total_weight
+        # ==== FIXED CONFIDENCE CALCULATION ====
+        # Confidence based on MODEL AGREEMENT (how much they agree on the prediction)
+        probs = np.array([predictions[m]['probability'] for m in predictions.keys()])
         
-        # Boost confidence if models agree
-        if len(predictions) > 1:
-            probs = [predictions[m]['probability'] for m in predictions.keys()]
-            agreement = 1.0 - (max(probs) - min(probs))  # 1.0 if perfect agreement
-            ensemble_conf = min(0.99, ensemble_conf * (1.0 + 0.2 * agreement))
+        if len(predictions) == 1:
+            # Single model: use its confidence directly
+            ensemble_conf = list(predictions.values())[0]['confidence']
+        else:
+            # Multiple models: confidence = agreement + individual certainty
+            
+            # 1. Agreement score: How close are the predictions?
+            #    - If all models predict ~0.80, agreement is HIGH
+            #    - If models predict 0.30, 0.50, 0.90, agreement is LOW
+            prob_std = np.std(probs)
+            # Convert std to agreement: low std = high agreement
+            # Max possible std for probabilities [0,1] is 0.5
+            agreement_score = 1.0 - min(prob_std / 0.3, 1.0)  # Normalize to 0-1
+            
+            # 2. Average individual confidence (entropy-based from each model)
+            avg_individual_conf = np.mean([predictions[m]['confidence'] for m in predictions.keys()])
+            
+            # 3. Combine: 70% weight on agreement, 30% on individual confidence
+            #    This means: "We trust ensemble when models agree, even if individual entropy is high"
+            ensemble_conf = 0.7 * agreement_score + 0.3 * avg_individual_conf
+            
+            # 4. Extreme disagreement penalty: If max-min > 0.3, significantly reduce confidence
+            disagreement = np.max(probs) - np.min(probs)
+            if disagreement > 0.3:
+                penalty = 1.0 - min((disagreement - 0.3) / 0.4, 0.5)  # Up to 50% penalty
+                ensemble_conf *= penalty
+                logger.warning(f"High model disagreement ({disagreement:.2f}): RF={probs[0]:.2f}, GB={probs[1] if len(probs)>1 else 'N/A'}. Confidence reduced to {ensemble_conf:.2%}")
+        
+        # Ensure confidence is in valid range
+        ensemble_conf = float(np.clip(ensemble_conf, 0.0, 0.99))
         
         model_predictions = {m: predictions[m]['probability'] for m in predictions.keys()}
         inference_time = (time.time() - start_time) * 1000
+        
+        logger.info(f"Ensemble result: prob={ensemble_prob:.3f}, conf={ensemble_conf:.3f}, agreement_std={prob_std:.3f if len(predictions) > 1 else 0.0}")
         
         return float(ensemble_prob), float(ensemble_conf), model_predictions, inference_time
 

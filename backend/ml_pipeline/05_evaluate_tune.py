@@ -26,6 +26,15 @@ import seaborn as sns
 import warnings
 warnings.filterwarnings('ignore')
 
+# Import PyTorch for TCN/LSTM evaluation
+try:
+    import torch
+    import torch.nn as nn
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    print("⚠ PyTorch not available. TCN and LSTM evaluation will be skipped.")
+
 # Set plotting style
 sns.set_style("whitegrid")
 plt.rcParams['figure.figsize'] = (12, 8)
@@ -34,6 +43,47 @@ plt.rcParams['figure.figsize'] = (12, 8)
 PIPELINE_DIR = Path(__file__).parent
 OUTPUT_DIR = PIPELINE_DIR / "outputs"
 MODELS_DIR = OUTPUT_DIR / "04_trained_models"
+
+# Define PyTorch model architectures (must match training)
+class TCNModel(nn.Module):
+    """Temporal Convolutional Network for time series flood prediction"""
+    def __init__(self, input_dim, num_channels=[64, 32], kernel_size=3, dropout=0.4):
+        super(TCNModel, self).__init__()
+        self.tcn_layers = nn.ModuleList()
+        in_channels = 1
+        
+        for out_channels in num_channels:
+            self.tcn_layers.append(nn.Sequential(
+                nn.Conv1d(in_channels, out_channels, kernel_size, padding=kernel_size//2),
+                nn.BatchNorm1d(out_channels),
+                nn.ReLU(),
+                nn.Dropout(dropout)
+            ))
+            in_channels = out_channels
+        
+        self.fc = nn.Linear(num_channels[-1] * input_dim, 2)
+    
+    def forward(self, x):
+        x = x.unsqueeze(1)  # (batch, 1, features)
+        for layer in self.tcn_layers:
+            x = layer(x)
+        x = x.flatten(1)
+        return self.fc(x)
+
+class LSTMModel(nn.Module):
+    """LSTM Network for sequential flood forecasting"""
+    def __init__(self, input_dim, hidden_dim=64, num_layers=2, dropout=0.2):
+        super(LSTMModel, self).__init__()
+        self.lstm = nn.LSTM(
+            input_dim, hidden_dim, num_layers,
+            batch_first=True, dropout=dropout if num_layers > 1 else 0
+        )
+        self.fc = nn.Linear(hidden_dim, 2)
+    
+    def forward(self, x):
+        x = x.unsqueeze(1)  # (batch, 1, features)
+        lstm_out, _ = self.lstm(x)
+        return self.fc(lstm_out[:, -1, :])
 
 print("=" * 80)
 print("STEP 5: EVALUATE AND TUNE")
@@ -59,11 +109,33 @@ print(f" Loaded test data: {X_test.shape}")
 
 # Load models
 models = {}
+
+# Load scikit-learn models (.pkl files)
 for model_file in MODELS_DIR.glob("*.pkl"):
     if model_file.stem in ['random_forest', 'gradient_boosting']:
         model = joblib.load(model_file)
         models[model_file.stem] = model
         print(f" Loaded: {model_file.name}")
+
+# Load PyTorch models (.pt files)
+if TORCH_AVAILABLE:
+    for model_file in MODELS_DIR.glob("*.pt"):
+        if model_file.stem in ['tcn_model', 'lstm_model']:
+            checkpoint = torch.load(model_file, map_location=torch.device('cpu'))
+            hyperparams = checkpoint['hyperparameters']
+            
+            if model_file.stem == 'tcn_model':
+                model = TCNModel(**hyperparams)
+                model.load_state_dict(checkpoint['model_state_dict'])
+                model.eval()
+                models['tcn'] = model
+                print(f" Loaded: {model_file.name}")
+            elif model_file.stem == 'lstm_model':
+                model = LSTMModel(**hyperparams)
+                model.load_state_dict(checkpoint['model_state_dict'])
+                model.eval()
+                models['lstm'] = model
+                print(f" Loaded: {model_file.name}")
 
 if not models:
     print(f" ERROR: No trained models found")
@@ -81,9 +153,19 @@ for name, model in models.items():
     print(f"MODEL: {name.upper().replace('_', ' ')}")
     print(f"{'=' * 80}")
     
-    # Predictions
-    y_pred = model.predict(X_test)
-    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    # Predictions (handle PyTorch models differently)
+    if name in ['tcn', 'lstm']:
+        # PyTorch model predictions
+        model.eval()
+        with torch.no_grad():
+            X_test_tensor = torch.FloatTensor(X_test.astype(np.float32))
+            outputs = model(X_test_tensor)
+            y_pred_proba = torch.softmax(outputs, dim=1)[:, 1].numpy()
+            y_pred = (y_pred_proba >= 0.5).astype(int)
+    else:
+        # Scikit-learn model predictions
+        y_pred = model.predict(X_test)
+        y_pred_proba = model.predict_proba(X_test)[:, 1]
     
     # Metrics
     acc = accuracy_score(y_test, y_pred)
@@ -153,13 +235,24 @@ cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 print(f"\n   Running 5-fold cross-validation on {len(df)} samples...")
 for name, model in models.items():
-    cv_scores = cross_val_score(model, X_full, y_full, cv=cv, scoring='accuracy')
-    results[name]['cross_validation'] = {
-        'mean_accuracy': float(cv_scores.mean()),
-        'std_accuracy': float(cv_scores.std()),
-        'fold_scores': [float(s) for s in cv_scores]
-    }
-    print(f"   {name:20s}: {cv_scores.mean():.3f} ± {cv_scores.std():.3f}")
+    # Skip CV for PyTorch models (would require custom implementation)
+    if name in ['tcn', 'lstm']:
+        print(f"   {name:20s}: Skipped (PyTorch model)")
+        results[name]['cross_validation'] = {
+            'mean_accuracy': float(results[name]['test_metrics']['accuracy']),
+            'std_accuracy': 0.0,
+            'fold_scores': [float(results[name]['test_metrics']['accuracy'])] * 5,
+            'note': 'Using test accuracy (CV skipped for PyTorch models)'
+        }
+    else:
+        cv_scores = cross_val_score(model, X_full, y_full, cv=cv, scoring='accuracy')
+        results[name]['cross_validation'] = {
+            'mean_accuracy': float(cv_scores.mean()),
+            'std_accuracy': float(cv_scores.std()),
+            'fold_scores': [float(s) for s in cv_scores]
+        }
+        print(f"   {name:20s}: {cv_scores.mean():.3f} ± {cv_scores.std():.3f}")
+
 
 print(" Cross-validation complete")
 
@@ -176,9 +269,22 @@ viz_count = 0
 
 # Visualization 1: Confusion Matrices
 print("   Creating confusion matrices...")
-fig, axes = plt.subplots(1, len(models), figsize=(14, 6))
-if len(models) == 1:
+
+# Create proper subplot layout for number of models
+num_models = len(models)
+if num_models <= 2:
+    fig, axes = plt.subplots(1, num_models, figsize=(7 * num_models, 6))
+elif num_models <= 4:
+    fig, axes = plt.subplots(2, 2, figsize=(14, 12))
+else:
+    fig, axes = plt.subplots(2, 3, figsize=(18, 12))
+
+# Ensure axes is always iterable
+if num_models == 1:
     axes = [axes]
+else:
+    axes = axes.flatten()
+
 fig.suptitle('Confusion Matrices: Model Performance', fontsize=16, fontweight='bold')
 
 for idx, (name, model) in enumerate(models.items()):
@@ -209,7 +315,16 @@ print("   Creating ROC curves...")
 plt.figure(figsize=(10, 8))
 
 for name, model in models.items():
-    y_pred_proba = model.predict_proba(X_test)[:, 1]
+    # Handle PyTorch models differently
+    if name in ['tcn', 'lstm']:
+        model.eval()
+        with torch.no_grad():
+            X_test_tensor = torch.FloatTensor(X_test.astype(np.float32))
+            outputs = model(X_test_tensor)
+            y_pred_proba = torch.softmax(outputs, dim=1)[:, 1].numpy()
+    else:
+        y_pred_proba = model.predict_proba(X_test)[:, 1]
+    
     fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
     auc = results[name]['test_metrics']['roc_auc']
     
@@ -354,7 +469,7 @@ plt.savefig(VIZ_DIR / '13_performance_summary.png', dpi=300, bbox_inches='tight'
 plt.close()
 viz_count += 1
 
-print(f"   ✓ Created {viz_count} evaluation visualizations")
+print(f"   [OK] Created {viz_count} evaluation visualizations")
 
 # ============================================================================
 # 4. SAVE EVALUATION REPORT
