@@ -98,7 +98,11 @@ async def create_prediction(
 ):
     """Create a flood prediction"""
     try:
-        logger.info(f"=== Prediction request received: lat={request.latitude}, lon={request.longitude}, model_type={request.model_type} ===")
+        logger.info(
+            f"=== Prediction request received: "
+            f"lat={request.latitude}, lon={request.longitude}, "
+            f"model_type={request.model_type} ==="
+        )
         logger.info(f"Models loaded status: {ModelService.models_loaded}")
         logger.info(f"RF model: {ModelService.rf_model is not None}, GB model: {ModelService.gb_model is not None}")
         
@@ -107,7 +111,10 @@ async def create_prediction(
            (request.latitude == 0.0 and request.longitude == 0.0):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid coordinates: Please provide valid location coordinates for South Sudan (latitude: 3-13°N, longitude: 24-36°E)"
+                detail=(
+                    "Invalid coordinates: Please provide valid location coordinates "
+                    "for South Sudan (latitude: 3-13°N, longitude: 24-36°E)"
+                )
             )
         
         # Validate coordinates are within South Sudan bounds (approximate)
@@ -187,25 +194,32 @@ async def create_prediction(
             if risk_level in ["critical", "high"]:
                 original_risk = risk_level
                 risk_level = "uncertain"  # Force to uncertain instead of contradicting
+                
+                # Format model predictions safely
+                rf_pred = model_predictions.get('rf', None) if model_predictions else None
+                gb_pred = model_predictions.get('gb', None) if model_predictions else None
+                rf_str = f"{rf_pred*100:.1f}%" if rf_pred is not None else "N/A"
+                gb_str = f"{gb_pred*100:.1f}%" if gb_pred is not None else "N/A"
+                
                 warning_message = (
-                    f"Low confidence prediction ({confidence:.1%}). "
-                    f"Models suggest {original_risk} risk ({probability:.1%} flood probability), "
+                    f"Low confidence prediction ({confidence*100:.1f}%). "
+                    f"Models suggest {original_risk} risk ({probability*100:.1f}% flood probability), "
                     f"but prediction reliability is insufficient for alert. "
-                    f"Possible reasons: (1) High model disagreement (RF: {model_predictions.get('rf', 'N/A') if model_predictions else 'N/A':.1%}, "
-                    f"GB: {model_predictions.get('gb', 'N/A') if model_predictions else 'N/A':.1%}), "
+                    f"Possible reasons: (1) High model disagreement (RF: {rf_str}, "
+                    f"GB: {gb_str}), "
                     f"(2) Location outside training data coverage, or (3) Unusual environmental conditions. "
                     f"Manual verification strongly recommended."
                 )
             else:
                 warning_message = (
-                    f"Low confidence prediction ({confidence:.1%}). "
+                    f"Low confidence prediction ({confidence*100:.1f}%). "
                     f"Model uncertainty is high - treat result with caution. "
                     f"Consider collecting more ground truth data for this region."
                 )
             
             logger.warning(
-                f"Low confidence prediction: {confidence:.1%} at ({request.latitude}, {request.longitude}). "
-                f"Probability: {probability:.2%}, Risk downgraded to: {risk_level}"
+                f"Low confidence prediction: {confidence*100:.1f}% at ({request.latitude}, {request.longitude}). "
+                f"Probability: {probability*100:.2f}%, Risk downgraded to: {risk_level}"
             )
         
         # Save to database
@@ -231,7 +245,8 @@ async def create_prediction(
                 request.longitude,
                 probability,
                 request.model_type,
-                request.lead_time_hours
+                request.lead_time_hours,
+                district=request.district  # Pass district name
             )
             
             # Send alert in background (fetch subscriptions)
@@ -264,9 +279,12 @@ async def create_prediction(
             warning=warning_message
         )
         
-        log_message = f"Prediction created: {probability:.2%} flood risk at ({request.latitude}, {request.longitude})"
+        log_message = (
+            f"Prediction created: {probability*100:.2f}% flood risk "
+            f"at ({request.latitude}, {request.longitude})"
+        )
         if not is_reliable:
-            log_message += f" [LOW CONFIDENCE: {confidence:.1%}]"
+            log_message += f" [LOW CONFIDENCE: {confidence*100:.1f}%]"
         logger.info(log_message)
         
         return response
@@ -353,7 +371,10 @@ async def create_batch_predictions(
         "total_locations": len(request.locations),
         "successful_predictions": len(predictions),
         "high_risk_locations": high_risk_count,
-        "average_flood_probability": sum(p.flood_probability for p in predictions) / len(predictions) if predictions else 0
+        "average_flood_probability": (
+            sum(p.flood_probability for p in predictions) / len(predictions)
+            if predictions else 0
+        )
     }
     
     return BatchPredictionResponse(predictions=predictions, summary=summary)
@@ -635,7 +656,11 @@ async def health_check(db: Session = Depends(get_db)):
             "message": "ML models not loaded - predictions unavailable"
         }
     else:
-        models_status = f"healthy - RF={'✓' if ModelService.rf_model else '✗'}, TCN={'✓' if ModelService.tcn_model else '✗'}, GB={'✓' if ModelService.gb_model else '✗'}"
+        models_status = (
+            f"healthy - RF={'OK' if ModelService.rf_model else 'MISSING'}, "
+            f"TCN={'OK' if ModelService.tcn_model else 'MISSING'}, "
+            f"GB={'OK' if ModelService.gb_model else 'MISSING'}"
+        )
         health_status["checks"]["models"] = {
             "status": "healthy",
             "rf_loaded": ModelService.rf_model is not None,

@@ -1,6 +1,6 @@
 {
   "step": "04_train_models",
-  "created_at": "2025-11-09T23:31:55.023900",
+  "created_at": "2025-11-10T00:29:59.091158",
   "data": {
     "total_samples": 126,
     "train_samples": 94,
@@ -28,7 +28,7 @@
         "max_samples": 0.8,
         "ccp_alpha": 0.0005
       },
-      "training_time_seconds": 1.103951,
+      "training_time_seconds": 0.804306,
       "training_samples": 134
     },
     "tcn": {
@@ -37,14 +37,14 @@
       "hyperparameters": {
         "input_dim": 16,
         "num_channels": [
-          64,
-          32
+          32,
+          16
         ],
-        "kernel_size": 3,
-        "dropout": 0.4
+        "kernel_size": 2,
+        "dropout": 0.5
       },
-      "epochs": 80,
-      "training_time_seconds": 4.602669,
+      "epochs": 100,
+      "training_time_seconds": 7.487251,
       "training_samples": 134
     },
     "lstm": {
@@ -58,7 +58,7 @@
         "dropout": 0.2
       },
       "epochs": 50,
-      "training_time_seconds": 3.649193,
+      "training_time_seconds": 1.136035,
       "training_samples": 134
     },
     "gradient_boosting": {
@@ -79,7 +79,7 @@
         "tol": 0.0001,
         "ccp_alpha": 0.0003
       },
-      "training_time_seconds": 0.083139,
+      "training_time_seconds": 0.026935,
       "training_samples": 134
     }
   },

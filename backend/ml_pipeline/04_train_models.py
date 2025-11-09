@@ -69,7 +69,14 @@ class TCNModel(nn.Module):
             ))
             in_channels = out_channels
         
-        self.fc = nn.Linear(num_channels[-1] * input_dim, 2)
+        # Calculate output size dynamically
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 1, input_dim)
+            for layer in self.tcn_layers:
+                dummy_input = layer(dummy_input)
+            flattened_size = dummy_input.flatten(1).shape[1]
+        
+        self.fc = nn.Linear(flattened_size, 2)
     
     def forward(self, x):
         # x shape: (batch, features)
@@ -219,37 +226,73 @@ training_log['random_forest'] = {
 model_count += 1
 print(f"       Trained in {train_time:.2f}s")
 
-# [PRIMARY 2/2] TCN (Temporal Convolutional Network)
+# [PRIMARY 2/2] TCN (Temporal Convolutional Network) with Few-Shot Learning
 if TORCH_AVAILABLE:
-    print("\n   [PRIMARY 2/2] Training TCN (Temporal Convolutional Network)...")
+    print("\n   [PRIMARY 2/2] Training TCN with Few-Shot Learning (Data Augmentation)...")
     
     # Ensure data is numeric (convert object dtypes to float32)
     X_train_numeric = X_train_balanced.astype(np.float32)
     X_test_numeric = X_test.astype(np.float32)
     
-    # Prepare PyTorch datasets
-    X_train_tensor = torch.FloatTensor(X_train_numeric)
-    y_train_tensor = torch.LongTensor(y_train_balanced)
+    # FEW-SHOT LEARNING: Data Augmentation for small datasets
+    print("      Applying few-shot learning techniques...")
+    
+    # 1. Add Gaussian noise (creates variations of existing samples)
+    noise_factor = 0.05  # 5% noise
+    X_augmented = []
+    y_augmented = []
+    
+    # Original data
+    X_augmented.append(X_train_numeric)
+    y_augmented.append(y_train_balanced)
+    
+    # Augmentation 1: Add small random noise
+    noise1 = np.random.normal(0, noise_factor, X_train_numeric.shape)
+    X_noise1 = X_train_numeric + noise1 * np.abs(X_train_numeric)
+    X_augmented.append(X_noise1.astype(np.float32))
+    y_augmented.append(y_train_balanced)
+    
+    # Augmentation 2: Add different noise pattern
+    noise2 = np.random.normal(0, noise_factor * 0.5, X_train_numeric.shape)
+    X_noise2 = X_train_numeric + noise2 * np.abs(X_train_numeric)
+    X_augmented.append(X_noise2.astype(np.float32))
+    y_augmented.append(y_train_balanced)
+    
+    # Combine augmented data
+    X_train_aug = np.vstack(X_augmented).astype(np.float32)
+    y_train_aug = np.hstack(y_augmented)
+    
+    print(f"      Original samples: {len(X_train_numeric)} -> Augmented: {len(X_train_aug)}")
+    
+    # Prepare PyTorch datasets with augmented data
+    X_train_tensor = torch.FloatTensor(X_train_aug)
+    y_train_tensor = torch.LongTensor(y_train_aug)
     X_test_tensor = torch.FloatTensor(X_test_numeric)
     y_test_tensor = torch.LongTensor(y_test)
     
     train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)  # Smaller batch for few-shot
     
-    # Initialize model with REGULARIZED hyperparameters for small dataset
+    # Initialize model with SIMPLER architecture for few-shot learning
     tcn_params = {
-        'input_dim': X_train.shape[1],
-        'num_channels': [64, 32],     # Reduced from [128,64,32] - simpler network
-        'kernel_size': 3,             # Reduced from 5 - smaller receptive field
-        'dropout': 0.4                # Increased from 0.3 - stronger regularization
+        'input_dim': X_train.shape[1],  # 16 features
+        'num_channels': [32, 16],       # Reduced from [64, 32] for few-shot
+        'kernel_size': 2,               # Smaller kernel to reduce parameters
+        'dropout': 0.5                  # Very strong regularization for few-shot
     }
     tcn_model = TCNModel(**tcn_params)
     
-    # Training configuration (with stronger regularization)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(tcn_model.parameters(), lr=0.001, weight_decay=1e-4)  # Higher L2 reg
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=8)
-    epochs = 80  # Reduced from 100 to prevent overfitting
+    print(
+        f"      TCN Parameters: input={X_train.shape[1]}, "
+        f"channels={tcn_params['num_channels']}, "
+        f"total_params={sum(p.numel() for p in tcn_model.parameters())}"
+    )
+    
+    # Few-shot learning configuration
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)  # Label smoothing for few-shot
+    optimizer = optim.Adam(tcn_model.parameters(), lr=0.0005, weight_decay=1e-3)  # Lower LR, higher reg
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
+    epochs = 100  # More epochs with early stopping
     
     # Train with early stopping
     start_time = datetime.now()
@@ -314,8 +357,9 @@ if TRAIN_OPTIONAL_MODELS:
         X_train_numeric = X_train_balanced.astype(np.float32)
         X_test_numeric = X_test.astype(np.float32)
         
+        # Initialize with CORRECT input_dim (16 features, not 19)
         lstm_params = {
-            'input_dim': X_train.shape[1],
+            'input_dim': X_train.shape[1],  # This will be 16
             'hidden_dim': 64,
             'num_layers': 2,
             'dropout': 0.2

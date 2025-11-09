@@ -74,8 +74,8 @@ const PredictionCenter: React.FC = () => {
         .map(([key, s]: any) => {
           // Get validated metrics if available for more accurate stats
           const validatedMetrics = validatedStats?.metrics?.[key] || {};
-          const avgProb = s?.avg_probability || validatedMetrics.roc_auc || 0;
-          const avgConf = s?.avg_confidence || validatedMetrics.precision || 0;
+          const accuracy = s?.accuracy || validatedMetrics.accuracy || 0;
+          const avgConf = s?.avg_confidence || s?.confidence || validatedMetrics.precision || 0;
           const lastPredTime = s?.last_prediction_time || s?.last_update;
 
           // Format last update time dynamically
@@ -106,7 +106,7 @@ const PredictionCenter: React.FC = () => {
             name: normalizeName(key),
             key: normalizedKey,
             originalKey: key,
-            accuracy: Math.round(avgProb * 100),
+            accuracy: Math.round(accuracy * 100),
             confidence: avgConf,
             lastUpdate: lastUpdateText,
             count: s?.count || 0

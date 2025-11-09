@@ -107,7 +107,10 @@ export const apiService = {
   getFloodStats: async (params?: any) => (await api.get('/stats/flood', { params })).data,
   getPredictionStats: async (params?: any) => (await api.get('/stats/predictions', { params })).data,
   getStateStats: async (state?: string) => state ? (await api.get('/stats/state', { params: { state } })).data : (await api.get('/stats/state')).data,
-  getModelStats: async (n: number = 500) => (await api.get('/stats/models', { params: { n } })).data,
+  getModelStats: async (n: number = 500) => {
+    const timestamp = Date.now();
+    return (await api.get('/stats/models', { params: { n, _t: timestamp } })).data;
+  },
   getValidatedModelStats: async () => (await api.get('/stats/models/validated')).data,
   getAlertStats: async (params?: any) => (await api.get('/stats/alerts', { params })).data,
   getTimeSeriesStats: async (days: number = 7) => (await api.get('/stats/time-series', { params: { days } })).data,

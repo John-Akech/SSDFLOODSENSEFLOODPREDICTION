@@ -328,7 +328,7 @@ async def get_system_stats(db: Session = Depends(get_db)):
     
     try:
         # Load model metadata to get real accuracy
-        models_dir = Path(__file__).parent.parent.parent.parent / "models"
+        models_dir = Path(__file__).parent.parent.parent / "models"
         metadata_file = models_dir / "model_metadata_pipeline_20251109_181046.json"
         
         if metadata_file.exists():
@@ -518,6 +518,29 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
     Returns per-model counts, avg probability, avg confidence, and latency percentiles.
     """
     try:
+        # Load trained model accuracy from metadata file
+        import json
+        from pathlib import Path
+        
+        trained_accuracy = {}
+        try:
+            models_dir = Path(__file__).parent.parent.parent / "models"
+            metadata_file = models_dir / "model_metadata_pipeline_20251109_181046.json"
+            
+            if metadata_file.exists():
+                with open(metadata_file, 'r') as f:
+                    metadata = json.load(f)
+                    perf = metadata.get("performance", {})
+                    trained_accuracy = {
+                        "ensemble": perf.get("test_accuracy", 0.0),
+                        "rf": perf.get("test_accuracy", 0.0),
+                        "random_forest": perf.get("test_accuracy", 0.0),
+                        "tcn": perf.get("test_accuracy", 0.0),
+                        "lstm": perf.get("test_accuracy", 0.0),
+                    }
+        except Exception as e:
+            print(f"Warning: Could not load trained model accuracy: {e}")
+        
         # Fetch last N predictions
         recent = db.query(DBPrediction).order_by(DBPrediction.created_at.desc()).limit(n).all()
         by_model = {}
@@ -536,22 +559,50 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
             return res
 
         aggregates = {}
+        total_preds = 0
+        total_prob = 0.0
+        total_conf = 0.0
+        best_model = None
+        best_accuracy = 0.0
+        
         for model_type, preds in by_model.items():
             cnt = len(preds)
+            total_preds += cnt
             avg_prob = sum((p.flood_probability or 0.0) for p in preds) / cnt if cnt else 0.0
             avg_conf = sum((p.confidence_score or 0.0) for p in preds) / cnt if cnt else 0.0
+            total_prob += avg_prob * cnt
+            total_conf += avg_conf * cnt
+            
             latencies = [float(p.inference_time_ms) for p in preds if p.inference_time_ms is not None]
             pct = percentiles(latencies)
+            
+            # Use trained model accuracy if available, otherwise use confidence as proxy
+            model_accuracy = trained_accuracy.get(model_type, avg_conf)
+            
             aggregates[model_type] = {
                 "count": cnt,
                 "avg_probability": round(avg_prob, 4),
                 "avg_confidence": round(avg_conf, 4),
+                "accuracy": round(model_accuracy, 4),
+                "confidence": round(avg_conf, 4),
+                "prediction_count": cnt,
                 "latency_ms": pct,
             }
+            
+            if model_accuracy > best_accuracy:
+                best_accuracy = model_accuracy
+                best_model = model_type
+
+        overall_accuracy = trained_accuracy.get("ensemble", (total_conf / total_preds)) if total_preds > 0 else 0.0
+        average_confidence = (total_conf / total_preds) if total_preds > 0 else 0.0
 
         return {
             "window_size": n,
             "models": aggregates,
+            "overall_accuracy": round(overall_accuracy, 4),
+            "total_predictions": total_preds,
+            "best_model": best_model,
+            "average_confidence": round(average_confidence, 4),
             "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
@@ -569,16 +620,6 @@ async def get_validated_model_metrics():
         }
     except Exception as e:
         return {"error": str(e)}
-
-
-@router.get("/stats/system")
-async def get_system_stats(db: Session = Depends(get_db)):
-    # existing implementation above has been moved earlier in file; we also include live model metrics for UI convenience
-    base = await get_flood_stats(db)  # type: ignore
-    model_stats = await get_model_stats(db=db)  # type: ignore
-    # Attach live models to system stats for frontend cards
-    base["live_models"] = model_stats.get("models", {})
-    return base
 
 
 @router.get("/stats/time-series")

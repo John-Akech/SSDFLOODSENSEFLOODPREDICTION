@@ -134,6 +134,7 @@ const Admin: React.FC = () => {
 
       const data = await apiService.getModelStats(500);
       clearTimeout(timeoutId);
+      console.log('[DEBUG] Model Stats Data:', JSON.stringify(data, null, 2));
       setModelStats(data);
       return data;
     } catch (err: any) {
@@ -680,6 +681,14 @@ const Admin: React.FC = () => {
             </div>
 
             {/* Model Performance Section */}
+            {(() => {
+              console.log('[DEBUG] modelStats state:', modelStats);
+              if (modelStats) {
+                console.log('[DEBUG] modelStats.models:', modelStats.models);
+                console.log('[DEBUG] modelStats keys:', Object.keys(modelStats));
+              }
+              return null;
+            })()}
             {modelStats && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -689,7 +698,9 @@ const Admin: React.FC = () => {
               >
                 <h2 className="text-xl font-bold text-gray-900 mb-6">AI Model Performance</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {modelStats.models && Object.entries(modelStats.models).map(([modelName, stats]: [string, any], idx) => (
+                  {modelStats.models && Object.entries(modelStats.models).map(([modelName, stats]: [string, any], idx) => {
+                    console.log(`[DEBUG] Rendering ${modelName}:`, stats);
+                    return (
                     <motion.div
                       key={modelName}
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -697,25 +708,20 @@ const Admin: React.FC = () => {
                       transition={{ delay: 0.1 * idx }}
                       className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200"
                     >
-                      <div className="flex items-center justify-between mb-3">
+                      <div className="mb-3">
                         <h3 className="font-bold text-gray-900 capitalize">{modelName.replace('_', ' ')}</h3>
-                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                          </svg>
-                        </div>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Accuracy</span>
                           <span className="text-lg font-bold text-purple-700">
-                            {(stats.accuracy * 100).toFixed(1)}%
+                            {stats.accuracy ? (stats.accuracy * 100).toFixed(1) : 'N/A'}%
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600">Confidence</span>
                           <span className="text-sm font-semibold text-gray-700">
-                            {(stats.confidence * 100).toFixed(1)}%
+                            {stats.confidence ? (stats.confidence * 100).toFixed(1) : 'N/A'}%
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -729,7 +735,8 @@ const Admin: React.FC = () => {
                         </div>
                       </div>
                     </motion.div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Overall Stats */}

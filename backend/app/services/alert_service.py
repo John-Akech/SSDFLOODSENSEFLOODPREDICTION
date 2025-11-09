@@ -18,17 +18,37 @@ class Alert:
     message: str
     severity: str  # low, medium, high, critical
     created_at: datetime
+    district: Optional[str] = None  # District/location name
     expires_at: Optional[datetime] = None
     sent: bool = False
 
 
 class AlertService:
-    """Service for managing flood alerts and notifications"""
+    """Service for managing flood alerts and notifications with geographic prioritization"""
+    
+    # HIGH-RISK ZONES: Historical flood-prone areas requiring priority alerts
+    # Based on South Sudan flood history and population vulnerability
+    HIGH_PRIORITY_DISTRICTS = {
+        "Jonglei": {"priority": "critical", "reason": "Frequent flooding, large population"},
+        "Unity": {"priority": "critical", "reason": "Oil infrastructure, displacement camps"},
+        "Upper Nile": {"priority": "high", "reason": "White Nile overflow risk"},
+        "Northern Bahr el Ghazal": {"priority": "high", "reason": "Seasonal flooding"},
+        "Warrap": {"priority": "high", "reason": "Agricultural vulnerability"},
+        "Lakes": {"priority": "medium", "reason": "Interconnected waterways"},
+        "Western Bahr el Ghazal": {"priority": "medium", "reason": "Border flooding"},
+        "Twic East": {"priority": "critical", "reason": "Remote location, limited evacuation routes"},
+    }
     
     def __init__(self):
         self.active_alerts: Dict[str, Alert] = {}
         self.alert_history: List[Alert] = []
         self.subscribers: List[Dict[str, Any]] = []
+    
+    def get_district_priority(self, district: Optional[str]) -> str:
+        """Get priority level for district"""
+        if not district:
+            return "medium"
+        return self.HIGH_PRIORITY_DISTRICTS.get(district, {}).get("priority", "medium")
     
     def create_alert(
         self,
@@ -36,9 +56,10 @@ class AlertService:
         longitude: float,
         flood_probability: float,
         model_type: str,
-        lead_time_hours: int = 12
+        lead_time_hours: int = 48,
+        district: Optional[str] = None
     ) -> Alert:
-        """Create a flood alert based on prediction"""
+        """Create a flood alert based on prediction with graduated severity"""
         
         # Validate coordinates
         if latitude == -90.0 and longitude == -180.0:
@@ -49,22 +70,58 @@ class AlertService:
             logger.error(f"Invalid coordinates: lat={latitude}, lon={longitude}")
             raise ValueError(f"Invalid coordinates: lat={latitude}, lon={longitude}")
         
-        # Determine severity based on probability
-        if flood_probability >= 0.8:
-            severity = "critical"
-            message = f"CRITICAL FLOOD WARNING: High flood risk ({flood_probability:.1%}) detected. Immediate evacuation recommended."
-        elif flood_probability >= 0.6:
-            severity = "high"
-            message = f"HIGH FLOOD WARNING: Significant flood risk ({flood_probability:.1%}) detected. Prepare for evacuation."
-        elif flood_probability >= 0.4:
-            severity = "medium"
-            message = f"MODERATE FLOOD ALERT: Elevated flood risk ({flood_probability:.1%}) detected. Monitor conditions closely."
-        else:
-            severity = "low"
-            message = f"LOW FLOOD ALERT: Minor flood risk ({flood_probability:.1%}) detected. Stay informed."
+        # Format location string
+        location_str = f"{district}, South Sudan" if district else "South Sudan"
         
-        # Add timing information (location will be resolved by frontend)
-        message += f" Predicted within {lead_time_hours} hours using {model_type.upper()} model."
+        # Check if this is a high-priority district
+        district_priority = self.get_district_priority(district)
+        priority_boost = district_priority in ["critical", "high"]
+        
+        # GRADUATED ALERT SYSTEM - Real-world response framework
+        # Based on probability, lead time, AND geographic priority
+        
+        # Apply priority boost: Lower threshold by 10% for high-risk areas
+        effective_probability = flood_probability
+        if priority_boost:
+            effective_probability = min(flood_probability + 0.10, 1.0)
+            logger.info(f"Priority boost applied for {district} ({district_priority} priority): {flood_probability:.2f} → {effective_probability:.2f}")
+        
+        if effective_probability >= 0.8:
+            # CRITICAL: Immediate danger
+            if lead_time_hours <= 12:
+                severity = "emergency"
+                action = "EVACUATE IMMEDIATELY"
+                message = f"🚨 FLOOD EMERGENCY for {location_str}: {action}! Severe flooding imminent (>{flood_probability:.0%} probability) within {lead_time_hours} hours. Move to higher ground NOW. Life-threatening conditions."
+            else:
+                severity = "critical"
+                action = "Begin evacuation"
+                message = f"⚠️ CRITICAL FLOOD WARNING for {location_str}: {action}. Very high flood risk ({flood_probability:.0%}) predicted within {lead_time_hours} hours. Prepare emergency supplies, identify evacuation routes, secure property."
+                
+        elif effective_probability >= 0.6:
+            # HIGH: Significant risk
+            if lead_time_hours <= 24:
+                severity = "high"
+                action = "Prepare to evacuate"
+                message = f"⚠️ FLOOD WARNING for {location_str}: {action}. High flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Pack emergency kit, move valuables to higher ground, monitor updates closely."
+            else:
+                severity = "high"
+                action = "Heightened alert"
+                message = f"⚠️ FLOOD WATCH for {location_str}: {action}. High flood risk ({flood_probability:.0%}) possible within {lead_time_hours} hours. Review evacuation plans, prepare supplies, stay informed."
+                
+        elif effective_probability >= 0.4:
+            # MEDIUM: Moderate risk
+            severity = "medium"
+            action = "Monitor conditions"
+            message = f"🟡 FLOOD ADVISORY for {location_str}: {action}. Moderate flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Stay alert, avoid low-lying areas, prepare emergency contacts."
+            
+        else:
+            # LOW: Minor risk
+            severity = "low"
+            action = "Stay informed"
+            message = f"🔵 FLOOD INFORMATION for {location_str}: {action}. Minor flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Continue normal activities but monitor weather."
+        
+        # Add model confidence note
+        message += f" Prediction: {model_type.upper()} model. Update frequency: Check for new alerts every 6 hours."
         
         alert = Alert(
             id=str(uuid.uuid4()),
@@ -72,12 +129,13 @@ class AlertService:
             longitude=longitude,
             message=message,
             severity=severity,
+            district=district,
             created_at=datetime.utcnow(),
-            expires_at=datetime.utcnow() + timedelta(hours=lead_time_hours + 6)  # Alert expires 6 hours after predicted event
+            expires_at=datetime.utcnow() + timedelta(hours=lead_time_hours + 12)  # Alert expires 12 hours after predicted event
         )
         
         self.active_alerts[alert.id] = alert
-        logger.info(f"Created {severity} alert for location ({latitude}, {longitude})")
+        logger.info(f"Created {severity.upper()} alert for {location_str} ({latitude}, {longitude}) - Action: {action}")
         
         return alert
     

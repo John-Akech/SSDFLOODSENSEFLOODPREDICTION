@@ -76,10 +76,11 @@ class PredictionRequest(BaseModel):
     latitude: float = Field(..., ge=-90, le=90, examples=[7.012])
     longitude: float = Field(..., ge=-180, le=180, examples=[31.3063])
     model_type: ModelType = ModelType.RANDOM_FOREST
-    lead_time_hours: int = Field(default=12, ge=1, le=168, examples=[12])
+    lead_time_hours: int = Field(default=48, ge=1, le=168, examples=[48])  # Changed default to 48 hours for better preparation
     features: Optional[Dict[str, float]] = None
+    district: Optional[str] = Field(default=None, examples=["Twic East"])  # District/location name
     
-    model_config = {"protected_namespaces": (), "json_schema_extra": {"examples": [{"latitude": 7.012, "longitude": 31.3063, "model_type": "ensemble", "lead_time_hours": 12}]}}
+    model_config = {"protected_namespaces": (), "json_schema_extra": {"examples": [{"latitude": 7.012, "longitude": 31.3063, "model_type": "ensemble", "lead_time_hours": 48, "district": "Twic East"}]}}
 
 
 class PredictionResponse(BaseModel):

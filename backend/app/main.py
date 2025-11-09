@@ -48,18 +48,18 @@ async def lifespan(app: FastAPI):
     # Startup: Initialize database and load ML models
     print("🔄 Starting application initialization...")
     init_db()
-    print("✓ Database initialized")
+    print("[OK] Database initialized")
     
     print("🔄 Loading ML models...")
     try:
         await ModelService.load_models()
-        print(f"✓ Models loaded: {ModelService.models_loaded}")
+        print(f"[OK] Models loaded: {ModelService.models_loaded}")
         print(f"  - Random Forest: {ModelService.rf_model is not None}")
         print(f"  - Gradient Boosting: {ModelService.gb_model is not None}")
         print(f"  - TCN: {ModelService.tcn_model is not None}")
         print(f"  - LSTM: {ModelService.lstm_model is not None}")
     except Exception as e:
-        print(f"✗ Error loading models: {e}")
+        print(f"[ERROR] Error loading models: {e}")
         import traceback
         traceback.print_exc()
     
