@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter,
-  ComposedChart, ReferenceLine
+import {
+  Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, PieChart, Pie, Cell,
+  ComposedChart
 } from 'recharts';
 import { useLanguage } from '../i18n/LanguageContext';
 import { apiService } from '../services/api';
 import '../styles/flood-colors.css';
 
 const Analytics: React.FC = () => {
-  const { t } = useLanguage();
+  const { t: _ } = useLanguage();
   const [timeFilter, setTimeFilter] = useState('monthly');
   const [stats, setStats] = useState<any>(null);
   const [stateStats, setStateStats] = useState<any>({});
@@ -20,7 +20,7 @@ const Analytics: React.FC = () => {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [predictions, setPredictions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedState, setSelectedState] = useState('All States');
+  const [allStates, setAllStates] = useState<string[]>([]);
 
   // Fetch all data
   useEffect(() => {
@@ -33,11 +33,45 @@ const Analytics: React.FC = () => {
           apiService.getPredictions(),
           apiService.getStateStats()
         ]);
-        
+
         setStats(systemStats);
         setAlerts(alertData.alerts || []);
         setPredictions(predData.predictions || []);
         setStateStats(stateData || {});
+
+        // Extract unique states/regions from data
+        const statesFromData = new Set<string>();
+
+        // Get states from predictions
+        (predData.predictions || []).forEach((p: any) => {
+          if (p.region) statesFromData.add(p.region);
+          if (p.state) statesFromData.add(p.state);
+        });
+
+        // Get states from alerts
+        (alertData.alerts || []).forEach((a: any) => {
+          if (a.region) statesFromData.add(a.region);
+          if (a.state) statesFromData.add(a.state);
+        });
+
+        // Get states from state stats
+        if (stateData) {
+          Object.keys(stateData).forEach(state => statesFromData.add(state));
+        }
+
+        // Get states from system stats population data
+        if (systemStats?.population_by_state) {
+          Object.keys(systemStats.population_by_state).forEach(state => statesFromData.add(state));
+        }
+
+        // Set states, with fallback to common South Sudan states if no data
+        const stateList = Array.from(statesFromData).sort();
+        setAllStates(stateList.length > 0 ? stateList : [
+          'Central Equatoria', 'Eastern Equatoria', 'Western Equatoria',
+          'Jonglei', 'Unity', 'Upper Nile',
+          'Northern Bahr el Ghazal', 'Western Bahr el Ghazal', 'Warrap', 'Lakes'
+        ]);
+
         // Seed live models from system if available
         if (systemStats?.live_models) {
           setLiveModels(systemStats.live_models);
@@ -65,40 +99,33 @@ const Analytics: React.FC = () => {
     fetchModelStats();
   }, [modelWindow]);
 
-  // All 10 states of South Sudan
-  const allStates = [
-    'Central Equatoria', 'Eastern Equatoria', 'Western Equatoria',
-    'Jonglei', 'Unity', 'Upper Nile',
-    'Northern Bahr el Ghazal', 'Western Bahr el Ghazal', 'Warrap', 'Lakes'
-  ];
-
   // Generate dynamic data based on actual predictions and alerts
   const generateTimeSeriesData = () => {
     const data = [];
     const now = new Date();
-    
+
     if (timeFilter === 'weekly') {
       for (let i = 0; i < 4; i++) {
         const weekStart = new Date(now);
         weekStart.setDate(now.getDate() - (7 * (4 - i)));
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekStart.getDate() + 7);
-        
+
         // Filter predictions in this week
         const weekPredictions = predictions.filter(p => {
           const predDate = new Date(p.created_at);
           return predDate >= weekStart && predDate <= weekEnd;
         });
-        
+
         const weekAlerts = alerts.filter(a => {
           const alertDate = new Date(a.created_at);
           return alertDate >= weekStart && alertDate <= weekEnd;
         });
-        
+
         const avgRisk = weekPredictions.length > 0
           ? weekPredictions.reduce((sum, p) => sum + (p.flood_probability || 0), 0) / weekPredictions.length
           : 0;
-        
+
         data.push({
           period: `Week ${i + 1}`,
           rainfall: 0, // Will be fetched from API if available
@@ -110,26 +137,26 @@ const Analytics: React.FC = () => {
     } else if (timeFilter === 'monthly') {
       const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const currentMonth = now.getMonth();
-      
+
       for (let i = 0; i < 12; i++) {
         const monthIndex = (currentMonth - 11 + i + 12) % 12;
         const monthName = months[monthIndex];
-        
+
         // Filter predictions in this month
         const monthPredictions = predictions.filter(p => {
           const predDate = new Date(p.created_at);
           return predDate.getMonth() === monthIndex;
         });
-        
+
         const monthAlerts = alerts.filter(a => {
           const alertDate = new Date(a.created_at);
           return alertDate.getMonth() === monthIndex;
         });
-        
+
         const avgRisk = monthPredictions.length > 0
           ? monthPredictions.reduce((sum, p) => sum + (p.flood_probability || 0), 0) / monthPredictions.length
           : 0;
-        
+
         data.push({
           period: monthName,
           rainfall: 0, // Will be fetched from CHIRPS API if available
@@ -145,16 +172,16 @@ const Analytics: React.FC = () => {
           const predDate = new Date(p.created_at);
           return predDate.getFullYear() === year;
         });
-        
+
         const yearAlerts = alerts.filter(a => {
           const alertDate = new Date(a.created_at);
           return alertDate.getFullYear() === year;
         });
-        
+
         const avgRisk = yearPredictions.length > 0
           ? yearPredictions.reduce((sum, p) => sum + (p.flood_probability || 0), 0) / yearPredictions.length
           : 0;
-        
+
         data.push({
           period: year.toString(),
           rainfall: 0, // Will be fetched from CHIRPS API if available
@@ -165,7 +192,7 @@ const Analytics: React.FC = () => {
         });
       }
     }
-    
+
     return data;
   };
 
@@ -197,8 +224,6 @@ const Analytics: React.FC = () => {
     { name: 'Low', value: severityCounts.low || 0, color: 'var(--risk-low)' },
     { name: 'Minimal', value: 0, color: 'var(--risk-minimal)' }
   ].filter(item => item.value > 0);
-
-  const COLORS = severityDistribution.map(item => item.color);
 
   const getRiskColor = (riskLevel: string) => {
     switch (riskLevel) {
@@ -254,25 +279,22 @@ const Analytics: React.FC = () => {
             <span className="text-gray-700 font-medium">Time Period:</span>
             <button
               onClick={() => setTimeFilter('weekly')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                timeFilter === 'weekly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition ${timeFilter === 'weekly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Weekly
             </button>
             <button
               onClick={() => setTimeFilter('monthly')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                timeFilter === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition ${timeFilter === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setTimeFilter('yearly')}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
-                timeFilter === 'yearly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium transition ${timeFilter === 'yearly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               Yearly
             </button>
@@ -312,23 +334,23 @@ const Analytics: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={timeSeriesData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="period" 
+                  <XAxis
+                    dataKey="period"
                     stroke="#64748b"
                     fontSize={12}
                   />
-                  <YAxis 
+                  <YAxis
                     yAxisId="left"
                     stroke="#64748b"
                     fontSize={12}
                   />
-                  <YAxis 
-                    yAxisId="right" 
+                  <YAxis
+                    yAxisId="right"
                     orientation="right"
                     stroke="#64748b"
                     fontSize={12}
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: '#f8fafc',
                       border: '1px solid #e2e8f0',
@@ -337,14 +359,14 @@ const Analytics: React.FC = () => {
                     }}
                   />
                   <Legend />
-                  <Bar 
+                  <Bar
                     yAxisId="left"
-                    dataKey="alerts" 
-                    fill="var(--flood-medium)" 
+                    dataKey="alerts"
+                    fill="var(--flood-medium)"
                     name="Active Alerts"
                     radius={[2, 2, 0, 0]}
                   />
-                  <Line 
+                  <Line
                     yAxisId="right"
                     type="monotone"
                     dataKey="floodRisk"
@@ -391,8 +413,8 @@ const Analytics: React.FC = () => {
               {severityDistribution.map((item) => (
                 <div key={item.name} className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div 
-                      className="w-4 h-4 rounded-full flex-shrink-0" 
+                    <div
+                      className="w-4 h-4 rounded-full flex-shrink-0"
                       style={{ backgroundColor: item.color }}
                     />
                     <span className="text-sm font-medium text-gray-700">{item.name}</span>
@@ -467,9 +489,8 @@ const Analytics: React.FC = () => {
                     <button
                       key={n}
                       onClick={() => setModelWindow(n)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                        modelWindow === n ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${modelWindow === n ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
                     >
                       Last {n}
                     </button>

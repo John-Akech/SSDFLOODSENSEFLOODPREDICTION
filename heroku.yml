@@ -1,0 +1,4 @@
+build:
+  docker:
+    web: Dockerfile.heroku
+    worker: ee-fastapi/Dockerfile

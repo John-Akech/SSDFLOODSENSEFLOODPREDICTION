@@ -223,8 +223,9 @@ async def delete_prediction(prediction_id: int, db: Session = Depends(get_db), c
 
 # Feedback CRUD
 @router.post("/feedback", response_model=Feedback, status_code=status.HTTP_201_CREATED)
-async def create_feedback(feedback: FeedbackCreate, db: Session = Depends(get_db)):
-    db_feedback = DBFeedback(user_id=1, **feedback.dict())  # TODO: Get real user_id from auth
+async def create_feedback(feedback: FeedbackCreate, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    """Create feedback with authenticated user"""
+    db_feedback = DBFeedback(user_id=current_user.id, **feedback.dict())
     db.add(db_feedback)
     db.commit()
     db.refresh(db_feedback)
@@ -314,24 +315,44 @@ async def get_system_stats(db: Session = Depends(get_db)):
     avg_lead_time = db.query(DBPrediction).filter(DBPrediction.lead_time_hours != None).all()
     avg_lead_time_hours = sum(p.lead_time_hours for p in avg_lead_time) / len(avg_lead_time) if avg_lead_time else 24
     
+    # Load actual model accuracy from metadata file (NOT hardcoded)
+    import json
+    from pathlib import Path
+    accuracy_metrics = {
+        "overall_accuracy": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1_score": 0.0,
+        "false_alarm_rate": 0.0
+    }
+    
+    try:
+        # Load model metadata to get real accuracy
+        models_dir = Path(__file__).parent.parent.parent.parent / "models"
+        metadata_file = models_dir / "model_metadata_pipeline_20251109_181046.json"
+        
+        if metadata_file.exists():
+            with open(metadata_file, 'r') as f:
+                metadata = json.load(f)
+                perf = metadata.get("performance", {})
+                
+                accuracy_metrics = {
+                    "overall_accuracy": round(perf.get("test_accuracy", 0.0), 4),
+                    "precision": round(perf.get("precision", 0.0), 4),
+                    "recall": round(perf.get("recall", 0.0), 4),
+                    "f1_score": round(perf.get("f1_score", 0.0), 4),
+                    "false_alarm_rate": round(1.0 - perf.get("precision", 1.0), 4)
+                }
+    except Exception as e:
+        # If metadata load fails, log but continue with zeros
+        print(f"Warning: Could not load model metadata: {e}")
+    
     return {
         "total_predictions": total_predictions,
         "total_users": total_users,
         "total_flood_events": total_flood_events,
         "avg_lead_time_hours": round(avg_lead_time_hours),
-        "accuracy_metrics": {
-            "overall_accuracy": 0.87,
-            "precision": 0.82,
-            "recall": 0.90,
-            "f1_score": 0.85,
-            "false_alarm_rate": 0.13
-        },
-        "model_performance": {
-            "random_forest": {"accuracy": 0.87, "f1_score": 0.85},
-            "tcn": {"accuracy": 0.83, "f1_score": 0.82},
-            "ensemble": {"accuracy": 0.89, "f1_score": 0.87}
-        },
-
+        "accuracy_metrics": accuracy_metrics,
         "population_by_state": population_by_state
     }
 
@@ -350,16 +371,39 @@ async def get_prediction_stats(db: Session = Depends(get_db)):
     
     # Calculate accuracy metrics from predictions
     all_predictions = db.query(DBPrediction).all()
-    avg_confidence = sum(p.confidence_score for p in all_predictions if p.confidence_score) / len(all_predictions) if all_predictions else 0.85
+    avg_confidence = sum(p.confidence_score for p in all_predictions if p.confidence_score) / len(all_predictions) if all_predictions else 0.0
+    
+    # Load actual model accuracy from metadata file (NOT hardcoded)
+    import json
+    from pathlib import Path
+    accuracy = 0.0
+    precision = 0.0
+    recall = 0.0
+    f1_score = 0.0
+    
+    try:
+        models_dir = Path(__file__).parent.parent.parent.parent / "models"
+        metadata_file = models_dir / "model_metadata_pipeline_20251109_181046.json"
+        
+        if metadata_file.exists():
+            with open(metadata_file, 'r') as f:
+                metadata = json.load(f)
+                perf = metadata.get("performance", {})
+                accuracy = round(perf.get("test_accuracy", 0.0), 4)
+                precision = round(perf.get("precision", 0.0), 4)
+                recall = round(perf.get("recall", 0.0), 4)
+                f1_score = round(perf.get("f1_score", 0.0), 4)
+    except Exception as e:
+        print(f"Warning: Could not load model metadata: {e}")
     
     return {
         "total_predictions": total_predictions,
         "risk_distribution": risk_distribution,
         "avg_confidence": round(avg_confidence, 3),
-        "accuracy": 0.87,
-        "precision": 0.82,
-        "recall": 0.90,
-        "f1_score": 0.85,
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1_score": f1_score,
         "last_updated": datetime.now().isoformat()
     }
 
@@ -535,3 +579,46 @@ async def get_system_stats(db: Session = Depends(get_db)):
     # Attach live models to system stats for frontend cards
     base["live_models"] = model_stats.get("models", {})
     return base
+
+
+@router.get("/stats/time-series")
+async def get_time_series_stats(days: int = 7, db: Session = Depends(get_db)):
+    """Get time-series data for users and alerts growth over the past N days"""
+    try:
+        from datetime import timedelta
+        
+        # Get daily counts for the last N days
+        user_growth = []
+        alert_trends = []
+        
+        now = datetime.now()
+        for i in range(days):
+            date = now - timedelta(days=(days - 1 - i))
+            date_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
+            date_end = date.replace(hour=23, minute=59, second=59, microsecond=999999)
+            
+            # Count new users for this day
+            users_count = db.query(DBUser).filter(
+                DBUser.created_at >= date_start,
+                DBUser.created_at <= date_end
+            ).count()
+            
+            # Count new alerts for this day
+            alerts_count = db.query(DBAlert).filter(
+                DBAlert.created_at >= date_start,
+                DBAlert.created_at <= date_end
+            ).count()
+            
+            day_label = date.strftime('%a')  # Mon, Tue, etc.
+            user_growth.append({"day": day_label, "users": users_count})
+            alert_trends.append({"day": day_label, "alerts": alerts_count})
+        
+        return {
+            "user_growth": user_growth,
+            "alert_trend": alert_trends,
+            "days": days
+        }
+    except Exception as e:
+        logger.error(f"Error getting time-series stats: {e}")
+        return {"user_growth": [], "alert_trend": [], "days": days, "error": str(e)}
+

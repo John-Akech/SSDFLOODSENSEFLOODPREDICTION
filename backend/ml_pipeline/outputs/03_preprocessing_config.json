@@ -1,0 +1,64 @@
+{
+  "step": "03_preprocess_data",
+  "created_at": "2025-11-09T18:09:01.453586",
+  "transformations": {
+    "missing_values": {
+      "strategy": "median",
+      "before": 0,
+      "after": 0
+    },
+    "categorical_encoding": {
+      "method": "one-hot",
+      "encoded_columns": [],
+      "new_columns": []
+    },
+    "feature_scaling": {
+      "method": "StandardScaler",
+      "scaled_features": [
+        "VV_mean",
+        "VV_std",
+        "VV_min",
+        "VV_max",
+        "VH_mean",
+        "VH_std",
+        "VH_min",
+        "VH_max",
+        "VV_stdDev_mean",
+        "VH_stdDev_mean",
+        "precipitation_sum",
+        "precipitation_mean",
+        "precipitation_max",
+        "elevation_mean",
+        "slope_mean",
+        "water_occurrence_mean"
+      ],
+      "scaler_path": "C:\\Users\\johna\\Desktop\\Pictures\\CAPSTONEPROJECT\\SSDFLOODSENSEFLOODPREDICTION\\backend\\ml_pipeline\\outputs\\03_feature_scaler.pkl"
+    }
+  },
+  "final_dataset": {
+    "total_samples": 126,
+    "total_features": 17,
+    "numeric_features": 16,
+    "categorical_features": 0
+  },
+  "feature_list": [
+    "VV_mean",
+    "VV_std",
+    "VV_min",
+    "VV_max",
+    "VH_mean",
+    "VH_std",
+    "VH_min",
+    "VH_max",
+    "VV_stdDev_mean",
+    "VH_stdDev_mean",
+    "precipitation_sum",
+    "precipitation_mean",
+    "precipitation_max",
+    "elevation_mean",
+    "slope_mean",
+    "water_occurrence_mean",
+    "flood"
+  ],
+  "ready_for_training": true
+}

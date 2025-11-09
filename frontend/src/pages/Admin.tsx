@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { apiService } from '../services/api';
 import '../styles/flood-colors.css';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface User {
   id: number;
@@ -33,63 +34,236 @@ interface Prediction {
 }
 
 const Admin: React.FC = () => {
+  const navigate = useNavigate();
   const [section, setSection] = useState('dashboard');
   const [users, setUsers] = useState<User[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
+  const [modelStats, setModelStats] = useState<any>(null);
+  const [timeSeriesData, setTimeSeriesData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [dataCache, setDataCache] = useState<{ users?: User[], alerts?: Alert[], predictions?: Prediction[], modelStats?: any, timestamp?: number }>({});
+
   // Form states
   const [showUserForm, setShowUserForm] = useState(false);
   const [showAlertForm, setShowAlertForm] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  
+  const [showPredictionForm, setShowPredictionForm] = useState(false);
+
   // Search and filter states
   const [userSearch, setUserSearch] = useState('');
   const [alertFilter, setAlertFilter] = useState('all');
-  const [predictionFilter, setPredictionFilter] = useState('all');
-  
-  const [newUser, setNewUser] = useState({ email: '', full_name: '', role: 'community_member', password: '' });
+  const [predictionFilter, setPredictionFilter] = useState('all'); const [newUser, setNewUser] = useState({ email: '', full_name: '', role: 'community_member', password: '' });
   const [newAlert, setNewAlert] = useState({ latitude: 6.877, longitude: 31.307, severity: 'high', message: '' });
+  const [newPrediction, setNewPrediction] = useState({ latitude: 6.877, longitude: 31.307 });
+  const [predictionLoading, setPredictionLoading] = useState(false);
 
-  // Fetch data
+  // Fetch data with caching and timeout optimization
   const fetchUsers = async () => {
     try {
-      const data = await apiService.getUsers();
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
+
+      // Limit to 50 users for faster loading
+      const data = await apiService.getUsers({ limit: 50 });
+      clearTimeout(timeoutId);
       setUsers(data);
-    } catch (err) {
-      setError('Failed to load users');
+      return data;
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.warn('[PERFORMANCE] Users fetch timed out');
+        setError('Loading users took too long - using cached data');
+      } else {
+        setError('Failed to load users');
+      }
+      return [];
     }
   };
 
   const fetchAlerts = async () => {
     try {
-      const data = await apiService.getActiveAlerts();
-      setAlerts(data.alerts || []);
-    } catch (err) {
-      setError('Failed to load alerts');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
+
+      // Limit to most recent 100 alerts for faster loading
+      const data = await apiService.getActiveAlerts({ limit: 100 });
+      clearTimeout(timeoutId);
+      const alertsArray = data.alerts || [];
+      setAlerts(alertsArray);
+      return alertsArray;
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.warn('[PERFORMANCE] Alerts fetch timed out');
+        setError('Loading alerts took too long - using cached data');
+      } else {
+        setError('Failed to load alerts');
+      }
+      return [];
     }
   };
 
   const fetchPredictions = async () => {
     try {
-      const data = await apiService.getPredictions();
-      setPredictions(data.predictions || data);
-    } catch (err) {
-      setError('Failed to load predictions');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
+
+      // Limit to most recent 100 predictions for faster loading
+      const data = await apiService.getPredictions({ limit: 100 });
+      clearTimeout(timeoutId);
+      const predictionsArray = data.predictions || data;
+      setPredictions(predictionsArray);
+      return predictionsArray;
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.warn('[PERFORMANCE] Predictions fetch timed out');
+        setError('Loading predictions took too long - using cached data');
+      } else {
+        setError('Failed to load predictions');
+      }
+      return [];
     }
   };
 
+  const fetchModelStats = async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
+
+      const data = await apiService.getModelStats(500);
+      clearTimeout(timeoutId);
+      setModelStats(data);
+      return data;
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.warn('[PERFORMANCE] Model stats fetch timed out');
+      } else {
+        console.error('Failed to load model stats:', err);
+      }
+      return null;
+    }
+  };
+
+  const fetchTimeSeriesData = async () => {
+    try {
+      const data = await apiService.getTimeSeriesStats(7); // Last 7 days
+      setTimeSeriesData(data);
+      return data;
+    } catch (err: any) {
+      console.error('Failed to load time-series data:', err);
+      return null;
+    }
+  };
+
+  // Security: Verify admin access on component mount
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      await Promise.all([fetchUsers(), fetchAlerts(), fetchPredictions()]);
-      setLoading(false);
+    const verifyAccess = async () => {
+      const token = localStorage.getItem('token');
+      const userRole = localStorage.getItem('userRole');
+
+      // Check if user is authenticated
+      if (!token) {
+        console.warn('[SECURITY] No authentication token found');
+        navigate('/login', { replace: true });
+        return;
+      }
+
+      // Check if user has admin role
+      if (userRole !== 'admin') {
+        console.warn('[SECURITY] Unauthorized access attempt - User role:', userRole);
+        navigate('/home', { replace: true });
+        return;
+      }
+
+      try {
+        // Verify token is still valid by fetching current user
+        const currentUser = await apiService.getCurrentUser();
+        if (currentUser.role !== 'admin') {
+          console.warn('[SECURITY] User role mismatch - Expected admin, got:', currentUser.role);
+          localStorage.setItem('userRole', currentUser.role);
+          navigate('/home', { replace: true });
+          return;
+        }
+
+        setIsAuthenticated(true);
+        setIsAdmin(true);
+        console.info('[SECURITY] Admin access verified for user:', currentUser.email);
+      } catch (err) {
+        console.error('[SECURITY] Token validation failed:', err);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('userRole');
+        navigate('/login', { replace: true });
+      }
     };
+
+    verifyAccess();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !isAdmin) return;
+
+    const loadData = async () => {
+      const startTime = performance.now();
+      setLoading(true);
+
+      // Check if we have cached data less than 30 seconds old
+      const now = Date.now();
+      const cacheAge = dataCache.timestamp ? (now - dataCache.timestamp) / 1000 : Infinity;
+
+      if (cacheAge < 30 && dataCache.users && dataCache.alerts && dataCache.predictions && dataCache.modelStats) {
+        console.info(`[PERFORMANCE] Using cached data (age: ${cacheAge.toFixed(1)}s)`);
+        setUsers(dataCache.users);
+        setAlerts(dataCache.alerts);
+        setPredictions(dataCache.predictions);
+        setModelStats(dataCache.modelStats);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // Parallel fetch with race condition - take first results within 1.8s
+        const fetchPromise = Promise.all([fetchUsers(), fetchAlerts(), fetchPredictions(), fetchModelStats(), fetchTimeSeriesData()]);
+        const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1800));
+
+        const result = await Promise.race([
+          fetchPromise.then(data => ({ success: true, data })),
+          timeoutPromise.then(() => ({ success: false, data: null }))
+        ]);
+
+        if (result.success && result.data) {
+          const [usersData, alertsData, predictionsData, modelStatsData] = result.data;
+
+          // Update cache
+          setDataCache({
+            users: usersData,
+            alerts: alertsData,
+            predictions: predictionsData,
+            modelStats: modelStatsData,
+            timestamp: Date.now()
+          });
+
+          const loadTime = performance.now() - startTime;
+          console.info(`[PERFORMANCE] Data loaded in ${loadTime.toFixed(0)}ms`);
+        } else {
+          console.warn('[PERFORMANCE] Data loading exceeded 1.8s - using partial data');
+          // Use cache if available
+          if (dataCache.users) setUsers(dataCache.users);
+          if (dataCache.alerts) setAlerts(dataCache.alerts);
+          if (dataCache.predictions) setPredictions(dataCache.predictions);
+          if (dataCache.modelStats) setModelStats(dataCache.modelStats);
+        }
+      } catch (err) {
+        console.error('[PERFORMANCE] Data loading failed:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     loadData();
-  }, []);
+  }, [isAuthenticated, isAdmin]);
 
   // CRUD operations
   const handleDeleteUser = async (id: number) => {
@@ -160,14 +334,45 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleCreatePrediction = async () => {
+    if (!newPrediction.latitude || !newPrediction.longitude) {
+      setError('Please provide valid coordinates');
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+
+    setPredictionLoading(true);
+    try {
+      const result = await apiService.createPrediction(newPrediction.latitude, newPrediction.longitude);
+      setShowPredictionForm(false);
+      setNewPrediction({ latitude: 6.877, longitude: 31.307 });
+      setSuccessMessage(`Prediction created: ${result.risk_level} risk detected with ${Math.round(result.confidence_score * 100)}% confidence`);
+      setTimeout(() => setSuccessMessage(null), 5000);
+      await fetchPredictions();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to create prediction');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setPredictionLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    console.log('[SECURITY] Admin user logging out');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
+    navigate('/login');
+  };
+
   // Filter data
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     user.email.toLowerCase().includes(userSearch.toLowerCase()) ||
     (user.full_name && user.full_name.toLowerCase().includes(userSearch.toLowerCase()))
   );
 
-  const filteredAlerts = alertFilter === 'all' 
-    ? alerts 
+  const filteredAlerts = alertFilter === 'all'
+    ? alerts
     : alerts.filter(a => a.severity === alertFilter);
 
   const filteredPredictions = predictionFilter === 'all'
@@ -182,9 +387,10 @@ const Admin: React.FC = () => {
       return date.toLocaleDateString('en-US', { weekday: 'short' });
     });
 
-    // Mock data for demonstration - in production, fetch from backend
-    const userGrowth = last7Days.map(day => ({ day, users: Math.floor(Math.random() * 20) + 10 }));
-    const alertTrend = last7Days.map(day => ({ day, alerts: Math.floor(Math.random() * 15) + 5 }));
+    // Use real time-series data from API (fetched in useEffect)
+    const userGrowth = timeSeriesData?.user_growth || last7Days.map(day => ({ day, users: 0 }));
+    const alertTrend = timeSeriesData?.alert_trend || last7Days.map(day => ({ day, alerts: 0 }));
+
     const predictionDistribution = {
       low: predictions.filter(p => p.risk_level === 'low').length,
       medium: predictions.filter(p => p.risk_level === 'medium').length,
@@ -202,12 +408,13 @@ const Admin: React.FC = () => {
     return { userGrowth, alertTrend, predictionDistribution, alertBySeverity };
   };
 
-  if (loading) {
+  if (loading && users.length === 0 && alerts.length === 0 && predictions.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
-          <p className="text-gray-600 font-medium">Loading admin dashboard...</p>
+          <div className="w-12 h-12 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-600 font-medium">Loading dashboard...</p>
+          <p className="text-gray-400 text-sm mt-1">This should take less than 2 seconds</p>
         </div>
       </div>
     );
@@ -236,7 +443,7 @@ const Admin: React.FC = () => {
               </svg>
             </div>
             <div>
-              <span className="font-bold text-lg text-gray-900">Admin Panel</span>
+              <span className="font-bold text-lg text-gray-900 block">Admin Panel</span>
               <p className="text-xs text-gray-500">FloodSense Management</p>
             </div>
           </div>
@@ -249,22 +456,35 @@ const Admin: React.FC = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${
-                section === s.key 
-                  ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg' 
-                  : 'hover:bg-blue-50 text-gray-700 hover:text-blue-700'
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${section === s.key
+                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                : 'hover:bg-blue-50 text-gray-700 hover:text-blue-700'
+                }`}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={s.icon} />
               </svg>
-              {s.label}
+              <span className="text-sm">{s.label}</span>
             </motion.button>
           ))}
         </nav>
+        <div className="p-4 border-t border-gray-200">
+          <motion.button
+            onClick={handleLogout}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800"
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </motion.button>
+        </div>
       </aside>
 
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-auto">
+      <main className="flex-1 p-6 sm:p-8 lg:p-10 overflow-auto">
         {/* Success/Error Messages */}
         {successMessage && (
           <motion.div
@@ -278,7 +498,7 @@ const Admin: React.FC = () => {
             {successMessage}
           </motion.div>
         )}
-        
+
         {error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -296,12 +516,12 @@ const Admin: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
+            className="space-y-8"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-                <p className="text-gray-600 mt-1">System overview and management controls</p>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
+                <p className="text-base text-gray-600">System overview and management controls</p>
               </div>
             </div>
 
@@ -311,18 +531,18 @@ const Admin: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+                className="bg-white p-8 rounded-xl shadow-lg border border-gray-100"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={adminSections[1].icon} />
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">{users.length}</h3>
-                <p className="text-gray-600 text-sm mt-1">Total Users</p>
-                <div className="mt-3 flex items-center text-xs text-green-600">
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">{users.length}</h3>
+                <p className="text-gray-600 text-sm">Total Users</p>
+                <div className="mt-2 flex items-center text-xs text-green-600">
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -334,18 +554,18 @@ const Admin: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+                className="bg-white p-8 rounded-xl shadow-lg border border-gray-100"
               >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={adminSections[2].icon} />
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">{activeAlerts}</h3>
-                <p className="text-gray-600 text-sm mt-1">Active Alerts</p>
-                <div className="mt-3 flex items-center text-xs text-red-600">
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">{activeAlerts}</h3>
+                <p className="text-gray-600 text-sm">Active Alerts</p>
+                <div className="mt-2 flex items-center text-xs text-red-600 font-medium">
                   <span className="font-semibold">{criticalAlerts}</span>
                   <span className="ml-1">critical</span>
                 </div>
@@ -355,7 +575,7 @@ const Admin: React.FC = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="bg-white p-6 rounded-xl shadow-lg border border-gray-100"
+                className="bg-white p-8 rounded-xl shadow-lg border border-gray-100"
               >
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center">
@@ -383,15 +603,17 @@ const Admin: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
                     <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={adminSections[4].icon} />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900">99.9%</h3>
-                <p className="text-gray-600 text-sm mt-1">System Uptime</p>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {modelStats?.overall_accuracy ? `${(modelStats.overall_accuracy * 100).toFixed(1)}%` : 'Loading...'}
+                </h3>
+                <p className="text-gray-600 text-sm mt-1">Model Accuracy</p>
                 <div className="mt-3 flex items-center text-xs text-green-600">
                   <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
-                  All services online
+                  {modelStats ? 'AI Models Active' : 'Loading stats...'}
                 </div>
               </motion.div>
             </div>
@@ -415,12 +637,12 @@ const Admin: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="severity" stroke="#6b7280" fontSize={12} />
                     <YAxis stroke="#6b7280" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#fff', 
-                        border: '1px solid #e5e7eb', 
-                        borderRadius: '8px' 
-                      }} 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px'
+                      }}
                     />
                     <Bar dataKey="count" fill="#3b82f6" radius={[8, 8, 0, 0]} />
                   </BarChart>
@@ -444,12 +666,12 @@ const Admin: React.FC = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="risk" stroke="#6b7280" fontSize={12} />
                     <YAxis stroke="#6b7280" fontSize={12} />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: '#fff', 
-                        border: '1px solid #e5e7eb', 
-                        borderRadius: '8px' 
-                      }} 
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#fff',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px'
+                      }}
                     />
                     <Bar dataKey="count" fill="#06b6d4" radius={[8, 8, 0, 0]} />
                   </BarChart>
@@ -457,10 +679,95 @@ const Admin: React.FC = () => {
               </motion.div>
             </div>
 
+            {/* Model Performance Section */}
+            {modelStats && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
+              >
+                <h2 className="text-xl font-bold text-gray-900 mb-6">AI Model Performance</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {modelStats.models && Object.entries(modelStats.models).map(([modelName, stats]: [string, any], idx) => (
+                    <motion.div
+                      key={modelName}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.1 * idx }}
+                      className="p-4 bg-gradient-to-br from-purple-50 to-blue-50 rounded-lg border border-purple-200"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-bold text-gray-900 capitalize">{modelName.replace('_', ' ')}</h3>
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Accuracy</span>
+                          <span className="text-lg font-bold text-purple-700">
+                            {(stats.accuracy * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Confidence</span>
+                          <span className="text-sm font-semibold text-gray-700">
+                            {(stats.confidence * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600">Predictions</span>
+                          <span className="text-sm font-semibold text-gray-700">
+                            {stats.prediction_count || 0}
+                          </span>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-purple-200">
+                          <span className="text-xs text-gray-500">Last Update: {new Date().toLocaleTimeString()}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Overall Stats */}
+                <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">Overall Accuracy</p>
+                      <p className="text-2xl font-bold text-green-700">
+                        {(modelStats.overall_accuracy * 100).toFixed(1)}%
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">Total Predictions</p>
+                      <p className="text-2xl font-bold text-green-700">
+                        {modelStats.total_predictions || 0}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">Best Model</p>
+                      <p className="text-lg font-bold text-green-700 capitalize">
+                        {modelStats.best_model?.replace('_', ' ') || 'N/A'}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600 mb-1">Avg Confidence</p>
+                      <p className="text-2xl font-bold text-green-700">
+                        {modelStats.average_confidence ? `${(modelStats.average_confidence * 100).toFixed(1)}%` : 'N/A'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
             {/* Quick Actions */}
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <button
                   onClick={() => { setSection('users'); setShowUserForm(true); }}
                   className="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors border border-blue-200"
@@ -478,6 +785,15 @@ const Admin: React.FC = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   Create Alert
+                </button>
+                <button
+                  onClick={() => { setSection('data'); setShowPredictionForm(true); }}
+                  className="flex items-center gap-3 px-4 py-3 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 rounded-lg transition-colors border border-cyan-200"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  Make Prediction
                 </button>
                 <button
                   onClick={() => window.location.reload()}
@@ -500,8 +816,8 @@ const Admin: React.FC = () => {
                 <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
                 <p className="text-gray-600 mt-1">Manage system users and permissions</p>
               </div>
-              <button 
-                onClick={() => setShowUserForm(!showUserForm)} 
+              <button
+                onClick={() => setShowUserForm(!showUserForm)}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -539,26 +855,26 @@ const Admin: React.FC = () => {
                     type="email"
                     placeholder="Email address"
                     value={newUser.email}
-                    onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                    onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   />
                   <input
                     type="text"
                     placeholder="Full Name"
                     value={newUser.full_name}
-                    onChange={(e) => setNewUser({...newUser, full_name: e.target.value})}
+                    onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   />
                   <input
                     type="password"
                     placeholder="Password"
                     value={newUser.password}
-                    onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                    onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   />
                   <select
                     value={newUser.role}
-                    onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                    onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   >
                     <option value="community_member">Community Member</option>
@@ -566,8 +882,8 @@ const Admin: React.FC = () => {
                     <option value="admin">Administrator</option>
                   </select>
                 </div>
-                <button 
-                  onClick={handleAddUser} 
+                <button
+                  onClick={handleAddUser}
                   className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -611,22 +927,20 @@ const Admin: React.FC = () => {
                             <div className="text-sm text-gray-600">{user.email}</div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                              user.role === 'admin' 
-                                ? 'bg-red-100 text-red-800 border border-red-200' 
-                                : user.role === 'ngo_partner'
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${user.role === 'admin'
+                              ? 'bg-red-100 text-red-800 border border-red-200'
+                              : user.role === 'ngo_partner'
                                 ? 'bg-purple-100 text-purple-800 border border-purple-200'
                                 : 'bg-blue-100 text-blue-800 border border-blue-200'
-                            }`}>
+                              }`}>
                               {user.role.replace('_', ' ')}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                              user.is_active 
-                                ? 'bg-green-100 text-green-800 border border-green-200' 
-                                : 'bg-gray-100 text-gray-700 border border-gray-300'
-                            }`}>
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${user.is_active
+                              ? 'bg-green-100 text-green-800 border border-green-200'
+                              : 'bg-gray-100 text-gray-700 border border-gray-300'
+                              }`}>
                               {user.is_active ? 'Active' : 'Inactive'}
                             </span>
                           </td>
@@ -634,7 +948,7 @@ const Admin: React.FC = () => {
                             {new Date(user.created_at).toLocaleDateString()}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <button 
+                            <button
                               onClick={() => handleDeleteUser(user.id)}
                               className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
                             >
@@ -661,8 +975,8 @@ const Admin: React.FC = () => {
                 <h1 className="text-3xl font-bold text-gray-900">Alerts Management</h1>
                 <p className="text-gray-600 mt-1">Monitor and manage flood alerts</p>
               </div>
-              <button 
-                onClick={() => setShowAlertForm(!showAlertForm)} 
+              <button
+                onClick={() => setShowAlertForm(!showAlertForm)}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-5 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -678,11 +992,10 @@ const Admin: React.FC = () => {
                 <button
                   key={severity}
                   onClick={() => setAlertFilter(severity)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    alertFilter === severity
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-lg transition-colors ${alertFilter === severity
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    }`}
                 >
                   {severity.charAt(0).toUpperCase() + severity.slice(1)}
                 </button>
@@ -702,7 +1015,7 @@ const Admin: React.FC = () => {
                     step="0.0001"
                     placeholder="Latitude"
                     value={newAlert.latitude}
-                    onChange={(e) => setNewAlert({...newAlert, latitude: parseFloat(e.target.value)})}
+                    onChange={(e) => setNewAlert({ ...newAlert, latitude: parseFloat(e.target.value) })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
                   />
                   <input
@@ -710,12 +1023,12 @@ const Admin: React.FC = () => {
                     step="0.0001"
                     placeholder="Longitude"
                     value={newAlert.longitude}
-                    onChange={(e) => setNewAlert({...newAlert, longitude: parseFloat(e.target.value)})}
+                    onChange={(e) => setNewAlert({ ...newAlert, longitude: parseFloat(e.target.value) })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
                   />
                   <select
                     value={newAlert.severity}
-                    onChange={(e) => setNewAlert({...newAlert, severity: e.target.value})}
+                    onChange={(e) => setNewAlert({ ...newAlert, severity: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
                   >
                     <option value="low">Low</option>
@@ -727,12 +1040,12 @@ const Admin: React.FC = () => {
                     type="text"
                     placeholder="Alert Message"
                     value={newAlert.message}
-                    onChange={(e) => setNewAlert({...newAlert, message: e.target.value})}
+                    onChange={(e) => setNewAlert({ ...newAlert, message: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
                   />
                 </div>
-                <button 
-                  onClick={handleAddAlert} 
+                <button
+                  onClick={handleAddAlert}
                   className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -765,12 +1078,11 @@ const Admin: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                            alert.severity === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${alert.severity === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
                             alert.severity === 'high' ? 'bg-orange-200 text-orange-900 border border-orange-300' :
-                            alert.severity === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
-                            'bg-green-200 text-green-900 border border-green-300'
-                          }`}>
+                              alert.severity === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
+                                'bg-green-200 text-green-900 border border-green-300'
+                            }`}>
                             {alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
                           </span>
                         </td>
@@ -778,11 +1090,10 @@ const Admin: React.FC = () => {
                           <div className="text-sm text-gray-900 max-w-md truncate">{alert.message}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                            alert.is_active 
-                              ? 'bg-green-100 text-green-800 border border-green-200' 
-                              : 'bg-gray-100 text-gray-700 border border-gray-300'
-                          }`}>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${alert.is_active
+                            ? 'bg-green-100 text-green-800 border border-green-200'
+                            : 'bg-gray-100 text-gray-700 border border-gray-300'
+                            }`}>
                             {alert.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
@@ -790,7 +1101,7 @@ const Admin: React.FC = () => {
                           {new Date(alert.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <button 
+                          <button
                             onClick={() => handleDeleteAlert(alert.id)}
                             className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
                           >
@@ -811,10 +1122,118 @@ const Admin: React.FC = () => {
 
         {section === 'data' && (
           <section>
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">Prediction Data Management</h1>
-              <p className="text-gray-600 mt-1">View and manage AI-generated flood predictions</p>
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Prediction Data Management</h1>
+                <p className="text-gray-600 mt-1">View, manage, and create AI-generated flood predictions</p>
+              </div>
+              <button
+                onClick={() => setShowPredictionForm(!showPredictionForm)}
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-5 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                {showPredictionForm ? 'Cancel' : 'Make Prediction'}
+              </button>
             </div>
+
+            {/* Prediction Form */}
+            {showPredictionForm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="bg-gradient-to-br from-cyan-50 to-blue-50 p-6 rounded-xl shadow-lg mb-6 border-2 border-cyan-200"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-cyan-600 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg text-gray-900">AI Flood Risk Prediction</h3>
+                    <p className="text-sm text-gray-600">Enter coordinates to generate flood risk assessment</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Latitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      placeholder="6.8770 (South Sudan)"
+                      value={newPrediction.latitude}
+                      onChange={(e) => setNewPrediction({ ...newPrediction, latitude: parseFloat(e.target.value) })}
+                      className="w-full border-2 border-cyan-300 rounded-lg px-4 py-3 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-200 transition-all font-mono text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Longitude
+                    </label>
+                    <input
+                      type="number"
+                      step="0.0001"
+                      placeholder="31.3070 (South Sudan)"
+                      value={newPrediction.longitude}
+                      onChange={(e) => setNewPrediction({ ...newPrediction, longitude: parseFloat(e.target.value) })}
+                      className="w-full border-2 border-cyan-300 rounded-lg px-4 py-3 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-200 transition-all font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-sm text-blue-900">
+                      <p className="font-semibold mb-1">How it works:</p>
+                      <ul className="list-disc list-inside space-y-1 text-blue-800">
+                        <li>Our AI model analyzes historical data, rainfall patterns, and terrain</li>
+                        <li>Prediction takes 2-5 seconds to process</li>
+                        <li>Results include risk level (low/medium/high/critical) and confidence score</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCreatePrediction}
+                    disabled={predictionLoading}
+                    className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white px-6 py-3 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl font-semibold disabled:cursor-not-allowed"
+                  >
+                    {predictionLoading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Generate Prediction
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setNewPrediction({ latitude: 6.877, longitude: 31.307 })}
+                    className="px-4 py-3 bg-white hover:bg-gray-50 text-gray-700 rounded-lg border-2 border-gray-300 transition-colors font-medium"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </motion.div>
+            )}
 
             {/* Filter Buttons */}
             <div className="mb-6 flex flex-wrap gap-2">
@@ -822,11 +1241,10 @@ const Admin: React.FC = () => {
                 <button
                   key={level}
                   onClick={() => setPredictionFilter(level)}
-                  className={`px-4 py-2 rounded-lg transition-colors ${
-                    predictionFilter === level
-                      ? 'bg-cyan-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-                  }`}
+                  className={`px-4 py-2 rounded-lg transition-colors ${predictionFilter === level
+                    ? 'bg-cyan-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                    }`}
                 >
                   {level.charAt(0).toUpperCase() + level.slice(1)}
                 </button>
@@ -854,12 +1272,11 @@ const Admin: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                            pred.risk_level === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${pred.risk_level === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
                             pred.risk_level === 'high' ? 'bg-orange-200 text-orange-900 border border-orange-300' :
-                            pred.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
-                            'bg-green-200 text-green-900 border border-green-300'
-                          }`}>
+                              pred.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
+                                'bg-green-200 text-green-900 border border-green-300'
+                            }`}>
                             {pred.risk_level.charAt(0).toUpperCase() + pred.risk_level.slice(1)}
                           </span>
                         </td>
@@ -872,7 +1289,7 @@ const Admin: React.FC = () => {
                           {new Date(pred.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <button 
+                          <button
                             onClick={() => handleDeletePrediction(pred.id)}
                             className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
                           >

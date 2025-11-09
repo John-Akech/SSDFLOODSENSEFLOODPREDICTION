@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { apiService } from '../services/api';
 import RiskBadge from '../components/RiskBadge';
-import { Alert, Prediction } from '../types';
+import { Alert } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 import { useLanguage } from '../i18n/LanguageContext';
 import { reverseGeocode } from '../services/geocoding';
@@ -10,60 +10,53 @@ import '../styles/flood-colors.css';
 
 const Home: React.FC = () => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [predictions, setPredictions] = useState<Prediction[]>([]);
-  const [stats, setStats] = useState({ 
-    total: 0, 
-    high: 0, 
-    zones: 0, 
+  const [stats, setStats] = useState({
+    total: 0,
+    high: 0,
+    zones: 0,
     predictions: 0,
     population: 0,
     accuracy: 0
   });
   const [loading, setLoading] = useState(true);
-  const [locationNames, setLocationNames] = useState<Record<number, string>>({});
+  const [locationNames, setLocationNames] = useState<Record<string, string>>({});
   const [populationByState, setPopulationByState] = useState<Record<string, number>>({});
-  const [floodStats, setFloodStats] = useState<any>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const { t } = useLanguage();
-
-  // Fetch all data with error handling
+  const { t: _ } = useLanguage();
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const [alertData, predData, systemStats, floodData] = await Promise.all([
+      const [alertData, predData, systemStats] = await Promise.all([
         apiService.getActiveAlerts(),
         apiService.getPredictions(),
-        apiService.getSystemStats(),
-        apiService.getFloodStats()
+        apiService.getSystemStats()
       ]);
-      
+
       const alertList = alertData.alerts || [];
       const predList = predData.predictions || [];
-      
+
       setAlerts(alertList);
-      setPredictions(predList);
       setPopulationByState(systemStats.population_by_state || {});
-      setFloodStats(floodData);
-      
+
       // Calculate high risk areas
-      const highRiskCount = alertList.filter((a: Alert) => 
+      const highRiskCount = alertList.filter((a: Alert) =>
         a.severity === 'high' || a.severity === 'critical'
       ).length;
-      
+
       // Calculate total population at risk
-      const totalPopulation = Object.values(systemStats.population_by_state || {}).reduce(
-        (sum, pop) => sum + (pop || 0), 0
+      const totalPopulation = Object.values(systemStats.population_by_state || {}).reduce<number>(
+        (sum, pop) => sum + ((pop as number) || 0), 0
       );
-      
+
       // Get accuracy from system stats or calculate from predictions
-      const accuracyFromStats = systemStats?.accuracy_metrics?.overall_accuracy || 0.87;
-      const accuracy = Math.round(accuracyFromStats * 100);
-      
+      const accuracyFromStats = systemStats?.accuracy_metrics?.overall_accuracy || 0;
+      const accuracy = accuracyFromStats > 0 ? Math.round(accuracyFromStats * 100) : 0;
+
       // Calculate zones from unique coordinate pairs (rounded to 1 decimal place)
-      const uniqueZones = new Set(alertList.map((a: Alert) => 
+      const uniqueZones = new Set(alertList.map((a: Alert) =>
         `${Math.floor(a.latitude * 10) / 10},${Math.floor(a.longitude * 10) / 10}`
       ));
-      
+
       setStats({
         total: alertList.length,
         high: highRiskCount,
@@ -72,7 +65,7 @@ const Home: React.FC = () => {
         population: totalPopulation,
         accuracy: accuracy
       });
-      
+
       // Get location names for all alerts and predictions
       const allLocations = [...alertList, ...predList];
       const locationPromises = allLocations.map(async (item) => {
@@ -84,13 +77,13 @@ const Home: React.FC = () => {
           return { key: `${item.latitude},${item.longitude}`, name: 'Unknown Location' };
         }
       });
-      
+
       const locationResults = await Promise.all(locationPromises);
       const newLocationNames = locationResults.reduce((acc, { key, name }) => {
         acc[key] = name;
         return acc;
       }, {} as Record<string, string>);
-      
+
       setLocationNames(prev => ({ ...prev, ...newLocationNames }));
       setLastUpdate(new Date());
     } catch (error) {
@@ -115,26 +108,6 @@ const Home: React.FC = () => {
       case 'medium': return 'var(--flood-medium)';
       case 'low': return 'var(--flood-low)';
       default: return 'var(--flood-minimal)';
-    }
-  };
-
-  const getRiskLevelColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'var(--risk-critical)';
-      case 'high': return 'var(--risk-high)';
-      case 'medium': return 'var(--risk-medium)';
-      case 'low': return 'var(--risk-low)';
-      default: return 'var(--risk-minimal)';
-    }
-  };
-
-  const getSeverityGradient = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'flood-gradient-critical';
-      case 'high': return 'flood-gradient-high';
-      case 'medium': return 'flood-gradient-medium';
-      case 'low': return 'flood-gradient-low';
-      default: return 'flood-gradient-minimal';
     }
   };
 
@@ -163,7 +136,7 @@ const Home: React.FC = () => {
     state: state.split(' ')[0], // Shorten for display
     fullName: state,
     population: pop || 0,
-    alerts: alerts.filter(a => 
+    alerts: alerts.filter(a =>
       locationNames[`${a.latitude},${a.longitude}`]?.includes(state.split(' ')[0])
     ).length
   }));
@@ -186,7 +159,7 @@ const Home: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-              className="mb-10 sm:mb-12 lg:mb-16"
+          className="mb-10 sm:mb-12 lg:mb-16"
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
             <div className="flex-1 min-w-0">
@@ -214,37 +187,37 @@ const Home: React.FC = () => {
         {/* Key Metrics - Responsive grid with proper spacing */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-12 lg:mb-16">
           {[
-            { 
-              label: 'Priority Zones', 
-              value: stats.zones, 
+            {
+              label: 'Priority Zones',
+              value: stats.zones,
               gradient: 'from-blue-600 to-cyan-600',
               icon: 'Location',
               desc: 'Monitored areas',
-              delay: 0 
+              delay: 0
             },
-            { 
-              label: 'Active Alerts', 
-              value: stats.total, 
+            {
+              label: 'Active Alerts',
+              value: stats.total,
               gradient: 'from-blue-700 to-blue-800',
               icon: 'Alert',
               desc: 'Current alerts',
-              delay: 0.1 
+              delay: 0.1
             },
-            { 
-              label: 'High Risk Areas', 
-              value: stats.high, 
+            {
+              label: 'High Risk Areas',
+              value: stats.high,
               gradient: 'from-amber-500 to-orange-600',
               icon: 'Warning',
               desc: 'High risk zones',
-              delay: 0.2 
+              delay: 0.2
             },
-            { 
-              label: 'Model Accuracy', 
-              value: `${stats.accuracy.toFixed(1)}%`, 
+            {
+              label: 'Model Accuracy',
+              value: `${stats.accuracy.toFixed(1)}%`,
               gradient: 'from-teal-500 to-cyan-600',
               icon: 'Target',
               desc: 'Prediction accuracy',
-              delay: 0.3 
+              delay: 0.3
             }
           ].map((stat, idx) => (
             <motion.div
@@ -258,30 +231,7 @@ const Home: React.FC = () => {
                 <div className="flex items-start justify-between gap-5 sm:gap-6">
                   <div className="flex-1 min-w-0 pr-3 sm:pr-4">
                     <p className="text-slate-600 text-xs sm:text-sm font-medium mb-4 sm:mb-5">{stat.label}</p>
-                    <p className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold text-slate-900 leading-tight">{stat.value}</p>
-                  </div>
-                  <div className={`w-14 h-14 sm:w-16 sm:h-16 flex-shrink-0 rounded-xl bg-gradient-to-r ${stat.gradient} flex items-center justify-center shadow-lg ml-3 sm:ml-4`}>
-                    {stat.icon === 'Location' && (
-                      <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
-                    )}
-                    {stat.icon === 'Alert' && (
-                      <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                    )}
-                    {stat.icon === 'Warning' && (
-                      <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                    )}
-                    {stat.icon === 'Target' && (
-                      <svg className="w-7 h-7 sm:w-8 sm:h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    )}
+                    <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 leading-tight">{stat.value}</p>
                   </div>
                 </div>
                 <p className="text-slate-500 text-xs sm:text-sm mt-2 sm:mt-3">{stat.desc}</p>
@@ -307,7 +257,7 @@ const Home: React.FC = () => {
                   <span className="text-sm text-slate-600">Live Updates</span>
                 </div>
               </div>
-              
+
               {alerts.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -326,32 +276,31 @@ const Home: React.FC = () => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: idx * 0.1 }}
-                      className={`p-6 sm:p-7 rounded-xl border-l-4 transition-all duration-200 hover:shadow-md mb-3 ${
-                        alert.severity === 'critical' ? 'border-red-500 bg-red-50' :
+                      className={`p-6 sm:p-7 rounded-xl border-l-4 transition-all duration-200 hover:shadow-md mb-3 ${alert.severity === 'critical' ? 'border-red-500 bg-red-50' :
                         alert.severity === 'high' ? 'border-orange-500 bg-orange-50' :
-                        alert.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
-                        'border-blue-500 bg-blue-50'
-                      }`}
+                          alert.severity === 'medium' ? 'border-yellow-500 bg-yellow-50' :
+                            'border-blue-500 bg-blue-50'
+                        }`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
-                            <RiskBadge severity={alert.severity} />
+                            <RiskBadge severity={alert.severity as 'low' | 'medium' | 'high' | 'critical'} />
                             <span className="text-sm text-slate-600">
-                              {locationNames[`${alert.latitude},${alert.longitude}`] || 
-                               `${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}`}
+                              {locationNames[`${alert.latitude},${alert.longitude}`] ||
+                                `${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}`}
                             </span>
                           </div>
                           <p className="text-slate-700 font-medium mb-1">
                             {alert.severity === 'critical' ? 'Critical Flood Risk' :
-                             alert.severity === 'high' ? 'High Flood Risk' :
-                             alert.severity === 'medium' ? 'Medium Flood Risk' :
-                             'Low Flood Risk'}
+                              alert.severity === 'high' ? 'High Flood Risk' :
+                                alert.severity === 'medium' ? 'Medium Flood Risk' :
+                                  'Low Flood Risk'}
                           </p>
                           <p className="text-sm text-slate-600">
-                            Created: {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', { 
-                              year: 'numeric', 
-                              month: 'short', 
+                            Created: {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
                               day: 'numeric',
                               hour: '2-digit',
                               minute: '2-digit'
@@ -359,12 +308,11 @@ const Home: React.FC = () => {
                           </p>
                         </div>
                         <div className="text-right">
-                          <div className={`w-4 h-4 rounded-full ${
-                            alert.severity === 'critical' ? 'bg-red-500' :
+                          <div className={`w-4 h-4 rounded-full ${alert.severity === 'critical' ? 'bg-red-500' :
                             alert.severity === 'high' ? 'bg-orange-500' :
-                            alert.severity === 'medium' ? 'bg-yellow-500' :
-                            'bg-blue-500'
-                          }`}></div>
+                              alert.severity === 'medium' ? 'bg-yellow-500' :
+                                'bg-blue-500'
+                            }`}></div>
                         </div>
                       </div>
                     </motion.div>
@@ -396,11 +344,11 @@ const Home: React.FC = () => {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {pieData.map((entry, index) => (
+                      {pieData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip 
+                    <Tooltip
                       formatter={(value, name) => [value, name]}
                       labelStyle={{ color: '#1e40af' }}
                     />
@@ -462,7 +410,7 @@ const Home: React.FC = () => {
                   { level: 'Minimal', color: 'var(--risk-minimal)', desc: 'Normal conditions' }
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start space-x-5">
-                    <div 
+                    <div
                       className="w-6 h-6 rounded-full flex-shrink-0 mt-0.5"
                       style={{ backgroundColor: item.color }}
                     ></div>
@@ -491,16 +439,16 @@ const Home: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="severity" 
+                  <XAxis
+                    dataKey="severity"
                     stroke="#64748b"
                     fontSize={12}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke="#64748b"
                     fontSize={12}
                   />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{
                       backgroundColor: '#f8fafc',
                       border: '1px solid #e2e8f0',
@@ -509,8 +457,8 @@ const Home: React.FC = () => {
                     }}
                     labelStyle={{ color: '#1e40af', fontWeight: '600' }}
                   />
-                  <Bar 
-                    dataKey="count" 
+                  <Bar
+                    dataKey="count"
                     radius={[4, 4, 0, 0]}
                     fill="#3b82f6"
                   />
@@ -526,20 +474,20 @@ const Home: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stateChartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="state" 
+                  <XAxis
+                    dataKey="state"
                     stroke="#64748b"
                     fontSize={12}
                     angle={-45}
                     textAnchor="end"
                     height={60}
                   />
-                  <YAxis 
+                  <YAxis
                     stroke="#64748b"
                     fontSize={12}
                     tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
                   />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(value) => [value.toLocaleString(), 'Population']}
                     contentStyle={{
                       backgroundColor: '#f8fafc',
@@ -549,17 +497,17 @@ const Home: React.FC = () => {
                     }}
                     labelStyle={{ color: '#1e40af', fontWeight: '600' }}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="population" 
-                    stroke="#3b82f6" 
+                  <Area
+                    type="monotone"
+                    dataKey="population"
+                    stroke="#3b82f6"
                     fill="url(#colorGradient)"
                     strokeWidth={2}
                   />
                   <defs>
                     <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1}/>
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0.1} />
                     </linearGradient>
                   </defs>
                 </AreaChart>

@@ -1,0 +1,96 @@
+{
+  "step": "04_train_models",
+  "created_at": "2025-11-09T23:31:55.023900",
+  "data": {
+    "total_samples": 126,
+    "train_samples": 94,
+    "test_samples": 32,
+    "features": 16,
+    "smote_applied": true
+  },
+  "models": {
+    "random_forest": {
+      "model_type": "RandomForestClassifier",
+      "category": "PRIMARY",
+      "hyperparameters": {
+        "n_estimators": 300,
+        "max_depth": 12,
+        "min_samples_split": 8,
+        "min_samples_leaf": 4,
+        "max_features": "sqrt",
+        "class_weight": "balanced",
+        "random_state": 42,
+        "n_jobs": -1,
+        "bootstrap": true,
+        "oob_score": true,
+        "criterion": "gini",
+        "min_impurity_decrease": 0.005,
+        "max_samples": 0.8,
+        "ccp_alpha": 0.0005
+      },
+      "training_time_seconds": 1.103951,
+      "training_samples": 134
+    },
+    "tcn": {
+      "model_type": "TCNModel",
+      "category": "PRIMARY",
+      "hyperparameters": {
+        "input_dim": 16,
+        "num_channels": [
+          64,
+          32
+        ],
+        "kernel_size": 3,
+        "dropout": 0.4
+      },
+      "epochs": 80,
+      "training_time_seconds": 4.602669,
+      "training_samples": 134
+    },
+    "lstm": {
+      "model_type": "LSTMModel",
+      "category": "OPTIONAL",
+      "purpose": "Time series forecasting",
+      "hyperparameters": {
+        "input_dim": 16,
+        "hidden_dim": 64,
+        "num_layers": 2,
+        "dropout": 0.2
+      },
+      "epochs": 50,
+      "training_time_seconds": 3.649193,
+      "training_samples": 134
+    },
+    "gradient_boosting": {
+      "model_type": "GradientBoostingClassifier",
+      "category": "OPTIONAL",
+      "purpose": "Alternative ensemble method",
+      "hyperparameters": {
+        "n_estimators": 200,
+        "max_depth": 6,
+        "min_samples_split": 8,
+        "min_samples_leaf": 4,
+        "learning_rate": 0.08,
+        "subsample": 0.8,
+        "max_features": "sqrt",
+        "random_state": 42,
+        "validation_fraction": 0.15,
+        "n_iter_no_change": 20,
+        "tol": 0.0001,
+        "ccp_alpha": 0.0003
+      },
+      "training_time_seconds": 0.083139,
+      "training_samples": 134
+    }
+  },
+  "test_data": {
+    "X_test_shape": [
+      32,
+      16
+    ],
+    "y_test_shape": [
+      32
+    ],
+    "saved_for_evaluation": true
+  }
+}

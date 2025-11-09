@@ -21,7 +21,7 @@ const NotificationBell: React.FC = () => {
         const filtered = alerts.filter((a: any) => !dismissedIds.has(a.id));
         setNotifications(filtered);
         setUnreadCount(filtered.length);
-        
+
         // Get location names for all alerts
         const locationPromises = alerts.map(async (alert: any) => {
           try {
@@ -32,13 +32,13 @@ const NotificationBell: React.FC = () => {
             return { id: alert.id, name: 'Unknown Location' };
           }
         });
-        
+
         const locationResults = await Promise.all(locationPromises);
         const newLocationNames = locationResults.reduce((acc, { id, name }) => {
           acc[id] = name;
           return acc;
         }, {} as Record<number, string>);
-        
+
         setLocationNames(prev => ({ ...prev, ...newLocationNames }));
       } catch (error) {
         console.error('Failed to fetch notifications:', error);
@@ -46,7 +46,7 @@ const NotificationBell: React.FC = () => {
         setLoading(false);
       }
     };
-    
+
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
@@ -87,19 +87,47 @@ const NotificationBell: React.FC = () => {
 
   const subscribeToPush = async () => {
     try {
-      if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      // Check browser support
+      if (!('serviceWorker' in navigator)) {
+        alert('Your browser does not support service workers');
+        return;
+      }
+      if (!('PushManager' in window)) {
+        alert('Your browser does not support push notifications');
+        return;
+      }
+
+      // Check notification permission
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert('Notification permission denied. Please enable notifications in your browser settings.');
+        return;
+      }
+
+      // Get service worker registration
       const reg = await navigator.serviceWorker.ready;
-      // Use VAPID public key if available
+
+      // Get VAPID public key from environment
       const vapid = (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY;
+      if (!vapid) {
+        console.warn('VAPID public key not found in environment');
+        alert('Push notification configuration is missing. Please contact support.');
+        return;
+      }
+
+      // Subscribe to push notifications
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapid ? urlBase64ToUint8Array(vapid) : undefined,
+        applicationServerKey: urlBase64ToUint8Array(vapid),
       });
+
+      // Send subscription to backend
       await apiService.pushSubscribe(sub.toJSON());
-      alert('Push notifications enabled');
-    } catch (e) {
-      console.error('Push subscribe failed', e);
-      alert('Failed to enable notifications');
+      alert('Push notifications enabled successfully!');
+    } catch (e: any) {
+      console.error('Push subscribe failed:', e);
+      const errorMsg = e?.message || 'Unknown error';
+      alert(`Failed to enable notifications: ${errorMsg}\n\nPlease check:\n- Browser supports notifications\n- Permissions are granted\n- Using HTTPS or localhost`);
     }
   };
 
@@ -194,15 +222,15 @@ const NotificationBell: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     </button>
-                    
+
                     <div className="flex items-start gap-3 pr-8">
-                      <div 
+                      <div
                         className="w-3 h-3 mt-2 rounded-full flex-shrink-0"
                         style={{ backgroundColor: getSeverityColor(notif.severity) }}
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span 
+                          <span
                             className="text-xs font-bold px-2 py-1 rounded-full text-white"
                             style={{ backgroundColor: getSeverityColor(notif.severity) }}
                           >
@@ -212,11 +240,11 @@ const NotificationBell: React.FC = () => {
                             {new Date(notif.created_at || notif.predicted_date).toLocaleTimeString()}
                           </span>
                         </div>
-                        
+
                         <p className="text-sm font-medium text-gray-900 mb-1">
                           {notif.message || `Flood ${notif.severity} risk detected`}
                         </p>
-                        
+
                         <p className="text-xs text-gray-600 font-medium flex items-center gap-1">
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -224,7 +252,7 @@ const NotificationBell: React.FC = () => {
                           </svg>
                           {locationNames[notif.id] || `${notif.latitude.toFixed(4)}, ${notif.longitude.toFixed(4)}`}
                         </p>
-                        
+
                         {notif.confidence && (
                           <p className="text-xs text-gray-500 mt-1">
                             Confidence: {Math.round(notif.confidence * 100)}%

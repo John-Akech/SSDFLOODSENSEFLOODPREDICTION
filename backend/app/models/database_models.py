@@ -191,3 +191,52 @@ class PushSubscription(Base):
     p256dh = Column(Text, nullable=True)
     auth = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class GEEExtractedFeature(Base):
+    """
+    Stores raw satellite features extracted from Google Earth Engine.
+    This is the starting point for the ML pipeline - fresh data from GEE.
+    """
+    __tablename__ = "gee_extracted_features"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    region = Column(String, nullable=False, index=True)  # Jonglei, Unity, Upper Nile
+    extraction_date = Column(DateTime, nullable=False, index=True)
+    
+    # Time window for the extraction
+    start_date = Column(DateTime, nullable=False)
+    end_date = Column(DateTime, nullable=False)
+    
+    # Precipitation features (CHIRPS)
+    precipitation_sum = Column(Float, nullable=True)
+    precipitation_mean = Column(Float, nullable=True)
+    precipitation_max = Column(Float, nullable=True)
+    precipitation_min = Column(Float, nullable=True)
+    
+    # SAR features (Sentinel-1)
+    VV_mean = Column(Float, nullable=True)
+    VV_std = Column(Float, nullable=True)
+    VV_min = Column(Float, nullable=True)
+    VV_max = Column(Float, nullable=True)
+    VH_mean = Column(Float, nullable=True)
+    VH_std = Column(Float, nullable=True)
+    VH_min = Column(Float, nullable=True)
+    VH_max = Column(Float, nullable=True)
+    VV_stdDev_mean = Column(Float, nullable=True)
+    VH_stdDev_mean = Column(Float, nullable=True)
+    
+    # Water features (JRC)
+    water_occurrence_mean = Column(Float, nullable=True)
+    water_occurrence_max = Column(Float, nullable=True)
+    
+    # Topography features (SRTM)
+    elevation_mean = Column(Float, nullable=True)
+    slope_mean = Column(Float, nullable=True)
+    
+    # Soil moisture features (SMAP) - optional
+    soil_moisture_mean = Column(Float, nullable=True)
+    
+    # Metadata
+    gee_project_id = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)

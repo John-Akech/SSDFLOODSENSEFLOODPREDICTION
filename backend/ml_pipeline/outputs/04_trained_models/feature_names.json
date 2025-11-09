@@ -1,0 +1,18 @@
+[
+  "VV_mean",
+  "VV_std",
+  "VV_min",
+  "VV_max",
+  "VH_mean",
+  "VH_std",
+  "VH_min",
+  "VH_max",
+  "VV_stdDev_mean",
+  "VH_stdDev_mean",
+  "precipitation_sum",
+  "precipitation_mean",
+  "precipitation_max",
+  "elevation_mean",
+  "slope_mean",
+  "water_occurrence_mean"
+]

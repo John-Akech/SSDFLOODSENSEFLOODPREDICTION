@@ -1,0 +1,15 @@
+# Reduce slug size by excluding unnecessary files
+*.pyc
+__pycache__/
+.pytest_cache/
+.git/
+.github/
+notebooks/
+data/FLoodObservatoryData/
+data/original_gee_data_2019_2024/
+data/time_series_data/
+tests/
+*.ipynb
+docker-compose*.yml
+quick-start.*
+DOCKER_GUIDE.md

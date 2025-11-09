@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 120000,
+  timeout: 5000, // Reduced from 120000ms to 5000ms (5 seconds)
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -45,9 +45,10 @@ export const apiService = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('userRole');
   },
   getCurrentUser: async () => (await api.get('/auth/me')).data,
-  
+
   // Predictions - Enhanced with real-time data
   createPrediction: async (lat: number, lng: number) => {
     const response = await api.post('/predictions', {
@@ -62,45 +63,45 @@ export const apiService = {
   getPrediction: async (id: number) => (await api.get(`/predictions/${id}`)).data,
   updatePrediction: async (id: number, data: any) => (await api.put(`/predictions/${id}`, data)).data,
   deletePrediction: async (id: number) => (await api.delete(`/predictions/${id}`)).data,
-  
+
   // Alerts - Enhanced with real-time updates
   getActiveAlerts: async (params?: any) => (await api.get('/alerts', { params })).data,
   createAlert: async (data: any) => (await api.post('/alerts', data)).data,
   updateAlert: async (id: number, data: any) => (await api.put(`/alerts/${id}`, data)).data,
   deleteAlert: async (id: number) => (await api.delete(`/alerts/${id}`)).data,
   getAlertHistory: async (params?: any) => (await api.get('/alerts/history', { params })).data,
-  
+
   // Real-time flood monitoring
   getFloodStatus: async () => (await api.get('/flood/status')).data,
   getFloodRiskLevels: async (bounds?: any) => (await api.get('/flood/risk-levels', { params: bounds })).data,
   getFloodPredictions: async (bounds?: any) => (await api.get('/flood/predictions', { params: bounds })).data,
-  
+
   // GIS and Mapping
   getDykeRecommendations: async (data: any) => (await api.post('/recommendations/dyke-placement', data)).data,
   getFloodZones: async (bounds?: any) => (await api.get('/gis/flood-zones', { params: bounds })).data,
   getElevationData: async (lat: number, lng: number) => (await api.get(`/gis/elevation?lat=${lat}&lng=${lng}`)).data,
   getWaterBodies: async (bounds?: any) => (await api.get('/gis/water-bodies', { params: bounds })).data,
-  
+
   // Feedback and Reports
   submitFeedback: async (data: any) => (await api.post('/feedback', { ...data, comments: data.comments ? sanitize(data.comments) : undefined })).data,
   getFeedback: async (params?: any) => (await api.get('/feedback', { params })).data,
   submitReport: async (data: any) => (await api.post('/reports', data)).data,
   getReports: async (params?: any) => (await api.get('/reports', { params })).data,
-  
+
   // Users Management
   getUsers: async (params?: any) => (await api.get('/users', { params })).data,
   getUser: async (id: number) => (await api.get(`/users/${id}`)).data,
   updateUser: async (id: number, data: any) => (await api.put(`/users/${id}`, data)).data,
   deleteUser: async (id: number) => (await api.delete(`/users/${id}`)).data,
   updateUserProfile: async (data: any) => (await api.put('/users/profile', data)).data,
-  
+
   // Flood Events - Enhanced
   createFloodEvent: async (data: any) => (await api.post('/flood-events', data)).data,
   getFloodEvents: async (params?: any) => (await api.get('/flood-events', { params })).data,
   getFloodEvent: async (id: number) => (await api.get(`/flood-events/${id}`)).data,
   updateFloodEvent: async (id: number, data: any) => (await api.put(`/flood-events/${id}`, data)).data,
   deleteFloodEvent: async (id: number) => (await api.delete(`/flood-events/${id}`)).data,
-  
+
   // Statistics - Enhanced with real-time data
   getSystemStats: async () => (await api.get('/stats/system')).data,
   getFloodStats: async (params?: any) => (await api.get('/stats/flood', { params })).data,
@@ -109,40 +110,41 @@ export const apiService = {
   getModelStats: async (n: number = 500) => (await api.get('/stats/models', { params: { n } })).data,
   getValidatedModelStats: async () => (await api.get('/stats/models/validated')).data,
   getAlertStats: async (params?: any) => (await api.get('/stats/alerts', { params })).data,
-  
+  getTimeSeriesStats: async (days: number = 7) => (await api.get('/stats/time-series', { params: { days } })).data,
+
   // Web Push
   pushSubscribe: async (subscription: any) => (await api.post('/push/subscribe', subscription)).data,
   pushUnsubscribe: async (endpoint: string) => (await api.post('/push/unsubscribe', { endpoint })).data,
   pushTest: async () => (await api.post('/push/test')).data,
-  
+
   // Notifications
   getNotifications: async (params?: any) => (await api.get('/notifications', { params })).data,
   markNotificationRead: async (id: number) => (await api.put(`/notifications/${id}/read`)).data,
   markAllNotificationsRead: async () => (await api.put('/notifications/read-all')).data,
   createNotification: async (data: any) => (await api.post('/notifications', data)).data,
-  
+
   // Settings and Configuration
   getSettings: async () => (await api.get('/settings')).data,
   updateSettings: async (data: any) => (await api.put('/settings', data)).data,
   getAppConfig: async () => (await api.get('/config')).data,
-  
+
   // Health and Status
   healthCheck: async () => (await api.get('/health')).data,
   getSystemStatus: async () => (await api.get('/status')).data,
-  
+
   // Data Export
   exportData: async (type: string, params?: any) => {
-    const response = await api.get(`/export/${type}`, { 
+    const response = await api.get(`/export/${type}`, {
       params,
       responseType: 'blob'
     });
     return response.data;
   },
-  
+
   // Offline Support
   getOfflineData: async () => (await api.get('/offline/data')).data,
   syncOfflineData: async (data: any) => (await api.post('/offline/sync', data)).data,
-  
+
   // Weather and Environmental Data
   getWeatherData: async (lat: number, lng: number) => (await api.get(`/weather?lat=${lat}&lng=${lng}`)).data,
   getRainfallData: async (params?: any) => (await api.get('/weather/rainfall', { params })).data,

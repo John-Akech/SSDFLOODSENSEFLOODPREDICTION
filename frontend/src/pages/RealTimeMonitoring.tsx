@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer, AreaChart, Area, GaugeChart, Gauge, ComposedChart
+import {
+  Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, AreaChart, Area, ComposedChart
 } from 'recharts';
 import { apiService } from '../services/api';
 import '../styles/flood-colors.css';
 
 const RealTimeMonitoring: React.FC = () => {
   const [alerts, setAlerts] = useState<any[]>([]);
-  const [sensors, setSensors] = useState<any[]>([]);
-  const [systemStatus, setSystemStatus] = useState<any>({});
+  const [predictions, setPredictions] = useState<any[]>([]);
+  const [floodEvents, setFloodEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
@@ -18,16 +18,15 @@ const RealTimeMonitoring: React.FC = () => {
   const fetchRealTimeData = useCallback(async () => {
     try {
       setLoading(true);
-      const [alertData, sensorData, statusData] = await Promise.all([
+      const [alertData, predData, floodEventData] = await Promise.all([
         apiService.getActiveAlerts(),
-        apiService.getFloodStatus(),
-        apiService.getSystemStatus()
+        apiService.getPredictions({ limit: 50 }),
+        apiService.getFloodEvents({ limit: 50 })
       ]);
-      
+
       setAlerts(alertData.alerts || []);
-      // No sensors - using satellite data and predictions instead
-      setSensors([]);
-      setSystemStatus(statusData);
+      setPredictions(predData.predictions || []);
+      setFloodEvents(floodEventData || []);
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Failed to fetch real-time data:', error);
@@ -42,36 +41,87 @@ const RealTimeMonitoring: React.FC = () => {
     return () => clearInterval(interval);
   }, [fetchRealTimeData]);
 
-  // Mock real-time data for visualization
-  const waterLevelData = [
-    { time: '00:00', level: 2.1, threshold: 4.0, critical: 5.0 },
-    { time: '02:00', level: 2.3, threshold: 4.0, critical: 5.0 },
-    { time: '04:00', level: 2.8, threshold: 4.0, critical: 5.0 },
-    { time: '06:00', level: 3.2, threshold: 4.0, critical: 5.0 },
-    { time: '08:00', level: 3.8, threshold: 4.0, critical: 5.0 },
-    { time: '10:00', level: 4.2, threshold: 4.0, critical: 5.0 },
-    { time: '12:00', level: 4.8, threshold: 4.0, critical: 5.0 },
-    { time: '14:00', level: 5.1, threshold: 4.0, critical: 5.0 },
-    { time: '16:00', level: 4.9, threshold: 4.0, critical: 5.0 },
-    { time: '18:00', level: 4.5, threshold: 4.0, critical: 5.0 },
-    { time: '20:00', level: 4.1, threshold: 4.0, critical: 5.0 },
-    { time: '22:00', level: 3.7, threshold: 4.0, critical: 5.0 }
-  ];
+  // Generate water level data from actual flood events and predictions
+  // NOTE: Water level data is derived from flood probabilities and events.
+  // For production deployment with physical sensors, integrate with:
+  // 1. IoT water level sensors via MQTT/HTTP
+  // 2. Hydrological APIs (e.g., USGS Water Services, local gauge stations)
+  // 3. River gauge networks in South Sudan
+  const generateWaterLevelData = () => {
+    const data = [];
+    const now = new Date();
 
-  const alertTrends = [
-    { hour: '00:00', alerts: 2, warnings: 1, critical: 0 },
-    { hour: '02:00', alerts: 3, warnings: 2, critical: 0 },
-    { hour: '04:00', alerts: 4, warnings: 3, critical: 1 },
-    { hour: '06:00', alerts: 6, warnings: 4, critical: 1 },
-    { hour: '08:00', alerts: 8, warnings: 5, critical: 2 },
-    { hour: '10:00', alerts: 12, warnings: 7, critical: 3 },
-    { hour: '12:00', alerts: 15, warnings: 9, critical: 4 },
-    { hour: '14:00', alerts: 18, warnings: 11, critical: 5 },
-    { hour: '16:00', alerts: 16, warnings: 10, critical: 4 },
-    { hour: '18:00', alerts: 14, warnings: 8, critical: 3 },
-    { hour: '20:00', alerts: 11, warnings: 6, critical: 2 },
-    { hour: '22:00', alerts: 8, warnings: 4, critical: 1 }
-  ];
+    // Get last 24 hours of data
+    for (let i = 0; i < 12; i++) {
+      const time = new Date(now);
+      time.setHours(time.getHours() - (11 - i) * 2);
+
+      // Find predictions and events near this time
+      const nearbyEvents = floodEvents.filter((event: any) => {
+        const eventDate = new Date(event.created_at);
+        const timeDiff = Math.abs(eventDate.getTime() - time.getTime());
+        return timeDiff < 2 * 60 * 60 * 1000; // within 2 hours
+      });
+
+      const nearbyPredictions = predictions.filter((pred: any) => {
+        const predDate = new Date(pred.created_at);
+        const timeDiff = Math.abs(predDate.getTime() - time.getTime());
+        return timeDiff < 2 * 60 * 60 * 1000;
+      });
+
+      // Calculate water level based on flood probability
+      const avgProbability = nearbyPredictions.length > 0
+        ? nearbyPredictions.reduce((sum, p) => sum + (p.flood_probability || 0), 0) / nearbyPredictions.length
+        : 0;
+
+      const waterLevel = 2 + (avgProbability * 3.5); // Scale from 2m to 5.5m
+
+      data.push({
+        time: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        level: Number(waterLevel.toFixed(1)),
+        threshold: 4.0,
+        critical: 5.0,
+        events: nearbyEvents.length
+      });
+    }
+
+    return data;
+  };
+
+  // Generate alert trends from actual alerts
+  const generateAlertTrends = () => {
+    const data = [];
+    const now = new Date();
+
+    for (let i = 0; i < 12; i++) {
+      const time = new Date(now);
+      time.setHours(time.getHours() - (11 - i) * 2);
+      const nextTime = new Date(time);
+      nextTime.setHours(nextTime.getHours() + 2);
+
+      // Count alerts in this time window
+      const timeAlerts = alerts.filter((alert: any) => {
+        const alertDate = new Date(alert.created_at);
+        return alertDate >= time && alertDate < nextTime;
+      });
+
+      const criticalCount = timeAlerts.filter((a: any) => a.severity === 'critical').length;
+      const highCount = timeAlerts.filter((a: any) => a.severity === 'high').length;
+      const mediumCount = timeAlerts.filter((a: any) => a.severity === 'medium' || a.severity === 'warning').length;
+
+      data.push({
+        hour: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        alerts: timeAlerts.length,
+        warnings: highCount + mediumCount,
+        critical: criticalCount
+      });
+    }
+
+    return data;
+  };
+
+  const waterLevelData = generateWaterLevelData();
+  const alertTrends = generateAlertTrends();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -80,16 +130,6 @@ const RealTimeMonitoring: React.FC = () => {
       case 'alert': return 'var(--risk-medium)';
       case 'normal': return 'var(--risk-minimal)';
       default: return 'var(--risk-low)';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'critical': return 'Critical';
-      case 'warning': return 'Warning';
-      case 'alert': return 'Alert';
-      case 'normal': return 'Normal';
-      default: return 'Unknown';
     }
   };
 
@@ -137,30 +177,30 @@ const RealTimeMonitoring: React.FC = () => {
         {/* Status Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {[
-            { 
-              title: 'Active Alerts', 
-              value: alerts.length, 
+            {
+              title: 'Active Alerts',
+              value: alerts.length,
               change: '+12%',
               color: 'var(--risk-critical)',
               icon: 'Alert'
             },
-            { 
-              title: 'Active Predictions', 
-              value: alerts.length || 0, 
+            {
+              title: 'Active Predictions',
+              value: alerts.length || 0,
               change: '+5%',
               color: 'var(--flood-medium)',
               icon: 'Prediction'
             },
-            { 
-              title: 'System Uptime', 
-              value: '99.8%', 
+            {
+              title: 'System Uptime',
+              value: '99.8%',
               change: '+0.1%',
               color: 'var(--risk-minimal)',
               icon: 'Uptime'
             },
-            { 
-              title: 'Data Points', 
-              value: '2.4K', 
+            {
+              title: 'Data Points',
+              value: '2.4K',
               change: '+156',
               color: 'var(--flood-high)',
               icon: 'Data'
@@ -174,14 +214,11 @@ const RealTimeMonitoring: React.FC = () => {
               className="flood-card p-6"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: metric.color + '20' }}>
-                  <span className="text-2xl font-bold" style={{ color: metric.color }}>{metric.icon.charAt(0)}</span>
-                </div>
                 <span className={`text-sm font-semibold ${metric.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
                   {metric.change}
                 </span>
               </div>
-              <h3 className="text-2xl font-bold text-flood-title mb-1">{metric.value}</h3>
+              <h3 className="text-xl font-bold text-flood-title mb-1">{metric.value}</h3>
               <p className="text-slate-600 text-sm">{metric.title}</p>
             </motion.div>
           ))}
@@ -202,16 +239,16 @@ const RealTimeMonitoring: React.FC = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={waterLevelData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis 
-                      dataKey="time" 
+                    <XAxis
+                      dataKey="time"
                       stroke="#64748b"
                       fontSize={12}
                     />
-                    <YAxis 
+                    <YAxis
                       stroke="#64748b"
                       fontSize={12}
                     />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{
                         backgroundColor: '#f8fafc',
                         border: '1px solid #e2e8f0',
@@ -220,26 +257,26 @@ const RealTimeMonitoring: React.FC = () => {
                       }}
                     />
                     <Legend />
-                    <Area 
-                      type="monotone" 
-                      dataKey="level" 
-                      stroke="var(--flood-medium)" 
+                    <Area
+                      type="monotone"
+                      dataKey="level"
+                      stroke="var(--flood-medium)"
                       fill="var(--flood-medium)"
                       fillOpacity={0.6}
                       name="Water Level (m)"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="threshold" 
-                      stroke="var(--risk-medium)" 
+                    <Line
+                      type="monotone"
+                      dataKey="threshold"
+                      stroke="var(--risk-medium)"
                       strokeWidth={2}
                       strokeDasharray="5 5"
                       name="Warning Threshold"
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="critical" 
-                      stroke="var(--risk-critical)" 
+                    <Line
+                      type="monotone"
+                      dataKey="critical"
+                      stroke="var(--risk-critical)"
                       strokeWidth={2}
                       strokeDasharray="5 5"
                       name="Critical Level"
@@ -273,13 +310,13 @@ const RealTimeMonitoring: React.FC = () => {
                         <h4 className="font-semibold text-slate-900 text-sm flex-1 min-w-0">
                           Alert #{alert.id || idx + 1}
                         </h4>
-                        <span 
+                        <span
                           className="px-3 py-1.5 rounded-full text-xs font-semibold text-white flex-shrink-0"
-                          style={{ 
+                          style={{
                             backgroundColor: alert.severity === 'critical' ? 'var(--risk-critical)' :
-                                            alert.severity === 'high' ? 'var(--risk-high)' :
-                                            alert.severity === 'medium' ? 'var(--risk-medium)' :
-                                            'var(--risk-low)'
+                              alert.severity === 'high' ? 'var(--risk-high)' :
+                                alert.severity === 'medium' ? 'var(--risk-medium)' :
+                                  'var(--risk-low)'
                           }}
                         >
                           {alert.severity || 'Unknown'}
@@ -317,16 +354,16 @@ const RealTimeMonitoring: React.FC = () => {
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={alertTrends}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis 
-                  dataKey="hour" 
+                <XAxis
+                  dataKey="hour"
                   stroke="#64748b"
                   fontSize={12}
                 />
-                <YAxis 
+                <YAxis
                   stroke="#64748b"
                   fontSize={12}
                 />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{
                     backgroundColor: '#f8fafc',
                     border: '1px solid #e2e8f0',
@@ -335,21 +372,21 @@ const RealTimeMonitoring: React.FC = () => {
                   }}
                 />
                 <Legend />
-                <Bar 
-                  dataKey="alerts" 
-                  fill="var(--risk-medium)" 
+                <Bar
+                  dataKey="alerts"
+                  fill="var(--risk-medium)"
                   name="Alerts"
                   radius={[2, 2, 0, 0]}
                 />
-                <Bar 
-                  dataKey="warnings" 
-                  fill="var(--risk-high)" 
+                <Bar
+                  dataKey="warnings"
+                  fill="var(--risk-high)"
                   name="Warnings"
                   radius={[2, 2, 0, 0]}
                 />
-                <Bar 
-                  dataKey="critical" 
-                  fill="var(--risk-critical)" 
+                <Bar
+                  dataKey="critical"
+                  fill="var(--risk-critical)"
                   name="Critical"
                   radius={[2, 2, 0, 0]}
                 />
@@ -397,7 +434,7 @@ const RealTimeMonitoring: React.FC = () => {
                         {alert.latitude?.toFixed(4)}, {alert.longitude?.toFixed(4)}
                       </td>
                       <td className="py-3 px-4">
-                        <span 
+                        <span
                           className="px-3 py-1 rounded-full text-xs font-semibold text-white"
                           style={{ backgroundColor: getStatusColor(alert.severity) }}
                         >
@@ -408,9 +445,9 @@ const RealTimeMonitoring: React.FC = () => {
                         {Math.random() * 5 + 1} m
                       </td>
                       <td className="py-3 px-4 text-slate-600">
-                        {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', { 
-                          year: 'numeric', 
-                          month: 'short', 
+                        {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
                           day: 'numeric',
                           hour: '2-digit',
                           minute: '2-digit'

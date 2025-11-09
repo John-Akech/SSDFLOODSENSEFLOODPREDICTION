@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, LayersControl, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { apiService } from '../services/api';
 import { reverseGeocode } from '../services/geocoding';
@@ -18,12 +18,10 @@ interface AnalysisResult {
 const GISAnalysis: React.FC = () => {
   const [alerts, setAlerts] = useState<any[]>([]);
   const [predictions, setPredictions] = useState<any[]>([]);
-  const [selectedLocation, setSelectedLocation] = useState<{lat: number, lng: number} | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const [statistics, setStatistics] = useState<any>(null);
-  
-  const [mapCenter] = useState([7.5, 30.0]);
+
+  const [mapCenter] = useState<[number, number]>([7.5, 30.0]);
   const southSudanBounds: [[number, number], [number, number]] = [
     [3.5, 23.5], [12.0, 35.9]
   ];
@@ -33,15 +31,13 @@ const GISAnalysis: React.FC = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [alertData, predData, systemStats] = await Promise.all([
+        const [alertData, predData] = await Promise.all([
           apiService.getActiveAlerts(),
-          apiService.getPredictions(),
-          apiService.getSystemStats()
+          apiService.getPredictions()
         ]);
-        
+
         setAlerts(alertData.alerts || []);
         setPredictions(predData.predictions || []);
-        setStatistics(systemStats);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -55,15 +51,14 @@ const GISAnalysis: React.FC = () => {
   // Analyze location when clicked
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
     setLoading(true);
-    setSelectedLocation({ lat, lng });
-    
+
     try {
       // Get elevation data and location name
       const [elevationData, locationName] = await Promise.all([
         apiService.getElevationData(lat, lng),
         reverseGeocode(lat, lng).catch(() => 'Unknown Location')
       ]);
-      
+
       // Find if this location has any alerts or predictions
       const nearbyAlerts = alerts.filter(a => {
         const dist = Math.sqrt(
@@ -71,7 +66,7 @@ const GISAnalysis: React.FC = () => {
         );
         return dist < 0.01; // ~1km radius
       });
-      
+
       const nearbyPredictions = predictions.filter(p => {
         const dist = Math.sqrt(
           Math.pow(p.latitude - lat, 2) + Math.pow(p.longitude - lng, 2)
@@ -80,10 +75,10 @@ const GISAnalysis: React.FC = () => {
       });
 
       // Calculate flood risk
-      const highestRisk = nearbyPredictions.reduce((max, p) => 
+      const highestRisk = nearbyPredictions.reduce((max, p) =>
         Math.max(max, (p.flood_probability || 0)), 0
       );
-      
+
       // Generate recommendation
       let recommendation = '';
       if (highestRisk > 0.7) {
@@ -252,7 +247,7 @@ const GISAnalysis: React.FC = () => {
                         <RiskBadge severity={analysisResult.floodRisk > 70 ? 'critical' : analysisResult.floodRisk > 50 ? 'high' : 'low'} />
                       </div>
                       <div className="w-full bg-purple-200 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-gradient-to-r from-purple-500 to-indigo-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${analysisResult.floodRisk}%` }}
                         ></div>

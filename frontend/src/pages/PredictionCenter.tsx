@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, 
-  ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, ScatterChart, Scatter,
-  ComposedChart, ReferenceLine, RadialBarChart, RadialBar
+import {
+  Line, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell,
+  ComposedChart
 } from 'recharts';
 import { apiService } from '../services/api';
 import '../styles/flood-colors.css';
@@ -11,7 +11,6 @@ import '../styles/flood-colors.css';
 const PredictionCenter: React.FC = () => {
   const [predictions, setPredictions] = useState<any[]>([]);
   const [models, setModels] = useState<any[]>([]);
-  const [accuracy, setAccuracy] = useState<any>({});
   const [loading, setLoading] = useState(true);
   const [selectedModel, setSelectedModel] = useState('ensemble');
   const [timeRange, setTimeRange] = useState('7d');
@@ -23,27 +22,25 @@ const PredictionCenter: React.FC = () => {
   const fetchPredictionData = useCallback(async () => {
     try {
       setLoading(true);
-      const [predData, modelData, accuracyData, modelStats, validatedStats] = await Promise.all([
+      const [predData, modelStats, validatedStats] = await Promise.all([
         apiService.getPredictions({ time_range: timeRange }),
-        apiService.getFloodStats(),
-        apiService.getPredictionStats(),
         apiService.getModelStats(300),
         apiService.getValidatedModelStats()
       ]);
-      
+
       const preds = predData.predictions || [];
       setPredictions(preds);
-      
+
       // Generate historical prediction data from actual predictions - use real model breakdown if available
-      const history = preds.slice(-20).map((pred, idx) => {
+      const history = preds.slice(-20).map((pred: any) => {
         const baseConfidence = pred.confidence_score || 0;
         const timestamp = new Date(pred.created_at || Date.now());
-        
+
         // Try to extract individual model scores if available in prediction metadata
         const ensemble = pred.confidence_score || baseConfidence;
         const rf = pred.model_scores?.rf || pred.model_scores?.random_forest || (baseConfidence > 0 ? baseConfidence * 0.98 : null);
         const tcn = pred.model_scores?.tcn || pred.model_scores?.temporal_cnn || (baseConfidence > 0 ? baseConfidence * 0.97 : null);
-        
+
         return {
           time: timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
           ensemble: ensemble,
@@ -51,12 +48,12 @@ const PredictionCenter: React.FC = () => {
           tcn: tcn || ensemble * 0.97,
           timestamp: timestamp.getTime()
         };
-      }).filter(h => h.ensemble > 0);
-      
+      }).filter((h: any) => h.ensemble > 0);
+
       // Sort by timestamp and take last 15 points for better visualization
-      history.sort((a, b) => a.timestamp - b.timestamp);
+      history.sort((a: any, b: any) => a.timestamp - b.timestamp);
       setPredictionHistory(history.length > 0 ? history.slice(-15) : []);
-      
+
       // Build model cards from live /stats/models - only show rf, tcn, and ensemble
       const liveModels = modelStats?.models || {};
       const normalizeName = (key: string) => {
@@ -66,7 +63,7 @@ const PredictionCenter: React.FC = () => {
         if (lowerKey.includes('ensemble')) return 'Ensemble';
         return key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
       };
-      
+
       // Filter to only show rf, tcn, and ensemble models - check multiple possible key names
       const allowedModelKeys = ['rf', 'random_forest', 'tcn', 'temporal_cnn', 'ensemble', 'bp-ensemble'];
       const cards = Object.entries(liveModels)
@@ -80,7 +77,7 @@ const PredictionCenter: React.FC = () => {
           const avgProb = s?.avg_probability || validatedMetrics.roc_auc || 0;
           const avgConf = s?.avg_confidence || validatedMetrics.precision || 0;
           const lastPredTime = s?.last_prediction_time || s?.last_update;
-          
+
           // Format last update time dynamically
           let lastUpdateText = 'Just now';
           if (lastPredTime) {
@@ -89,7 +86,7 @@ const PredictionCenter: React.FC = () => {
               const now = new Date();
               const diffMs = now.getTime() - updateTime.getTime();
               const diffMins = Math.floor(diffMs / 60000);
-              
+
               if (diffMins < 1) lastUpdateText = 'Just now';
               else if (diffMins < 60) lastUpdateText = `${diffMins}m ago`;
               else if (diffMins < 1440) lastUpdateText = `${Math.floor(diffMins / 60)}h ago`;
@@ -98,13 +95,13 @@ const PredictionCenter: React.FC = () => {
               lastUpdateText = 'Recent';
             }
           }
-          
+
           // Normalize key for consistent identification
           let normalizedKey = key.toLowerCase();
           if (normalizedKey.includes('rf') || normalizedKey.includes('random_forest')) normalizedKey = 'rf';
           else if (normalizedKey.includes('tcn') || normalizedKey.includes('temporal_cnn')) normalizedKey = 'tcn';
           else if (normalizedKey.includes('ensemble')) normalizedKey = 'ensemble';
-          
+
           return {
             name: normalizeName(key),
             key: normalizedKey,
@@ -120,10 +117,9 @@ const PredictionCenter: React.FC = () => {
           const order: Record<string, number> = { ensemble: 0, rf: 1, tcn: 2 };
           return (order[a.key] ?? 99) - (order[b.key] ?? 99);
         });
-      
+
       // Only set models if we have real data from API - no hardcoded fallbacks
       setModels(cards);
-      setAccuracy(accuracyData);
       setModelLatency(modelStats?.models || {});
       setValidated(validatedStats || null);
     } catch (error) {
@@ -157,18 +153,18 @@ const PredictionCenter: React.FC = () => {
   const modelPerformance = models.map(model => {
     // Try to get validated metrics first
     const validatedMetrics = validated?.metrics?.[model.originalKey] || validated?.metrics?.[model.key] || {};
-    
+
     return {
       model: model.name,
       accuracy: model.accuracy,
-      precision: validatedMetrics.precision 
-        ? Math.round(validatedMetrics.precision * 100) 
+      precision: validatedMetrics.precision
+        ? Math.round(validatedMetrics.precision * 100)
         : Math.round(model.confidence * 100),
-      recall: validatedMetrics.recall 
-        ? Math.round(validatedMetrics.recall * 100) 
+      recall: validatedMetrics.recall
+        ? Math.round(validatedMetrics.recall * 100)
         : Math.round(model.confidence * 100),
-      f1: validatedMetrics.f1 
-        ? Math.round(validatedMetrics.f1 * 100) 
+      f1: validatedMetrics.f1
+        ? Math.round(validatedMetrics.f1 * 100)
         : Math.round(model.confidence * 100),
       rocAuc: validatedMetrics.roc_auc || model.confidence
     };
@@ -237,48 +233,46 @@ const PredictionCenter: React.FC = () => {
             </span>
           </h2>
           {models.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10 lg:gap-12">
-            {models.map((model, idx) => (
-              <motion.div
-                key={model.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 + idx * 0.1 }}
-                className={`flood-card p-8 sm:p-10 lg:p-12 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${
-                  selectedModel === model.key || selectedModel === model.name.toLowerCase().replace(' ', '-')
-                    ? 'ring-2 ring-blue-500 bg-blue-50/50 shadow-lg' 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-14">
+              {models.map((model, idx) => (
+                <motion.div
+                  key={model.name}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 + idx * 0.1 }}
+                  className={`flood-card p-12 sm:p-14 lg:p-16 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${selectedModel === model.key || selectedModel === model.name.toLowerCase().replace(' ', '-')
+                    ? 'ring-2 ring-blue-500 bg-blue-50/50 shadow-lg'
                     : 'hover:ring-2 hover:ring-blue-300'
-                }`}
-                onClick={() => setSelectedModel(model.key || model.name.toLowerCase().replace(' ', '-'))}
-              >
-                <div className="flex items-start justify-between mb-8">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-5 h-5 rounded-full flex-shrink-0 ${
-                      model.accuracy >= 87 ? 'bg-teal-500' :
-                      model.accuracy >= 83 ? 'bg-amber-500' : 'bg-blue-700'
-                    } ${model.accuracy >= 87 ? 'animate-pulse' : ''}`}></div>
-                    <h3 className="font-bold text-lg sm:text-xl text-slate-900">{model.name}</h3>
+                    }`}
+                  onClick={() => setSelectedModel(model.key || model.name.toLowerCase().replace(' ', '-'))}
+                >
+                  <div className="flex items-start justify-between mb-12">
+                    <div className="flex items-center gap-6">
+                      <div className={`w-8 h-8 rounded-full flex-shrink-0 ${model.accuracy >= 87 ? 'bg-teal-500' :
+                        model.accuracy >= 83 ? 'bg-amber-500' : 'bg-blue-700'
+                        } ${model.accuracy >= 87 ? 'animate-pulse' : ''}`}></div>
+                      <h3 className="font-bold text-2xl sm:text-3xl text-slate-900">{model.name}</h3>
+                    </div>
                   </div>
-                </div>
-                <div className="text-center mb-8 pb-8 border-b border-slate-200">
-                  <div className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                    {model.accuracy}%
+                  <div className="text-center mb-12 pb-12 border-b-2 border-slate-200">
+                    <div className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-5 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                      {model.accuracy}%
+                    </div>
+                    <div className="text-lg font-semibold text-slate-600 uppercase tracking-wide mt-4">Accuracy</div>
                   </div>
-                  <div className="text-sm font-medium text-slate-600 uppercase tracking-wide mt-2">Accuracy</div>
-                </div>
-                <div className="space-y-5 text-sm mt-8">
-                  <div className="flex items-center justify-between py-3 px-4 bg-slate-50 rounded-lg">
-                    <span className="text-slate-600 font-medium text-sm">Confidence:</span>
-                    <span className="font-bold text-slate-900 text-base">{(model.confidence * 100).toFixed(1)}%</span>
+                  <div className="space-y-7 mt-12">
+                    <div className="flex items-center justify-between py-5 px-6 bg-slate-50 rounded-xl">
+                      <span className="text-slate-600 font-semibold text-lg">Confidence:</span>
+                      <span className="font-bold text-slate-900 text-xl">{(model.confidence * 100).toFixed(1)}%</span>
+                    </div>
+                    <div className="flex items-center justify-between py-5 px-6 bg-slate-50 rounded-xl">
+                      <span className="text-slate-600 font-semibold text-lg">Last Update:</span>
+                      <span className="text-slate-500 font-semibold text-lg">{model.lastUpdate}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between py-3 px-4 bg-slate-50 rounded-lg">
-                    <span className="text-slate-600 font-medium text-sm">Last Update:</span>
-                    <span className="text-slate-500 font-medium text-sm">{model.lastUpdate}</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
           ) : (
             <div className="flood-card p-12 text-center">
               <div className="max-w-md mx-auto">
@@ -313,23 +307,23 @@ const PredictionCenter: React.FC = () => {
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={modelPerformance} margin={{ top: 50, right: 80, bottom: 80, left: 60 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                      <XAxis 
-                        dataKey="model" 
+                      <XAxis
+                        dataKey="model"
                         stroke="#64748b"
                         fontSize={12}
                       />
-                      <YAxis 
+                      <YAxis
                         yAxisId="left"
                         stroke="#64748b"
                         fontSize={12}
                       />
-                      <YAxis 
-                        yAxisId="right" 
+                      <YAxis
+                        yAxisId="right"
                         orientation="right"
                         stroke="#64748b"
                         fontSize={12}
                       />
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{
                           backgroundColor: '#f8fafc',
                           border: '1px solid #e2e8f0',
@@ -338,18 +332,18 @@ const PredictionCenter: React.FC = () => {
                         }}
                       />
                       <Legend />
-                      <Bar 
+                      <Bar
                         yAxisId="left"
-                        dataKey="accuracy" 
-                        fill="var(--flood-medium)" 
+                        dataKey="accuracy"
+                        fill="var(--flood-medium)"
                         name="Accuracy (%)"
                         radius={[2, 2, 0, 0]}
                       />
-                      <Line 
+                      <Line
                         yAxisId="right"
-                        type="monotone" 
-                        dataKey="f1" 
-                        stroke="var(--risk-high)" 
+                        type="monotone"
+                        dataKey="f1"
+                        stroke="var(--risk-high)"
                         strokeWidth={3}
                         name="F1 Score"
                         dot={{ fill: 'var(--risk-high)', strokeWidth: 2, r: 4 }}
@@ -367,32 +361,32 @@ const PredictionCenter: React.FC = () => {
                 <div className="flex-1 flex items-center justify-center">
                   {distributionData.length > 0 ? (
                     <div className="h-[300px] sm:h-[350px] lg:h-[380px] w-full mb-8 min-w-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart margin={{ top: 50, right: 50, bottom: 50, left: 50 }}>
-                      <Pie
-                        data={distributionData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={35}
-                        outerRadius={70}
-                        paddingAngle={3}
-                        dataKey="count"
-                      >
-                        {distributionData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value, name) => [value, name]}
-                        contentStyle={{
-                          backgroundColor: '#f8fafc',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                        }}
-                      />
-                    </PieChart>
-                    </ResponsiveContainer>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart margin={{ top: 50, right: 50, bottom: 50, left: 50 }}>
+                          <Pie
+                            data={distributionData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={35}
+                            outerRadius={70}
+                            paddingAngle={3}
+                            dataKey="count"
+                          >
+                            {distributionData.map((_entry, index) => (
+                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value, name) => [value, name]}
+                            contentStyle={{
+                              backgroundColor: '#f8fafc',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '8px',
+                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
                     </div>
                   ) : (
                     <div className="text-center text-slate-500 py-8">
@@ -401,20 +395,20 @@ const PredictionCenter: React.FC = () => {
                   )}
                 </div>
                 {distributionData.length > 0 && (
-                <div className="space-y-6 mt-10 sm:mt-12">
-                  {distributionData.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between gap-6 px-3">
-                      <div className="flex items-center space-x-6">
-                        <div 
-                          className="w-7 h-7 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: item.color }}
-                        ></div>
-                        <span className="text-sm font-medium text-slate-700">{item.risk}</span>
+                  <div className="space-y-6 mt-10 sm:mt-12">
+                    {distributionData.map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between gap-6 px-3">
+                        <div className="flex items-center space-x-6">
+                          <div
+                            className="w-7 h-7 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: item.color }}
+                          ></div>
+                          <span className="text-sm font-medium text-slate-700">{item.risk}</span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-900">{item.count}</span>
                       </div>
-                      <span className="text-sm font-bold text-slate-900">{item.count}</span>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
@@ -435,59 +429,59 @@ const PredictionCenter: React.FC = () => {
           </h2>
           <div className="flood-card p-9 sm:p-11 lg:p-14 xl:p-16 overflow-x-auto">
             {predictionHistory.length > 0 ? (
-            <div className="h-80 sm:h-96 lg:h-[450px] w-full min-w-[600px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={predictionHistory} margin={{ top: 50, right: 80, bottom: 80, left: 60 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis 
-                    dataKey="time" 
-                    stroke="#64748b"
-                    fontSize={12}
-                  />
-                  <YAxis 
-                    stroke="#64748b"
-                    fontSize={12}
-                    domain={[0.7, 1.0]}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: '#f8fafc',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Legend />
-                  <Area 
-                    type="monotone" 
-                    dataKey="ensemble" 
-                    stackId="1"
-                    stroke="var(--flood-high)" 
-                    fill="var(--flood-high)"
-                    fillOpacity={0.6}
-                    name="Ensemble Model"
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="rf" 
-                    stackId="2"
-                    stroke="var(--flood-medium)" 
-                    fill="var(--flood-medium)"
-                    fillOpacity={0.4}
-                    name="Random Forest"
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="tcn" 
-                    stackId="3"
-                    stroke="var(--flood-low)" 
-                    fill="var(--flood-low)"
-                    fillOpacity={0.3}
-                    name="Temporal CNN"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+              <div className="h-80 sm:h-96 lg:h-[450px] w-full min-w-[600px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={predictionHistory} margin={{ top: 50, right: 80, bottom: 80, left: 60 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis
+                      dataKey="time"
+                      stroke="#64748b"
+                      fontSize={12}
+                    />
+                    <YAxis
+                      stroke="#64748b"
+                      fontSize={12}
+                      domain={[0.7, 1.0]}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: '#f8fafc',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                    <Legend />
+                    <Area
+                      type="monotone"
+                      dataKey="ensemble"
+                      stackId="1"
+                      stroke="var(--flood-high)"
+                      fill="var(--flood-high)"
+                      fillOpacity={0.6}
+                      name="Ensemble Model"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="rf"
+                      stackId="2"
+                      stroke="var(--flood-medium)"
+                      fill="var(--flood-medium)"
+                      fillOpacity={0.4}
+                      name="Random Forest"
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="tcn"
+                      stackId="3"
+                      stroke="var(--flood-low)"
+                      fill="var(--flood-low)"
+                      fillOpacity={0.3}
+                      name="Temporal CNN"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             ) : (
               <div className="h-96 sm:h-[450px] flex items-center justify-center text-slate-500">
                 <div className="text-center">
@@ -521,7 +515,7 @@ const PredictionCenter: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {Object.entries(modelLatency).map(([name, stats]: any, idx) => (
+                  {Object.entries(modelLatency).map(([name, stats]: any) => (
                     <tr key={name} className="border-b border-slate-100 hover:bg-slate-50">
                       <td className="py-5 px-6 font-medium capitalize text-sm text-slate-700">{name}</td>
                       <td className="py-5 px-6 text-sm text-slate-600">{stats.count}</td>
@@ -615,12 +609,11 @@ const PredictionCenter: React.FC = () => {
                       <td className="py-5 px-6 text-sm text-slate-600 font-medium">{model.recall}%</td>
                       <td className="py-5 px-6 text-sm text-slate-600 font-medium">{model.f1}%</td>
                       <td className="py-5 px-6">
-                        <span className={`px-4 py-2 rounded-full text-xs font-bold inline-block ${
-                          model.accuracy > 95 ? 'bg-teal-100 text-teal-800' :
+                        <span className={`px-4 py-2 rounded-full text-xs font-bold inline-block ${model.accuracy > 95 ? 'bg-teal-100 text-teal-800' :
                           model.accuracy > 90 ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'
-                        }`}>
+                          }`}>
                           {model.accuracy > 95 ? 'Excellent' :
-                           model.accuracy > 90 ? 'Good' : 'Needs Improvement'}
+                            model.accuracy > 90 ? 'Good' : 'Needs Improvement'}
                         </span>
                       </td>
                     </motion.tr>

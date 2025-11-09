@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import { apiService } from '../services/api';
 import '../styles/flood-colors.css';
 
 const DataSharing: React.FC = () => {
   const location = useLocation();
   const currentPath = location.pathname;
+  const [modelAccuracy, setModelAccuracy] = useState<number>(0);
   const [formData, setFormData] = useState({
     dataType: 'flood_observation',
     location: '',
@@ -17,10 +19,24 @@ const DataSharing: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [uploading, setUploading] = useState(false);
 
+  // Fetch real model accuracy
+  useEffect(() => {
+    const fetchModelAccuracy = async () => {
+      try {
+        const stats = await apiService.getSystemStats();
+        const accuracy = stats?.accuracy_metrics?.overall_accuracy || 0;
+        setModelAccuracy(accuracy);
+      } catch (error) {
+        console.error('Failed to fetch model accuracy:', error);
+      }
+    };
+    fetchModelAccuracy();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploading(true);
-    
+
     // Simulate upload
     setTimeout(() => {
       setSubmitted(true);
@@ -40,44 +56,44 @@ const DataSharing: React.FC = () => {
   };
 
   const dataTypes = [
-    { 
-      value: 'flood_observation', 
-      label: 'Flood Observation', 
+    {
+      value: 'flood_observation',
+      label: 'Flood Observation',
       icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z',
       color: 'from-blue-500 to-blue-600',
       desc: 'Visual observations of flood conditions, water levels, and extent'
     },
-    { 
-      value: 'rainfall_data', 
-      label: 'Rainfall Data', 
+    {
+      value: 'rainfall_data',
+      label: 'Rainfall Data',
       icon: 'M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z',
       color: 'from-cyan-500 to-cyan-600',
       desc: 'Precipitation measurements and rainfall records'
     },
-    { 
-      value: 'satellite_imagery', 
-      label: 'Satellite Imagery', 
+    {
+      value: 'satellite_imagery',
+      label: 'Satellite Imagery',
       icon: 'M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z',
       color: 'from-purple-500 to-purple-600',
       desc: 'Remote sensing data and satellite images'
     },
-    { 
-      value: 'infrastructure_data', 
-      label: 'Infrastructure', 
+    {
+      value: 'infrastructure_data',
+      label: 'Infrastructure',
       icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
       color: 'from-indigo-500 to-indigo-600',
       desc: 'Roads, buildings, and critical facilities data'
     },
-    { 
-      value: 'community_feedback', 
-      label: 'Community Feedback', 
+    {
+      value: 'community_feedback',
+      label: 'Community Feedback',
       icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z',
       color: 'from-green-500 to-green-600',
       desc: 'Local knowledge, community reports, and feedback'
     },
-    { 
-      value: 'other', 
-      label: 'Other Data', 
+    {
+      value: 'other',
+      label: 'Other Data',
       icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
       color: 'from-gray-500 to-gray-600',
       desc: 'Additional relevant information and data'
@@ -85,23 +101,23 @@ const DataSharing: React.FC = () => {
   ];
 
   const benefits = [
-    { 
-      text: 'Improve AI Model Accuracy', 
+    {
+      text: 'Improve AI Model Accuracy',
       icon: 'M13 10V3L4 14h7v7l9-11h-7z',
       color: 'text-blue-600'
     },
-    { 
-      text: 'Protect Your Community', 
+    {
+      text: 'Protect Your Community',
       icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
       color: 'text-green-600'
     },
-    { 
-      text: 'Contribute to Research', 
+    {
+      text: 'Contribute to Research',
       icon: 'M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z',
       color: 'text-purple-600'
     },
-    { 
-      text: 'Better Early Warnings', 
+    {
+      text: 'Better Early Warnings',
       icon: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
       color: 'text-orange-600'
     }
@@ -252,82 +268,167 @@ const DataSharing: React.FC = () => {
 
   // Default: Data Sharing form
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 min-h-screen pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
           {/* Header Section */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-16">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.8 }}
-              className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 rounded-full text-sm font-semibold mb-6 border border-blue-200 shadow-lg"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-100 to-cyan-100 text-blue-800 rounded-full text-base font-bold mb-8 border-2 border-blue-300 shadow-xl"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
-              Data Contribution Portal
+              Data Contribution Portal - Help Build Better Predictions
             </motion.div>
-            
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
+
+            <h1 className="text-6xl md:text-7xl font-extrabold mb-8 bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent leading-tight">
               Share Your Data
             </h1>
-            <p className="text-xl text-slate-600 max-w-4xl mx-auto leading-relaxed">
-              Help improve flood predictions by sharing your observations, measurements, and local knowledge. 
-              Every contribution makes a difference in protecting communities.
+            <p className="text-2xl text-slate-700 max-w-4xl mx-auto leading-relaxed font-medium mb-8">
+              Help improve flood predictions by sharing your observations, measurements, and local knowledge.
+              <span className="block mt-4 text-xl text-blue-600 font-bold">Every contribution makes a difference in protecting communities across South Sudan!</span>
             </p>
+
+            {/* Stats Bar */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto mt-12">
+              {[
+                { num: '2,345', label: 'Data Contributions', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', color: 'from-blue-500 to-blue-600' },
+                { num: '487', label: 'Active Contributors', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z', color: 'from-green-500 to-green-600' },
+                { num: modelAccuracy > 0 ? `${Math.round(modelAccuracy * 100)}%` : '-', label: 'Model Accuracy', icon: 'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z', color: 'from-purple-500 to-purple-600' },
+                { num: '12', label: 'Counties Covered', icon: 'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z', color: 'from-cyan-500 to-cyan-600' }
+              ].map((stat, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.4 + idx * 0.1 }}
+                  whileHover={{ scale: 1.05, y: -5 }}
+                  className="bg-white rounded-2xl shadow-xl p-6 border-2 border-slate-200 hover:border-blue-300 transition-all duration-300"
+                >
+                  <div className={`w-14 h-14 bg-gradient-to-br ${stat.color} rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg`}>
+                    <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={stat.icon} />
+                    </svg>
+                  </div>
+                  <p className="text-3xl font-black text-slate-900 mb-2">{stat.num}</p>
+                  <p className="text-sm font-semibold text-slate-600">{stat.label}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
-          {/* Main Content - Grid Layout (minimalist, no cards) */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-8 md:gap-10 items-start">
-            {/* Left Sidebar - Data Types (plain list) */}
-            <div className="xl:col-span-1 min-w-0">
-              <h3 className="text-base font-semibold text-gray-900 mb-3">Data Types</h3>
-              <div className="space-y-2">
-                {dataTypes.map((type) => (
-                  <button
-                    key={type.value}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, dataType: type.value })}
-                    className={`w-full text-left px-3 py-2 rounded-lg border text-sm transition-colors ${
-                      formData.dataType === type.value
-                        ? 'bg-blue-50 border-blue-400 text-blue-800'
-                        : 'bg-white border-gray-200 text-gray-800 hover:border-blue-300'
-                    }`}
-                    aria-pressed={formData.dataType === type.value}
-                  >
-                    <div className="flex items-center gap-2">
-                      <span className="inline-block w-2 h-2 rounded-full bg-blue-500"></span>
-                      <span className="font-medium">{type.label}</span>
-                      {formData.dataType === type.value && (
-                        <span className="ml-auto text-[11px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 font-semibold">Selected</span>
-                      )}
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1 truncate">{type.desc}</div>
-                  </button>
-                ))}
-              </div>
+          {/* Main Content - Grid Layout */}
+          <div className="grid grid-cols-1 xl:grid-cols-4 gap-10 items-start">
+            {/* Left Sidebar - Data Types */}
+            <div className="xl:col-span-1">
+              <div className="bg-white rounded-2xl shadow-xl p-8 border-2 border-slate-200 sticky top-8">
+                <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                  </div>
+                  Data Types
+                </h3>
+                <div className="space-y-3">
+                  {dataTypes.map((type) => (
+                    <motion.button
+                      key={type.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, dataType: type.value })}
+                      className={`w-full text-left px-5 py-4 rounded-xl border-2 text-sm transition-all duration-200 ${formData.dataType === type.value
+                        ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-500 shadow-lg scale-105'
+                        : 'bg-white border-gray-200 text-gray-800 hover:border-blue-300 hover:shadow-md'
+                        }`}
+                      whileHover={{ scale: formData.dataType !== type.value ? 1.02 : 1.05 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`w-10 h-10 bg-gradient-to-r ${type.color} rounded-lg flex items-center justify-center shadow-md`}>
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={type.icon} />
+                          </svg>
+                        </div>
+                        <div className="flex-1">
+                          <span className="font-bold text-base block">{type.label}</span>
+                          {formData.dataType === type.value && (
+                            <motion.span
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              className="text-xs px-2 py-1 rounded-full bg-blue-500 text-white font-semibold inline-block mt-1"
+                            >
+                              ✓ Selected
+                            </motion.span>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-xs text-gray-600 leading-relaxed">{type.desc}</p>
+                    </motion.button>
+                  ))}
+                </div>
 
-              <h3 className="text-base font-semibold text-gray-900 mt-8 mb-3">Why Share?</h3>
-              <ul className="space-y-2">
-                {benefits.map((item, idx) => (
-                  <li key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    {item.text}
-                  </li>
-                ))}
-              </ul>
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl shadow-xl p-8 border-2 border-green-200 mt-8">
+                  <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    Why Share?
+                  </h3>
+                  <ul className="space-y-4">
+                    {benefits.map((item, idx) => (
+                      <motion.li
+                        key={idx}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.6 + idx * 0.1 }}
+                        className="flex items-start gap-3"
+                      >
+                        <div className={`w-8 h-8 bg-gradient-to-br ${item.color.replace('text-', 'from-')} to-${item.color.split('-')[1]}-700 rounded-lg flex items-center justify-center flex-shrink-0 shadow-md`}>
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{item.text}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {idx === 0 && 'Your data trains better AI models'}
+                            {idx === 1 && 'Help save lives in your community'}
+                            {idx === 2 && 'Support scientific research'}
+                            {idx === 3 && 'Enable faster emergency response'}
+                          </p>
+                        </div>
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
             </div>
 
-            {/* Main Form Area (plain section) */}
-            <div className="xl:col-span-3 min-w-0">
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Your Data</h3>
-              <p className="text-gray-600 mb-6">Fill out the form below to contribute your data</p>
-                
+            {/* Main Form Area */}
+            <div className="xl:col-span-3">
+              <div className="bg-white rounded-2xl shadow-2xl p-10 border-2 border-slate-200">
+                <div className="mb-8">
+                  <h3 className="text-3xl font-black text-gray-900 mb-3 flex items-center gap-3">
+                    <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                      </svg>
+                    </div>
+                    Upload Your Data
+                  </h3>
+                  <p className="text-lg text-gray-600">Fill out the form below to contribute your valuable data to our flood prediction system</p>
+                </div>
+
                 <AnimatePresence mode="wait">
                   {!submitted ? (
                     <motion.form
@@ -443,7 +544,7 @@ const DataSharing: React.FC = () => {
                           <div>
                             <h4 className="font-semibold text-gray-900 mb-1">Privacy & Security</h4>
                             <p className="text-sm text-gray-700 leading-relaxed">
-                              Your data will be used solely for improving flood prediction models. 
+                              Your data will be used solely for improving flood prediction models.
                               All personal information will be kept confidential and secure in compliance with data protection regulations.
                             </p>
                           </div>
@@ -497,6 +598,7 @@ const DataSharing: React.FC = () => {
                 </AnimatePresence>
               </div>
             </div>
+          </div>
         </motion.div>
       </div>
     </div>

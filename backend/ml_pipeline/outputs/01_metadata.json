@@ -1,0 +1,43 @@
+{
+  "step": "01_load_merge_data",
+  "created_at": "2025-11-09T18:08:57.692164",
+  "input_source": "flood_training_data_full_20251109.csv",
+  "output_file": "01_merged_dataset.csv",
+  "total_samples": 126,
+  "total_features": 17,
+  "flood_events": 90,
+  "non_flood_events": 36,
+  "class_balance_ratio": 0.7142857142857143,
+  "missing_values": 19,
+  "duplicate_rows": 0,
+  "data_sources": {
+    "SAR": "Sentinel-1 (Google Earth Engine)",
+    "Precipitation": "CHIRPS (Climate Hazards Group)",
+    "Elevation": "SRTM (Shuttle Radar Topography Mission)",
+    "Water": "JRC Global Surface Water"
+  },
+  "features": [
+    "VV_mean",
+    "VV_std",
+    "VV_min",
+    "VV_max",
+    "VH_mean",
+    "VH_std",
+    "VH_min",
+    "VH_max",
+    "VV_stdDev_mean",
+    "VH_stdDev_mean",
+    "precipitation_sum",
+    "precipitation_mean",
+    "precipitation_max",
+    "elevation_mean",
+    "slope_mean",
+    "water_occurrence_mean",
+    "flood"
+  ],
+  "quality_checks": {
+    "no_missing": false,
+    "no_duplicates": true,
+    "target_balanced": false
+  }
+}

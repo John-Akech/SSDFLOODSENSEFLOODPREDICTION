@@ -56,13 +56,13 @@ const MapClickHandler: React.FC<{
   return null;
 };
 
-const MapController: React.FC<{ 
-  center: [number, number] | null; 
+const MapController: React.FC<{
+  center: [number, number] | null;
   zoom: number;
   bounds?: [[number, number], [number, number]];
 }> = ({ center, zoom, bounds }) => {
   const map = useMap();
-  
+
   React.useEffect(() => {
     if (bounds) {
       map.fitBounds(bounds, { padding: [20, 20] });
@@ -70,7 +70,7 @@ const MapController: React.FC<{
       map.setView(center, zoom, { animate: true, duration: 1 });
     }
   }, [center, zoom, bounds, map]);
-  
+
   return null;
 };
 
@@ -79,7 +79,7 @@ const MapSizeInvalidator: React.FC = () => {
   const map = useMap();
   React.useEffect(() => {
     const invalidate = () => {
-      try { map.invalidateSize(false); } catch {}
+      try { map.invalidateSize(false); } catch { }
     };
     const t = setTimeout(invalidate, 300);
     window.addEventListener('resize', invalidate);
@@ -112,7 +112,7 @@ const Map: React.FC = () => {
     lastUpdate: new Date().toLocaleTimeString()
   });
   const [error, setError] = useState<string | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [autoRefresh] = useState(true);
 
   // South Sudan bounds
   const southSudanBounds: [[number, number], [number, number]] = [
@@ -125,31 +125,30 @@ const Map: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [alertData, predData, floodStats] = await Promise.all([
+      const [alertData, predData] = await Promise.all([
         apiService.getActiveAlerts(),
-        apiService.getPredictions(),
-        apiService.getFloodStats()
+        apiService.getPredictions()
       ]);
-      
+
       const alertList = alertData.alerts || [];
       const predList = predData.predictions || [];
-      
+
       setAlerts(alertList);
       setExistingPredictions(predList);
-      
+
       // Update stats
       setStats({
         totalAlerts: alertList.length,
         totalPredictions: predList.length,
-        highRiskAreas: alertList.filter(a => a.severity === 'critical' || a.severity === 'high').length,
+        highRiskAreas: alertList.filter((a: Alert) => a.severity === 'critical' || a.severity === 'high').length,
         lastUpdate: new Date().toLocaleTimeString()
       });
-      
+
       // Set initial map center to South Sudan if not set
       if (!mapCenter) {
         setMapCenter([7.5, 30.0]);
       }
-      
+
       // Get location names for all alerts and predictions
       const allLocations = [...alertList, ...predList];
       const locationPromises = allLocations.map(async (item) => {
@@ -161,13 +160,13 @@ const Map: React.FC = () => {
           return { key: `${item.latitude},${item.longitude}`, name: 'Unknown Location' };
         }
       });
-      
+
       const locationResults = await Promise.all(locationPromises);
       const newLocationNames = locationResults.reduce((acc, { key, name }) => {
         acc[key] = name;
         return acc;
       }, {} as Record<string, string>);
-      
+
       setLocationNames(prev => ({ ...prev, ...newLocationNames }));
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -188,23 +187,23 @@ const Map: React.FC = () => {
 
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
     if (predicting) return;
-    
+
     setPredicting(true);
     try {
       const prediction = await apiService.createPrediction(lat, lng);
       setPredictions(prev => [...prev, prediction]);
-      
+
       // Get location name
       try {
         const name = await reverseGeocode(lat, lng);
-        setLocationNames(prev => ({ 
-          ...prev, 
-          [`${lat},${lng}`]: name 
+        setLocationNames(prev => ({
+          ...prev,
+          [`${lat},${lng}`]: name
         }));
       } catch (error) {
         console.warn('Failed to get location name:', error);
-        setLocationNames(prev => ({ 
-          ...prev, 
+        setLocationNames(prev => ({
+          ...prev,
           [`${lat},${lng}`]: 'Unknown Location'
         }));
       }
@@ -219,17 +218,17 @@ const Map: React.FC = () => {
 
   const handleSearch = useCallback(async () => {
     if (!searchPlace.trim() || searching) return;
-    
+
     setSearching(true);
     try {
       const coords = await forwardGeocode(searchPlace);
       if (coords) {
-        setMapCenter([coords.lat, coords.lng]);
+        setMapCenter([coords.lat, coords.lon]);
         // Force map re-render
         setMapKey(prev => prev + 1);
         // Auto-create prediction for searched location
         setTimeout(() => {
-          handleMapClick(coords.lat, coords.lng);
+          handleMapClick(coords.lat, coords.lon);
         }, 1000);
       } else {
         alert('Location not found. Please try a different search term.');
@@ -262,11 +261,11 @@ const Map: React.FC = () => {
     }
   };
 
-  const filteredAlerts = alerts.filter(alert => 
+  const filteredAlerts = alerts.filter(alert =>
     selectedRiskLevel === 'all' || alert.severity === selectedRiskLevel
   );
 
-  const filteredPredictions = [...predictions, ...existingPredictions].filter(pred => 
+  const filteredPredictions = [...predictions, ...existingPredictions].filter(pred =>
     selectedRiskLevel === 'all' || (pred.risk_level || 'low') === selectedRiskLevel
   );
 
@@ -275,7 +274,7 @@ const Map: React.FC = () => {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
         <div className="flood-card max-w-md text-center p-8">
           <p className="text-red-600 font-bold mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => { setError(null); setLoading(true); fetchData(); }}
             className="btn-flood-primary px-4 py-2 mt-2"
           >
@@ -314,7 +313,7 @@ const Map: React.FC = () => {
               </h1>
               <p className="text-sm sm:text-base text-slate-600">Interactive flood prediction and monitoring</p>
             </div>
-            
+
             <div className="flex flex-row items-center gap-3 sm:gap-4 flex-wrap">
               {/* Search */}
               <div className="flex items-center space-x-2">
@@ -375,16 +374,16 @@ const Map: React.FC = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
             <MapSizeInvalidator />
-            
+
             <MapClickHandler onMapClick={handleMapClick} disabled={predicting} />
-            <MapController 
-              center={mapCenter} 
-              zoom={6} 
+            <MapController
+              center={mapCenter}
+              zoom={6}
               bounds={mapCenter ? undefined : southSudanBounds}
             />
 
             {/* Flood Risk Circles for Alerts */}
-            {filteredAlerts.map((alert, idx) => (
+            {filteredAlerts.map((alert) => (
               <Circle
                 key={`alert-${alert.id}`}
                 center={[alert.latitude, alert.longitude]}
@@ -399,17 +398,17 @@ const Map: React.FC = () => {
                 <Popup>
                   <div className="p-2">
                     <div className="flex items-center space-x-2 mb-2">
-                      <RiskBadge severity={alert.severity} />
+                      <RiskBadge severity={alert.severity as 'low' | 'medium' | 'high' | 'critical'} />
                       <span className="font-semibold">Flood Alert</span>
                     </div>
                     <p className="text-sm text-slate-600 mb-1">
-                      {locationNames[`${alert.latitude},${alert.longitude}`] || 
-                       `${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}`}
+                      {locationNames[`${alert.latitude},${alert.longitude}`] ||
+                        `${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}`}
                     </p>
                     <p className="text-sm text-slate-500">
-                      Created: {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
+                      Created: {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
@@ -434,8 +433,8 @@ const Map: React.FC = () => {
                       <span className="font-semibold">Flood Prediction</span>
                     </div>
                     <p className="text-sm text-slate-600 mb-1">
-                      {locationNames[`${prediction.latitude},${prediction.longitude}`] || 
-                       `${prediction.latitude.toFixed(4)}, ${prediction.longitude.toFixed(4)}`}
+                      {locationNames[`${prediction.latitude},${prediction.longitude}`] ||
+                        `${prediction.latitude.toFixed(4)}, ${prediction.longitude.toFixed(4)}`}
                     </p>
                     <p className="text-sm text-slate-500">
                       Confidence: {Math.round((prediction.confidence_score || 0) * 100)}%
@@ -479,7 +478,7 @@ const Map: React.FC = () => {
                   { level: 'Minimal', color: '#65a30d', desc: 'Normal conditions' }
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center space-x-3">
-                    <div 
+                    <div
                       className="w-4 h-4 rounded-full"
                       style={{ backgroundColor: item.color }}
                     ></div>
@@ -517,19 +516,19 @@ const Map: React.FC = () => {
         >
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
-              <p className="text-2xl font-bold text-flood-title">{stats.totalAlerts}</p>
+              <p className="text-xl font-bold text-flood-title">{stats.totalAlerts}</p>
               <p className="text-sm text-slate-600">Active Alerts</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-flood-title">{stats.totalPredictions}</p>
+              <p className="text-xl font-bold text-flood-title">{stats.totalPredictions}</p>
               <p className="text-sm text-slate-600">Predictions</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-flood-title">{stats.highRiskAreas}</p>
+              <p className="text-xl font-bold text-flood-title">{stats.highRiskAreas}</p>
               <p className="text-sm text-slate-600">High Risk Areas</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-flood-title">{stats.lastUpdate}</p>
+              <p className="text-xl font-bold text-flood-title">{stats.lastUpdate}</p>
               <p className="text-sm text-slate-600">Last Update</p>
             </div>
           </div>

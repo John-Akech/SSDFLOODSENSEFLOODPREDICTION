@@ -124,16 +124,6 @@ def sanitize_input(input_str: str) -> str:
     return sanitized.strip()
 
 
-def get_current_user(token: str):
-    """Placeholder for getting current user from token"""
-    from schemas.schemas import User, UserRole
-    # In production, decode token and fetch user from database
-    # For now, return a mock admin user
-    return User(
-        id=1,
-        email="admin@floodsense.org",
-        full_name="Admin User",
-        role=UserRole.ADMIN,
-        is_active=True,
-        created_at=datetime.utcnow()
-    )
+# NOTE: get_current_user has been moved to middleware/auth_middleware.py
+# This function was a mock placeholder and is no longer needed.
+# Authentication is now handled properly through JWT tokens in auth_middleware

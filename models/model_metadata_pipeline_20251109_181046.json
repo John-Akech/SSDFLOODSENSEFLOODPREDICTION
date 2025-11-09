@@ -1,0 +1,107 @@
+{
+  "model_info": {
+    "name": "Gradient Boosting",
+    "type": "GradientBoostingClassifier",
+    "version": "20251109_181046",
+    "created_at": "2025-11-09T18:10:46.489380",
+    "pipeline_version": "1.0.0"
+  },
+  "performance": {
+    "test_accuracy": 0.96875,
+    "cv_accuracy": 0.9046153846153846,
+    "precision": 0.9565217391304348,
+    "recall": 0.9565217391304348,
+    "f1_score": 0.9565217391304348,
+    "roc_auc": 0.9806763285024156,
+    "confusion_matrix": {
+      "tn": 8,
+      "fp": 1,
+      "fn": 1,
+      "tp": 22
+    }
+  },
+  "production_readiness": {
+    "meets_86_requirement": true,
+    "status": "production_ready",
+    "recommendation": "Highest accuracy (96.88%) among production-ready models"
+  },
+  "training_data": {
+    "source": "flood_training_data_full_20251109.csv",
+    "total_samples": 126,
+    "flood_events": 90,
+    "date_range": "N/A",
+    "regions": {},
+    "data_sources": {
+      "SAR": "Sentinel-1 (Google Earth Engine)",
+      "Precipitation": "CHIRPS (Climate Hazards Group)",
+      "Elevation": "SRTM (Shuttle Radar Topography Mission)",
+      "Water": "JRC Global Surface Water"
+    }
+  },
+  "training_config": {
+    "hyperparameters": {
+      "n_estimators": 150,
+      "max_depth": 5,
+      "min_samples_split": 10,
+      "min_samples_leaf": 5,
+      "learning_rate": 0.05,
+      "subsample": 0.75,
+      "max_features": "sqrt",
+      "random_state": 42,
+      "validation_fraction": 0.15,
+      "n_iter_no_change": 15,
+      "tol": 0.001,
+      "ccp_alpha": 0.0005
+    },
+    "training_time_seconds": 0.140732,
+    "smote_applied": true,
+    "train_test_split": {
+      "test_size": 0.25,
+      "stratified": true,
+      "random_state": 42
+    }
+  },
+  "features": {
+    "count": 16,
+    "scaling": "StandardScaler",
+    "scaler_file": "feature_scaler_pipeline_20251109_181046.pkl"
+  },
+  "files": {
+    "model": "gradient_boosting_pipeline_20251109_181046.pkl",
+    "scaler": "feature_scaler_pipeline_20251109_181046.pkl",
+    "features": "feature_names_pipeline_20251109_181046.json"
+  },
+  "deployment": {
+    "python_version": "3.12+",
+    "required_packages": [
+      "scikit-learn>=1.3.0",
+      "numpy>=1.24.0",
+      "pandas>=2.0.0",
+      "joblib>=1.3.0"
+    ],
+    "usage_example": {
+      "load": "model = joblib.load('gradient_boosting_pipeline_20251109_181046.pkl')",
+      "predict": "predictions = model.predict(X_scaled)",
+      "note": "Features must be scaled using the saved scaler before prediction"
+    }
+  },
+  "validation": {
+    "no_overfitting": false,
+    "no_data_leakage": true,
+    "temporal_ordering": true,
+    "quality_checks_passed": {
+      "no_missing": false,
+      "no_duplicates": true,
+      "target_balanced": false
+    }
+  },
+  "pipeline_steps": {
+    "01_load_merge_data": " Complete",
+    "02_explore_visualize": " Complete",
+    "03_preprocess_data": " Complete",
+    "04_train_models": " Complete",
+    "05_evaluate_tune": " Complete",
+    "06_compare_models": " Complete",
+    "07_save_model": " Complete"
+  }
+}

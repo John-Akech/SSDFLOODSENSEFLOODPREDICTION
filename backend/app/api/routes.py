@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from typing import Optional
 from datetime import datetime
 import logging
+import httpx
 
 import sys
 import os
@@ -13,12 +15,72 @@ from schemas.schemas import *
 from models.database_models import Prediction as DBPrediction, Alert as DBAlert
 from services.model_service import ModelService
 from services.alert_service import alert_service
-from models.database_models import PushSubscription as DBPush
+from models.database_models import Prediction as DBPrediction, Alert as DBAlert, PushSubscription as DBPush
 from services.gis_service import GISService
-from fastapi import Body
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# SAR service configuration
+SAR_SERVICE_URL = os.getenv("SAR_SERVICE_URL", "http://localhost:8080")
+
+
+async def fetch_gee_features(latitude: float, longitude: float, lead_time_hours: int = 12) -> dict:
+    """Fetch satellite features from SAR detection service
+    
+    Args:
+        latitude: Location latitude
+        longitude: Location longitude
+        lead_time_hours: Forecast lead time in hours
+        
+    Returns:
+        Dictionary with GEE-extracted features
+        
+    Raises:
+        HTTPException: If SAR service is unavailable or returns error
+    """
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                f"{SAR_SERVICE_URL}/extract-features",
+                json={
+                    "latitude": latitude,
+                    "longitude": longitude,
+                    "buffer_km": 5.0,  # 5km radius for feature extraction
+                    "lead_time_hours": lead_time_hours
+                }
+            )
+            
+            if response.status_code == 200:
+                gee_data = response.json()
+                logger.info(f"Successfully fetched GEE features for ({latitude}, {longitude})")
+                return gee_data.get("features", {})
+            else:
+                error_detail = response.json().get("detail", "Unknown error")
+                logger.error(f"SAR service error: {response.status_code} - {error_detail}")
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"Failed to fetch satellite data: {error_detail}"
+                )
+                
+    except httpx.TimeoutException:
+        logger.error(f"SAR service timeout for ({latitude}, {longitude})")
+        raise HTTPException(
+            status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+            detail="Satellite data service timeout. Please try again."
+        )
+    except httpx.ConnectError:
+        logger.error(f"Cannot connect to SAR service at {SAR_SERVICE_URL}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Satellite data service unavailable. Please ensure SAR detection service is running."
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error fetching GEE features: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error fetching satellite data: {str(e)}"
+        )
 
 
 
@@ -36,6 +98,10 @@ async def create_prediction(
 ):
     """Create a flood prediction"""
     try:
+        logger.info(f"=== Prediction request received: lat={request.latitude}, lon={request.longitude}, model_type={request.model_type} ===")
+        logger.info(f"Models loaded status: {ModelService.models_loaded}")
+        logger.info(f"RF model: {ModelService.rf_model is not None}, GB model: {ModelService.gb_model is not None}")
+        
         # Validate coordinates are not default/invalid values
         if (request.latitude == -90.0 and request.longitude == -180.0) or \
            (request.latitude == 0.0 and request.longitude == 0.0):
@@ -48,15 +114,50 @@ async def create_prediction(
         if not (3 <= request.latitude <= 13 and 24 <= request.longitude <= 36):
             logger.warning(f"Coordinates outside South Sudan: {request.latitude}, {request.longitude}")
         
-        # Realtime-safe feature guard: disallow leak-prone fields
-        forbidden = {"sar_after", "sar_difference", "sar_change"}
+        # Get features: either from request or fetch from SAR service
         if request.features:
+            # Realtime-safe feature guard: disallow leak-prone fields
+            forbidden = {"sar_after", "sar_difference", "sar_change"}
             if any(k in forbidden for k in request.features.keys()):
-                raise HTTPException(status_code=400, detail="Forbidden realtime features in request. Please omit derived 'after' SAR features.")
+                raise HTTPException(
+                    status_code=400, 
+                    detail="Forbidden realtime features in request. Please omit derived 'after' SAR features."
+                )
             features = request.features
+            logger.info(f"Using provided features for prediction at ({request.latitude}, {request.longitude})")
         else:
-            # TODO: integrate real GEE adapter; for now, generate synthetic features
-            features = ModelService.generate_features_from_location(request.latitude, request.longitude)
+            # Auto-fetch features from SAR service
+            logger.info(f"Fetching satellite features from SAR service for ({request.latitude}, {request.longitude})")
+            try:
+                gee_features = await fetch_gee_features(
+                    request.latitude, 
+                    request.longitude, 
+                    request.lead_time_hours
+                )
+                
+                # Map GEE features to model format
+                features = ModelService.map_gee_to_model_features(
+                    gee_features, 
+                    request.latitude, 
+                    request.longitude
+                )
+                logger.info(f"Successfully mapped {len(features)} features from GEE data")
+                
+            except ValueError as ve:
+                logger.error(f"Feature mapping error: {ve}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Incomplete satellite data: {str(ve)}"
+                )
+            except HTTPException:
+                # Re-raise HTTP exceptions from fetch_gee_features
+                raise
+            except Exception as e:
+                logger.error(f"Unexpected error fetching/mapping features: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to process satellite data: {str(e)}"
+                )
         
         # Make prediction based on model type
         model_predictions = None
@@ -76,6 +177,22 @@ async def create_prediction(
         # Get risk level
         risk_level = ModelService.get_risk_level(probability)
         
+        # PRODUCTION: Low Confidence Handling (60% threshold)
+        is_reliable = confidence >= 0.60
+        warning_message = None
+        
+        if not is_reliable:
+            warning_message = (
+                f"Low confidence prediction ({confidence:.1%}). "
+                f"Model uncertainty is high - manual verification recommended. "
+                f"This may indicate: (1) location far from training data regions, "
+                f"(2) unusual environmental conditions, or (3) insufficient satellite data quality."
+            )
+            logger.warning(
+                f"Low confidence prediction: {confidence:.1%} at ({request.latitude}, {request.longitude}). "
+                f"Probability: {probability:.2%}"
+            )
+        
         # Save to database
         db_prediction = DBPrediction(
             latitude=request.latitude,
@@ -92,8 +209,8 @@ async def create_prediction(
         db.commit()
         db.refresh(db_prediction)
         
-        # Create alert if probability is significant
-        if probability >= 0.3:
+        # Create alert only for reliable predictions with significant probability
+        if probability >= 0.3 and is_reliable:
             alert = alert_service.create_alert(
                 request.latitude,
                 request.longitude,
@@ -127,10 +244,16 @@ async def create_prediction(
             confidence_score=db_prediction.confidence_score,
             risk_level=db_prediction.risk_level,
             created_at=db_prediction.created_at,
-            model_predictions=model_predictions
+            model_predictions=model_predictions,
+            is_reliable=is_reliable,
+            warning=warning_message
         )
         
-        logger.info(f"Prediction created: {probability:.2%} flood risk at ({request.latitude}, {request.longitude})")
+        log_message = f"Prediction created: {probability:.2%} flood risk at ({request.latitude}, {request.longitude})"
+        if not is_reliable:
+            log_message += f" [LOW CONFIDENCE: {confidence:.1%}]"
+        logger.info(log_message)
+        
         return response
         
     except Exception as e:
@@ -281,15 +404,44 @@ async def get_elevation(
     lat: float,
     lng: float
 ):
-    """Get elevation data for a specific location"""
+    """Get elevation data for a specific location using Open-Elevation API or SRTM data"""
     try:
-        # In a real implementation, this would fetch elevation from a DEM
-        # For now, return mock data
+        # Try to fetch elevation from Open-Elevation API (free, open source)
+        import requests
+        try:
+            response = requests.get(
+                f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lng}",
+                timeout=5
+            )
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('results') and len(data['results']) > 0:
+                    elevation = data['results'][0]['elevation']
+                    return {
+                        "latitude": lat,
+                        "longitude": lng,
+                        "elevation": elevation,
+                        "source": "open-elevation"
+                    }
+        except Exception as api_error:
+            logger.warning(f"Open-Elevation API failed: {api_error}, using estimated elevation")
+        
+        # Fallback: Use estimated elevation based on South Sudan topography
+        # South Sudan elevation ranges: 400-500m (plains), up to 3000m+ (mountains)
+        # Using latitude-based estimation (rough approximation)
+        if lat < 5:  # Southern regions (higher elevations)
+            estimated_elevation = 500 + (5 - lat) * 100
+        elif lat > 10:  # Northern regions (lower elevations)
+            estimated_elevation = 400 - (lat - 10) * 20
+        else:  # Central regions
+            estimated_elevation = 420
+        
         return {
             "latitude": lat,
             "longitude": lng,
-            "elevation": 450.0,  # Mock elevation in meters
-            "source": "mock"
+            "elevation": round(estimated_elevation, 1),
+            "source": "estimated",
+            "note": "Elevation estimated based on regional topography. For precise data, integrate SRTM DEM."
         }
     except Exception as e:
         logger.error(f"Error getting elevation: {e}")
@@ -341,14 +493,6 @@ async def get_water_bodies(
 
 
 # Health check endpoint
-@router.get("/health")
-async def health_check():
-    """API health check"""
-    return {
-        "status": "healthy",
-        "models_loaded": ModelService.models_loaded,
-        "timestamp": datetime.utcnow()
-    }
 
 
 @router.get("/models/info")
@@ -389,14 +533,151 @@ async def calibrate_models(dataset: str = "data/original_gee_data_2019_2024/floo
 
 @router.get("/features/from-gee")
 async def features_from_gee(lat: float, lon: float):
-    """Placeholder: returns generated features for the given location.
-    Replace with real GEE adapter integration.
+    """Get real-time features from Google Earth Engine (GEE) service
+    
+    This endpoint integrates with the ee-fastapi service to extract real SAR,
+    precipitation, elevation, and other environmental features from satellite data.
+    
+    PRODUCTION POLICY: Returns HTTP 503 if GEE service unavailable.
+    NO SYNTHETIC FALLBACK - zero tolerance for mock data.
     """
     try:
-        feats = ModelService.generate_features_from_location(lat, lon)
-        return {"latitude": lat, "longitude": lon, "features": feats}
+        # Call GEE service to extract features
+        import requests
+        gee_service_url = os.getenv("GEE_SERVICE_URL", "http://ee-fastapi:8001")
+        
+        try:
+            response = requests.get(
+                f"{gee_service_url}/api/features/extract",
+                params={"lat": lat, "lon": lon},
+                timeout=10
+            )
+            
+            if response.status_code == 200:
+                gee_features = response.json()
+                return {
+                    "latitude": lat,
+                    "longitude": lon,
+                    "features": gee_features.get("features", {}),
+                    "source": "google_earth_engine",
+                    "timestamp": gee_features.get("timestamp")
+                }
+            elif response.status_code == 503:
+                raise HTTPException(
+                    status_code=503,
+                    detail="GEE service temporarily unavailable. Cannot extract satellite features."
+                )
+            else:
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=f"GEE service error: {response.text}"
+                )
+                
+        except requests.exceptions.Timeout:
+            logger.error(f"GEE service timeout for location ({lat}, {lon})")
+            raise HTTPException(
+                status_code=503,
+                detail="GEE service timeout. Cannot extract satellite features without real data."
+            )
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"GEE service connection failed: {e}")
+            raise HTTPException(
+                status_code=503,
+                detail="GEE service unavailable. Cannot make predictions without real satellite data."
+            )
+            
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error getting features: {e}")
+        raise HTTPException(status_code=500, detail=f"Feature extraction failed: {str(e)}")
+
+@router.get("/health")
+async def health_check(db: Session = Depends(get_db)):
+    """Production health check - validates all critical systems
+    
+    Returns HTTP 200 only if ALL systems operational.
+    Returns HTTP 503 if any critical system unavailable.
+    
+    Checks:
+    - Models loaded and ready
+    - Database connection
+    - GEE service availability (optional warning)
+    """
+    health_status = {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "checks": {}
+    }
+    
+    # Check 1: Models loaded
+    models_status = "healthy"
+    if not ModelService.models_loaded:
+        health_status["status"] = "unhealthy"
+        models_status = "failed - ML models not loaded"
+        health_status["checks"]["models"] = {
+            "status": "failed",
+            "message": "ML models not loaded - predictions unavailable"
+        }
+    else:
+        models_status = f"healthy - RF={'✓' if ModelService.rf_model else '✗'}, TCN={'✓' if ModelService.tcn_model else '✗'}, GB={'✓' if ModelService.gb_model else '✗'}"
+        health_status["checks"]["models"] = {
+            "status": "healthy",
+            "rf_loaded": ModelService.rf_model is not None,
+            "tcn_loaded": ModelService.tcn_model is not None,
+            "gb_loaded": ModelService.gb_model is not None,
+            "scaler_loaded": ModelService.scaler is not None
+        }
+    
+    # Check 2: Database connection
+    database_status = "healthy"
+    try:
+        db.execute(text("SELECT 1"))
+        database_status = "healthy - connection active"
+        health_status["checks"]["database"] = {
+            "status": "healthy",
+            "message": "Database connection active"
+        }
+    except Exception as e:
+        health_status["status"] = "unhealthy"
+        database_status = f"failed - {str(e)}"
+        health_status["checks"]["database"] = {
+            "status": "failed",
+            "message": f"Database connection failed: {str(e)}"
+        }
+    
+    # Check 3: GEE service (warning only, not critical)
+    try:
+        import requests
+        gee_service_url = os.getenv("GEE_SERVICE_URL", "http://ee-fastapi:8001")
+        response = requests.get(f"{gee_service_url}/health", timeout=5)
+        if response.status_code == 200:
+            health_status["checks"]["gee_service"] = {
+                "status": "healthy",
+                "url": gee_service_url
+            }
+        else:
+            health_status["checks"]["gee_service"] = {
+                "status": "warning",
+                "message": f"GEE service returned status {response.status_code}",
+                "impact": "Real-time predictions unavailable"
+            }
+    except Exception as e:
+        health_status["checks"]["gee_service"] = {
+            "status": "warning",
+            "message": f"GEE service unreachable: {str(e)}",
+            "impact": "Real-time predictions unavailable"
+        }
+    
+    # Add simple top-level fields for backward compatibility with tests
+    health_status["database"] = database_status
+    health_status["models"] = models_status
+    
+    # Return appropriate HTTP status
+    if health_status["status"] == "unhealthy":
+        raise HTTPException(status_code=503, detail=health_status)
+    
+    return health_status
 
 @router.get("/status")
 async def get_system_status(db: Session = Depends(get_db)):
@@ -423,11 +704,40 @@ async def get_system_status(db: Session = Depends(get_db)):
 
 @router.get("/flood/status")
 async def get_flood_status(db: Session = Depends(get_db)):
-    """Get real-time flood status"""
+    """Get real-time flood status with comprehensive metrics"""
     try:
+        # Get active alerts
         active_alerts = db.query(DBAlert).filter(DBAlert.is_active == True).all()
         
+        # Get high-risk predictions (probability > 0.65 = 65%)
+        # Note: Threshold set to 65% to include "high" risk level predictions
+        high_risk_predictions = db.query(DBPrediction).filter(
+            DBPrediction.flood_probability > 0.65
+        ).all()
+        
+        # Extract unique high-risk areas (group by approximate location)
+        high_risk_areas = []
+        seen_locations = set()
+        for pred in high_risk_predictions:
+            # Round to 2 decimal places to group nearby locations
+            loc_key = (round(pred.latitude, 2), round(pred.longitude, 2))
+            if loc_key not in seen_locations:
+                seen_locations.add(loc_key)
+                high_risk_areas.append({
+                    "latitude": pred.latitude,
+                    "longitude": pred.longitude,
+                    "risk_level": pred.risk_level,
+                    "probability": pred.flood_probability
+                })
+        
+        # Estimate affected population (rough estimate: 1000 people per high-risk area)
+        # In production, this would query actual census/population data
+        estimated_population = len(high_risk_areas) * 1000
+        
         return {
+            "active_floods": len(active_alerts),
+            "high_risk_areas": len(high_risk_areas),
+            "affected_population": estimated_population,
             "alerts": [
                 {
                     "id": alert.id,
@@ -438,6 +748,7 @@ async def get_flood_status(db: Session = Depends(get_db)):
                     "created_at": alert.created_at.isoformat() if alert.created_at else None
                 } for alert in active_alerts
             ],
+            "high_risk_locations": high_risk_areas[:10],  # Top 10 high-risk locations
             "count": len(active_alerts),
             "timestamp": datetime.now().isoformat()
         }

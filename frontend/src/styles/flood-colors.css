@@ -1,50 +1,82 @@
 /* Professional Flood Water Color Scheme */
 :root {
   /* Primary Flood Colors - Water-based blues and teals */
-  --flood-critical: #1e40af;      /* Deep blue for critical flood levels */
-  --flood-high: #2563eb;          /* Bright blue for high flood levels */
-  --flood-medium: #3b82f6;        /* Medium blue for medium flood levels */
-  --flood-low: #60a5fa;           /* Light blue for low flood levels */
-  --flood-minimal: #93c5fd;       /* Very light blue for minimal flood levels */
-  
+  --flood-critical: #1e40af;
+  /* Deep blue for critical flood levels */
+  --flood-high: #2563eb;
+  /* Bright blue for high flood levels */
+  --flood-medium: #3b82f6;
+  /* Medium blue for medium flood levels */
+  --flood-low: #60a5fa;
+  /* Light blue for low flood levels */
+  --flood-minimal: #93c5fd;
+  /* Very light blue for minimal flood levels */
+
   /* Water Depth Indicators */
-  --water-deep: #0f172a;          /* Very deep water (dark navy) */
-  --water-deep-medium: #1e293b;   /* Deep water (dark slate) */
-  --water-medium: #334155;        /* Medium depth water (slate) */
-  --water-shallow: #64748b;       /* Shallow water (slate gray) */
-  --water-very-shallow: #94a3b8;  /* Very shallow water (light slate) */
-  
+  --water-deep: #0f172a;
+  /* Very deep water (dark navy) */
+  --water-deep-medium: #1e293b;
+  /* Deep water (dark slate) */
+  --water-medium: #334155;
+  /* Medium depth water (slate) */
+  --water-shallow: #64748b;
+  /* Shallow water (slate gray) */
+  --water-very-shallow: #94a3b8;
+  /* Very shallow water (light slate) */
+
   /* Risk Level Colors */
-  --risk-critical: #dc2626;       /* Red for critical risk */
-  --risk-high: #ea580c;           /* Orange for high risk */
-  --risk-medium: #d97706;         /* Amber for medium risk */
-  --risk-low: #ca8a04;            /* Yellow for low risk */
-  --risk-minimal: #65a30d;        /* Green for minimal risk */
-  
+  --risk-critical: #dc2626;
+  /* Red for critical risk */
+  --risk-high: #ea580c;
+  /* Orange for high risk */
+  --risk-medium: #d97706;
+  /* Amber for medium risk */
+  --risk-low: #ca8a04;
+  /* Yellow for low risk */
+  --risk-minimal: #65a30d;
+  /* Green for minimal risk */
+
   /* Status Colors */
-  --status-active: #059669;       /* Green for active alerts */
-  --status-warning: #d97706;      /* Amber for warnings */
-  --status-info: #2563eb;         /* Blue for information */
-  --status-error: #dc2626;        /* Red for errors */
-  
+  --status-active: #059669;
+  /* Green for active alerts */
+  --status-warning: #d97706;
+  /* Amber for warnings */
+  --status-info: #2563eb;
+  /* Blue for information */
+  --status-error: #dc2626;
+  /* Red for errors */
+
   /* Background Colors */
-  --bg-water-surface: #f0f9ff;    /* Very light blue for water surface */
-  --bg-flood-panel: #e0f2fe;      /* Light blue for flood panels */
-  --bg-risk-panel: #fef3c7;       /* Light amber for risk panels */
-  --bg-success: #f0fdf4;          /* Light green for success states */
-  --bg-warning: #fffbeb;          /* Light amber for warning states */
-  --bg-error: #fef2f2;            /* Light red for error states */
-  
+  --bg-water-surface: #f0f9ff;
+  /* Very light blue for water surface */
+  --bg-flood-panel: #e0f2fe;
+  /* Light blue for flood panels */
+  --bg-risk-panel: #fef3c7;
+  /* Light amber for risk panels */
+  --bg-success: #f0fdf4;
+  /* Light green for success states */
+  --bg-warning: #fffbeb;
+  /* Light amber for warning states */
+  --bg-error: #fef2f2;
+  /* Light red for error states */
+
   /* Border Colors */
-  --border-flood: #0ea5e9;        /* Sky blue for flood borders */
-  --border-risk: #f59e0b;         /* Amber for risk borders */
-  --border-water: #38bdf8;        /* Light sky blue for water borders */
-  
+  --border-flood: #0ea5e9;
+  /* Sky blue for flood borders */
+  --border-risk: #f59e0b;
+  /* Amber for risk borders */
+  --border-water: #38bdf8;
+  /* Light sky blue for water borders */
+
   /* Text Colors */
-  --text-flood: #0c4a6e;          /* Dark blue for flood text */
-  --text-water: #075985;          /* Darker blue for water text */
-  --text-risk: #92400e;           /* Dark amber for risk text */
-  --text-critical: #991b1b;       /* Dark red for critical text */
+  --text-flood: #0c4a6e;
+  /* Dark blue for flood text */
+  --text-water: #075985;
+  /* Darker blue for water text */
+  --text-risk: #92400e;
+  /* Dark amber for risk text */
+  --text-critical: #991b1b;
+  /* Dark red for critical text */
 }
 
 /* Flood Level Gradients */
@@ -106,13 +138,13 @@
 .flood-card {
   background: white;
   border: 1px solid rgba(14, 165, 233, 0.2);
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   overflow: visible;
   position: relative;
-  line-height: 1.7;
-  padding: 1.75rem;
-  margin-bottom: 1.5rem;
+  line-height: 1.8;
+  padding: 3rem;
+  margin-bottom: 2rem;
   transition: all 0.3s ease;
 }
 
@@ -124,9 +156,9 @@
 /* Mobile responsive cards */
 @media (max-width: 640px) {
   .flood-card {
-    padding: 1.25rem;
-    border-radius: 12px;
-    margin-bottom: 1rem;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
   }
 }
 

@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon, LayersControl, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Circle, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { apiService } from '../services/api';
 import { reverseGeocode } from '../services/geocoding';
@@ -25,24 +25,24 @@ const criticalInfrastructure: InfrastructureItem[] = [
   { id: '1', name: 'Juba Teaching Hospital', type: 'hospital', latitude: 4.8475, longitude: 31.5967, status: 'safe', atRisk: false, population: 500 },
   { id: '2', name: 'Malakal Hospital', type: 'hospital', latitude: 9.5333, longitude: 31.6500, status: 'warning', atRisk: true, population: 300 },
   { id: '3', name: 'Bentiu Hospital', type: 'hospital', latitude: 9.2667, longitude: 29.7333, status: 'critical', atRisk: true, population: 200 },
-  
+
   // Schools
   { id: '4', name: 'University of Juba', type: 'school', latitude: 4.8500, longitude: 31.6000, status: 'safe', atRisk: false, population: 2000 },
   { id: '5', name: 'Malakal Secondary School', type: 'school', latitude: 9.5500, longitude: 31.6800, status: 'warning', atRisk: true, population: 800 },
-  
+
   // Bridges
   { id: '6', name: 'Juba Bridge (White Nile)', type: 'bridge', latitude: 4.8400, longitude: 31.5900, status: 'safe', atRisk: false, population: 0 },
   { id: '7', name: 'Malakal Nile Bridge', type: 'bridge', latitude: 9.5400, longitude: 31.6600, status: 'critical', atRisk: true, population: 0 },
   { id: '8', name: 'Bentiu Bridge', type: 'bridge', latitude: 9.2700, longitude: 29.7400, status: 'warning', atRisk: true, population: 0 },
-  
+
   // Power Infrastructure
   { id: '9', name: 'Juba Power Station', type: 'power', latitude: 4.8450, longitude: 31.5850, status: 'warning', atRisk: true, population: 0 },
   { id: '10', name: 'Malakal Power Grid', type: 'power', latitude: 9.5350, longitude: 31.6400, status: 'critical', atRisk: true, population: 0 },
-  
+
   // Water Infrastructure
   { id: '11', name: 'Juba Water Treatment Plant', type: 'water', latitude: 4.8350, longitude: 31.5750, status: 'safe', atRisk: false, population: 0 },
   { id: '12', name: 'Bentiu Water Facility', type: 'water', latitude: 9.2650, longitude: 29.7300, status: 'critical', atRisk: true, population: 0 },
-  
+
   // Major Roads
   { id: '13', name: 'Juba-Nimule Road', type: 'road', latitude: 4.8300, longitude: 31.5800, status: 'safe', atRisk: false, population: 0 },
   { id: '14', name: 'Unity-Jonglei Highway', type: 'road', latitude: 8.3667, longitude: 32.3167, status: 'warning', atRisk: true, population: 0 },
@@ -56,8 +56,8 @@ const Infrastructure: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<string>('all');
   const [showAtRiskOnly, setShowAtRiskOnly] = useState(false);
-  
-  const [mapCenter] = useState([7.5, 30.0]);
+
+  const [mapCenter] = useState<[number, number]>([7.5, 30.0]);
   const southSudanBounds: [[number, number], [number, number]] = [
     [3.5, 23.5], [12.0, 35.9]
   ];
@@ -67,27 +67,27 @@ const Infrastructure: React.FC = () => {
       try {
         const alertData = await apiService.getActiveAlerts();
         setAlerts(alertData.alerts || []);
-        
+
         // Update infrastructure risk status based on alerts
         const updatedInfrastructure = criticalInfrastructure.map(item => {
           const nearbyAlerts = alertData.alerts.filter((alert: any) => {
             const dist = Math.sqrt(
-              Math.pow(alert.latitude - item.latitude, 2) + 
+              Math.pow(alert.latitude - item.latitude, 2) +
               Math.pow(alert.longitude - item.longitude, 2)
             );
             return dist < 0.01; // ~1km radius
           });
-          
-          const hasCriticalAlert = nearbyAlerts.some((alert: any) => 
+
+          const hasCriticalAlert = nearbyAlerts.some((alert: any) =>
             ['high', 'critical'].includes(alert.severity)
           );
-          
+
           const atRisk = nearbyAlerts.length > 0;
-          const status = hasCriticalAlert ? 'critical' : atRisk ? 'warning' : 'safe';
-          
+          const status: 'safe' | 'warning' | 'critical' = hasCriticalAlert ? 'critical' : atRisk ? 'warning' : 'safe';
+
           return { ...item, status, atRisk, notes: atRisk ? `${nearbyAlerts.length} active alert(s)` : undefined };
         });
-        
+
         setInfrastructure(updatedInfrastructure);
       } catch (error) {
         console.error('Failed to fetch alerts:', error);
@@ -134,7 +134,7 @@ const Infrastructure: React.FC = () => {
   const createInfrastructureIcon = (item: InfrastructureItem) => {
     const color = getStatusColor(item.status);
     const emoji = getStatusIcon(item.type);
-    
+
     return L.divIcon({
       className: 'custom-div-icon',
       html: `<div style="
@@ -214,7 +214,7 @@ const Infrastructure: React.FC = () => {
             {/* Filters */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
               <h3 className="font-semibold text-gray-800 mb-3">Filters</h3>
-              
+
               <div className="mb-3">
                 <label className="text-xs text-gray-700 font-medium mb-1 block">Infrastructure Type</label>
                 <select
@@ -303,11 +303,10 @@ const Infrastructure: React.FC = () => {
                   <div
                     key={item.id}
                     onClick={() => handleMarkerClick(item)}
-                    className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                      selectedInfrastructure?.id === item.id
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-gray-200 hover:border-blue-300 bg-white'
-                    }`}
+                    className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${selectedInfrastructure?.id === item.id
+                      ? 'border-blue-600 bg-blue-50'
+                      : 'border-gray-200 hover:border-blue-300 bg-white'
+                      }`}
                   >
                     <div className="flex items-start gap-2">
                       <span className="text-2xl">{getStatusIcon(item.type)}</span>

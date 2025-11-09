@@ -31,22 +31,22 @@ const Landing: React.FC = () => {
         <div className="absolute inset-0 opacity-40" style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
         }}></div>
-        
+
         {/* Floating Elements */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <motion.div 
+          <motion.div
             className="absolute top-20 left-20 w-32 h-32 bg-blue-200/30 rounded-full blur-xl"
-            animate={{ 
-              y: [0, 20, 0], 
+            animate={{
+              y: [0, 20, 0],
               scale: [1, 1.1, 1],
               opacity: [0.3, 0.6, 0.3]
             }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
           />
-          <motion.div 
+          <motion.div
             className="absolute bottom-20 right-20 w-40 h-40 bg-cyan-200/30 rounded-full blur-xl"
-            animate={{ 
-              y: [0, -20, 0], 
+            animate={{
+              y: [0, -20, 0],
               scale: [1, 1.2, 1],
               opacity: [0.2, 0.5, 0.2]
             }}
@@ -73,7 +73,7 @@ const Landing: React.FC = () => {
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
                 <span>Live Monitoring Active</span>
               </motion.div>
-              
+
               {/* Main Heading */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -88,12 +88,12 @@ const Landing: React.FC = () => {
                   <br />
                   <span className="text-slate-900">Protecting South Sudan</span>
                 </h1>
-                
+
                 <p className="text-base sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl">
                   AI-Powered Flood Prediction & Early Warning System leveraging advanced machine learning and real-time satellite data to protect communities across South Sudan.
                 </p>
               </motion.div>
-              
+
               {/* CTA Buttons */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -157,7 +157,7 @@ const Landing: React.FC = () => {
                       </svg>
                     </div>
                   </motion.div>
-                  
+
                   {/* Communities Card */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -178,7 +178,7 @@ const Landing: React.FC = () => {
                       </svg>
                     </div>
                   </motion.div>
-                  
+
                   {/* Accuracy Card */}
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
@@ -228,39 +228,39 @@ const Landing: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {[
-              { 
-                title: 'AI-Powered Predictions', 
-                desc: 'Advanced ensemble ML models with 95%+ accuracy using Random Forest and TCN architectures', 
+              {
+                title: 'AI-Powered Predictions',
+                desc: 'Ensemble machine learning models using Random Forest and TCN architectures',
                 color: 'from-blue-500 to-blue-600',
                 icon: 'Brain'
               },
-              { 
-                title: 'Real-Time Early Warnings', 
-                desc: 'Instant alerts delivered 1-168 hours in advance with multi-channel notification system', 
+              {
+                title: 'Real-Time Early Warnings',
+                desc: 'Instant alerts delivered 1-168 hours in advance with multi-channel notification system',
                 color: 'from-green-500 to-green-600',
                 icon: 'Alert'
               },
-              { 
-                title: 'Nationwide Coverage', 
-                desc: 'Comprehensive monitoring across all 10 states with 24/7 satellite surveillance', 
+              {
+                title: 'Nationwide Coverage',
+                desc: 'Comprehensive monitoring across all 10 states with 24/7 satellite surveillance',
                 color: 'from-cyan-500 to-cyan-600',
                 icon: 'Map'
               },
-              { 
-                title: 'Sentinel-1 SAR Data', 
-                desc: 'High-resolution satellite imagery from Google Earth Engine for precise flood detection', 
+              {
+                title: 'Sentinel-1 SAR Data',
+                desc: 'High-resolution satellite imagery from Google Earth Engine for precise flood detection',
                 color: 'from-yellow-500 to-yellow-600',
                 icon: 'Satellite'
               },
-              { 
-                title: 'Smart GIS Integration', 
-                desc: 'Intelligent infrastructure recommendations and evacuation route optimization', 
+              {
+                title: 'Smart GIS Integration',
+                desc: 'Intelligent infrastructure recommendations and evacuation route optimization',
                 color: 'from-indigo-500 to-indigo-600',
                 icon: 'Infrastructure'
               },
-              { 
-                title: 'Offline PWA Support', 
-                desc: 'Progressive Web App with 24-hour offline access for remote communities', 
+              {
+                title: 'Offline PWA Support',
+                desc: 'Progressive Web App with 24-hour offline access for remote communities',
                 color: 'from-gray-500 to-gray-600',
                 icon: 'Mobile'
               }
@@ -324,11 +324,11 @@ const Landing: React.FC = () => {
                       </h3>
                     </div>
                   </div>
-                  
+
                   <p className="text-slate-600 leading-relaxed group-hover:text-slate-700 transition-colors duration-300 text-sm flex-1">
                     {feature.desc}
                   </p>
-                  
+
                   <div className="pt-2">
                     <div className="w-full h-1 bg-slate-200 rounded-full overflow-hidden">
                       <motion.div
@@ -351,12 +351,12 @@ const Landing: React.FC = () => {
       <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 relative overflow-hidden w-full">
         {/* Background Pattern */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-full h-full" style={{ 
-            backgroundImage: 'radial-gradient(circle, white 2px, transparent 2px)', 
-            backgroundSize: '60px 60px' 
+          <div className="absolute top-0 left-0 w-full h-full" style={{
+            backgroundImage: 'radial-gradient(circle, white 2px, transparent 2px)',
+            backgroundSize: '60px 60px'
           }}></div>
         </div>
-        
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -373,20 +373,20 @@ const Landing: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12 lg:mb-16">
             {[
-              { 
-                value: stats.predictions > 0 ? `${stats.predictions}+` : 'Loading...', 
+              {
+                value: stats.predictions > 0 ? `${stats.predictions}+` : 'Loading...',
                 label: 'Total Predictions',
                 desc: 'AI-powered flood forecasts',
                 icon: 'Analytics'
               },
-              { 
-                value: '24/7', 
+              {
+                value: '24/7',
                 label: 'Continuous Monitoring',
                 desc: 'Real-time satellite surveillance',
                 icon: 'Satellite'
               },
-              { 
-                value: stats.accuracy > 0 ? `${stats.accuracy}%` : 'Loading...', 
+              {
+                value: stats.accuracy > 0 ? `${stats.accuracy}%` : 'Loading...',
                 label: 'Model Accuracy',
                 desc: 'Advanced ML precision',
                 icon: 'Target'
@@ -465,22 +465,22 @@ const Landing: React.FC = () => {
               <div className="flex gap-4">
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/>
+                    <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z" />
                   </svg>
                 </div>
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"/>
+                    <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z" />
                   </svg>
                 </div>
                 <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-700 transition-colors cursor-pointer">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                   </svg>
                 </div>
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-white font-bold text-lg mb-6">Quick Links</h4>
               <div className="space-y-3">
@@ -490,7 +490,7 @@ const Landing: React.FC = () => {
                 <Link to="/report" className="block text-slate-400 hover:text-white transition-colors duration-200">Report Flood</Link>
               </div>
             </div>
-            
+
             <div>
               <h4 className="text-white font-bold text-lg mb-6">Contact</h4>
               <div className="space-y-3 text-slate-400">
@@ -509,7 +509,7 @@ const Landing: React.FC = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="border-t border-slate-800 pt-8">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-slate-400 text-sm">

@@ -1,3 +1,13 @@
+"""
+FloodSense API - Main Application Entry Point
+
+This is the main FastAPI application for the South Sudan Flood Prediction System.
+It sets up all the routes, middleware, and handles the application lifecycle.
+
+Author: John Akech
+Last Updated: November 2025
+"""
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -10,14 +20,18 @@ from sqlalchemy.exc import SQLAlchemyError
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
+# Import our custom routes
 from api.routes import router
 from api.admin_routes import router as admin_router
 from api.auth_routes import router as auth_router
 from api.crud_routes import router as crud_router
 
+# Import core functionality
 from core.database import init_db, SessionLocal
 from core.config import settings
 from services.model_service import ModelService
+
+# Import our custom middleware
 from middleware.error_handler import database_error_handler
 from middleware.rate_limiter import RateLimiter
 from middleware.security_headers import SecurityHeadersMiddleware
@@ -27,28 +41,50 @@ from middleware.ip_whitelist import IPWhitelistMiddleware
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Handle application startup and shutdown.
+    This runs once when the app starts and once when it shuts down.
+    """
+    # Startup: Initialize database and load ML models
+    print("🔄 Starting application initialization...")
     init_db()
-    await ModelService.load_models()
+    print("✓ Database initialized")
+    
+    print("🔄 Loading ML models...")
+    try:
+        await ModelService.load_models()
+        print(f"✓ Models loaded: {ModelService.models_loaded}")
+        print(f"  - Random Forest: {ModelService.rf_model is not None}")
+        print(f"  - Gradient Boosting: {ModelService.gb_model is not None}")
+        print(f"  - TCN: {ModelService.tcn_model is not None}")
+        print(f"  - LSTM: {ModelService.lstm_model is not None}")
+    except Exception as e:
+        print(f"✗ Error loading models: {e}")
+        import traceback
+        traceback.print_exc()
+    
     yield
+    # Shutdown: cleanup would go here if needed
 
 
+# Create the main FastAPI application
 app = FastAPI(
     title="FloodSense API",
     description="Community-Based Predictive Flood Forecasting and Early Warning System for South Sudan",
     version="2.0.0",
     lifespan=lifespan,
+    # Hide docs in production for security
     docs_url="/docs" if os.getenv("ENVIRONMENT") != "production" else None,
     redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None
 )
 
-# Security Middleware (order matters!)
-# Middleware executes in REVERSE ORDER (last added = first to execute)
-# So add them in the order you want them to execute
+# Add middleware layers
+# Important: Middleware executes in REVERSE ORDER (last added runs first)
+# Think of it like wrapping layers - the outer layer runs first on the way in
 
-# Rate Limiter (most outer layer)
+# 1. Rate limiting (outer layer - runs first)
+# Prevents abuse by limiting requests per hour
 app.add_middleware(RateLimiter, requests=100, window=3600)
-
-# Trusted Host Middleware
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=[

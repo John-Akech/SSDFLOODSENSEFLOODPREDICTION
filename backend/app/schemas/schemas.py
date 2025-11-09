@@ -93,6 +93,8 @@ class PredictionResponse(BaseModel):
     risk_level: str  # low, medium, high, critical
     created_at: datetime
     model_predictions: Optional[Dict[str, float]] = None  # Individual model predictions for ensemble
+    is_reliable: Optional[bool] = True  # False if confidence < 60%
+    warning: Optional[str] = None  # Warning message for low confidence predictions
     
     model_config = {"from_attributes": True, "protected_namespaces": ()}
 

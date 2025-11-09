@@ -30,40 +30,32 @@ gee_error = None
 
 # Try to initialize Earth Engine on startup
 try:
-    import json
-    service_account_file = os.path.join(os.path.dirname(__file__), 'gee-service-account.json')
+    # Initialize with personal credentials (from volume mount)
+    # Try without project first, then with project if environment variable is set
+    project_id = os.getenv('GEE_PROJECT_ID')
     
-    # Try service account first (for production)
-    if os.path.exists(service_account_file):
+    if project_id:
         try:
-            with open(service_account_file, 'r') as f:
-                key_data = json.load(f)
-            service_account = key_data['client_email']
-            project_id = key_data.get('project_id')
-            credentials = ee.ServiceAccountCredentials(service_account, service_account_file)
-            ee.Initialize(credentials, project=project_id)
-            logger.info(f"[OK] Earth Engine initialized with service account (project: {project_id})")
+            logger.info(f"Attempting Earth Engine initialization with project: {project_id}")
+            ee.Initialize(project=project_id)
+            logger.info(f"[OK] Earth Engine initialized successfully with project: {project_id}")
             gee_initialized = True
-        except Exception as sa_error:
-            logger.warning(f"[WARN] Service account failed: {sa_error}")
-            # Fallback to personal auth
-            try:
-                ee.Initialize()
-                logger.info("[OK] Earth Engine initialized with personal auth (fallback)")
-                gee_initialized = True
-            except Exception as fallback_error:
-                logger.error(f"[ERROR] Personal auth also failed: {fallback_error}")
-                gee_error = f"Service account: {sa_error}. Personal auth: {fallback_error}"
-                gee_initialized = False
+        except Exception as project_error:
+            logger.warning(f"[WARN] Project-based init failed: {project_error}")
+            # Fallback to initialization without project
+            logger.info("Attempting Earth Engine initialization without project...")
+            ee.Initialize()
+            logger.info("[OK] Earth Engine initialized successfully (no project)")
+            gee_initialized = True
     else:
-        # No service account file, use personal auth
+        logger.info("Attempting Earth Engine initialization without project...")
         ee.Initialize()
-        logger.info("[OK] Earth Engine initialized with personal auth")
+        logger.info("[OK] Earth Engine initialized successfully (no project)")
         gee_initialized = True
 except Exception as e:
     gee_error = str(e)
-    logger.warning(f"[WARN] Earth Engine not initialized: {e}")
-    logger.info("Run 'earthengine authenticate' in terminal first")
+    logger.error(f"[ERROR] Earth Engine initialization failed: {e}")
+    logger.error("Make sure Earth Engine credentials are mounted at /home/appuser/.config/earthengine")
     gee_initialized = False
 
 app = FastAPI(
@@ -113,6 +105,12 @@ class FloodDetectionResponse(BaseModel):
     flood_tile: str
     flood_area_ha: Optional[float] = None
     metadata: dict
+
+class FeatureExtractionRequest(BaseModel):
+    latitude: float = Field(..., description="Location latitude")
+    longitude: float = Field(..., description="Location longitude")
+    buffer_km: float = Field(5.0, description="Buffer radius in kilometers")
+    lead_time_hours: int = Field(12, description="Forecast lead time in hours")
 
 # Ensure output directory exists
 output_dir = Path(settings.OUTPUT_DIR)
@@ -292,6 +290,119 @@ async def flood_display(request: FloodDetectionRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Flood detection failed: {str(e)}"
+        )
+
+@app.post("/extract-features", tags=["Feature Extraction"])
+async def extract_features(request: FeatureExtractionRequest):
+    """
+    Extract satellite-derived features for flood prediction.
+    
+    Returns environmental features from Google Earth Engine:
+    - SAR backscatter (VV, VH polarizations)
+    - Precipitation
+    - Elevation
+    - Water occurrence
+    """
+    if not gee_initialized:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google Earth Engine not initialized"
+        )
+    
+    try:
+        from datetime import datetime, timedelta
+        
+        # Create point geometry
+        point = ee.Geometry.Point([request.longitude, request.latitude])
+        region = point.buffer(request.buffer_km * 1000)  # Convert km to meters
+        
+        # Date range (last 30 days)
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=30)
+        
+        # SAR data (Sentinel-1)
+        sar = ee.ImageCollection('COPERNICUS/S1_GRD') \
+            .filterBounds(region) \
+            .filterDate(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')) \
+            .filter(ee.Filter.eq('instrumentMode', 'IW'))
+        
+        sar_vv = sar.select('VV').mean().reduceRegion(
+            reducer=ee.Reducer.mean().combine(ee.Reducer.stdDev(), '', True)
+                    .combine(ee.Reducer.min(), '', True)
+                    .combine(ee.Reducer.max(), '', True),
+            geometry=region,
+            scale=100
+        ).getInfo()
+        
+        sar_vh = sar.select('VH').mean().reduceRegion(
+            reducer=ee.Reducer.mean().combine(ee.Reducer.stdDev(), '', True)
+                    .combine(ee.Reducer.min(), '', True)
+                    .combine(ee.Reducer.max(), '', True),
+            geometry=region,
+            scale=100
+        ).getInfo()
+        
+        # Precipitation (CHIRPS)
+        precip = ee.ImageCollection('UCSB-CHG/CHIRPS/DAILY') \
+            .filterBounds(region) \
+            .filterDate(start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')) \
+            .sum() \
+            .reduceRegion(
+                reducer=ee.Reducer.mean(),
+                geometry=region,
+                scale=5000
+            ).getInfo()
+        
+        # Elevation (SRTM)
+        elevation = ee.Image('USGS/SRTMGL1_003').select('elevation') \
+            .reduceRegion(
+                reducer=ee.Reducer.mean().combine(ee.Reducer.stdDev(), '', True),
+                geometry=region,
+                scale=90
+            ).getInfo()
+        
+        # Water occurrence (JRC)
+        water = ee.Image('JRC/GSW1_4/GlobalSurfaceWater').select('occurrence') \
+            .reduceRegion(
+                reducer=ee.Reducer.mean(),
+                geometry=region,
+                scale=30
+            ).getInfo()
+        
+        # Return features
+        features = {
+            "sar_vv": {
+                "mean": sar_vv.get('VV_mean', 0),
+                "std": sar_vv.get('VV_stdDev', 0),
+                "min": sar_vv.get('VV_min', 0),
+                "max": sar_vv.get('VV_max', 0)
+            },
+            "sar_vh": {
+                "mean": sar_vh.get('VH_mean', 0),
+                "std": sar_vh.get('VH_stdDev', 0),
+                "min": sar_vh.get('VH_min', 0),
+                "max": sar_vh.get('VH_max', 0)
+            },
+            "precipitation": {
+                "sum_30d": precip.get('precipitation', 0)
+            },
+            "elevation": {
+                "mean": elevation.get('elevation_mean', 0),
+                "std": elevation.get('elevation_stdDev', 0)
+            },
+            "water_occurrence": {
+                "mean": water.get('occurrence', 0)
+            }
+        }
+        
+        logger.info(f"Extracted features for ({request.latitude}, {request.longitude})")
+        return {"features": features, "location": {"latitude": request.latitude, "longitude": request.longitude}}
+        
+    except Exception as e:
+        logger.error(f"Feature extraction error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Feature extraction failed: {str(e)}"
         )
 
 @app.exception_handler(Exception)

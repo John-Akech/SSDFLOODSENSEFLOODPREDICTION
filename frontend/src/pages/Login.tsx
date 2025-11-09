@@ -22,12 +22,16 @@ const Login: React.FC = () => {
       try {
         user = await apiService.getCurrentUser(); // This gets /auth/me, which should always have the role
         localStorage.setItem('user', JSON.stringify(user)); // Keep localStorage fresh with latest user data
+        localStorage.setItem('userRole', user.role); // Store role separately for ProtectedRoute
       } catch {
         // Fallback if getCurrentUser fails
         const storedUser = localStorage.getItem('user');
         user = storedUser ? JSON.parse(storedUser) : null;
+        if (user?.role) {
+          localStorage.setItem('userRole', user.role);
+        }
       }
-      
+
       // Redirect based on user role
       if (user && user.role === 'admin') {
         navigate('/admin');

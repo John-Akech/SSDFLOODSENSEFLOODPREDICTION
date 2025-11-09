@@ -1,0 +1,337 @@
+{
+  "step": "02_explore_visualize",
+  "created_at": "2025-11-09T11:36:28.516167",
+  "dataset": {
+    "total_samples": 126,
+    "flood_samples": 90,
+    "non_flood_samples": 36,
+    "features": 16
+  },
+  "statistical_summary": {
+    "VV_mean": {
+      "mean": -0.9525551670852785,
+      "std": 0.7583909086820124,
+      "min": -3.7460244432213714,
+      "q25": -1.416063932110338,
+      "median": -0.8658673416920775,
+      "q75": -0.42534892486307296,
+      "max": 0.0,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VV_std": {
+      "mean": 2.4794663442644436,
+      "std": 1.5645225602177197,
+      "min": 0.0,
+      "q25": 1.8544849413449132,
+      "median": 2.8290645980377276,
+      "q75": 3.450286005232573,
+      "max": 5.821346547973184,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VV_min": {
+      "mean": -9.00336673791233,
+      "std": 5.345372623397593,
+      "min": -18.505270954847425,
+      "q25": -12.382914622647768,
+      "median": -10.787933635723366,
+      "q75": -8.646911014055425,
+      "max": 0.0,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VV_max": {
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "q25": 0.0,
+      "median": 0.0,
+      "q75": 0.0,
+      "max": 0.0,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VH_mean": {
+      "mean": -1.577332026137033,
+      "std": 1.2346088582572294,
+      "min": -5.629739161436866,
+      "q25": -2.3063408625970356,
+      "median": -1.5060428286925633,
+      "q75": -0.696021646438971,
+      "max": 0.0,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VH_std": {
+      "mean": 4.079329038187189,
+      "std": 2.505254599083437,
+      "min": 0.0,
+      "q25": 3.120076187131242,
+      "median": 4.815545381949997,
+      "q75": 5.667088487315497,
+      "max": 9.42673468857387,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VH_min": {
+      "mean": -14.118550812106323,
+      "std": 8.194085370187821,
+      "min": -25.181094142159164,
+      "q25": -19.360286243759464,
+      "median": -17.247212009766457,
+      "q75": -14.70859488855367,
+      "max": 0.0,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VH_max": {
+      "mean": 0.0,
+      "std": 0.0,
+      "min": 0.0,
+      "q25": 0.0,
+      "median": 0.0,
+      "q75": 0.0,
+      "max": 0.0,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VV_stdDev_mean": {
+      "mean": 3.0104536530499206e-05,
+      "std": 9.080420961839199e-05,
+      "min": 0.0,
+      "q25": 0.0,
+      "median": 0.0,
+      "q75": 0.0,
+      "max": 0.0004312556331012,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "VH_stdDev_mean": {
+      "mean": 3.3255060125258734e-05,
+      "std": 0.00010021872500825769,
+      "min": 0.0,
+      "q25": 0.0,
+      "median": 0.0,
+      "q75": 0.0,
+      "max": 0.0004738310311276,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "precipitation_sum": {
+      "mean": 11911.681535811342,
+      "std": 9563.297185517598,
+      "min": 734.8136457257544,
+      "q25": 4110.057151401259,
+      "median": 8856.055422975669,
+      "q75": 18541.100057052514,
+      "max": 43677.95992822704,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "precipitation_mean": {
+      "mean": 9.942521285355905,
+      "std": 3.730013751219539,
+      "min": 4.673378083494698,
+      "q25": 7.880468624998526,
+      "median": 9.0696947270112,
+      "q75": 10.816713105846357,
+      "max": 26.262194681017395,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "precipitation_max": {
+      "mean": 82.01211594283333,
+      "std": 24.638269133407537,
+      "min": 31.400755350898883,
+      "q25": 66.46831280518376,
+      "median": 81.08847036531779,
+      "q75": 97.87230299068136,
+      "max": 163.74016552702875,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "elevation_mean": {
+      "mean": 408.69102823628305,
+      "std": 12.414250296636578,
+      "min": 394.76016915222186,
+      "q25": 397.21243739420566,
+      "median": 403.82610711103615,
+      "q75": 416.6416838727232,
+      "max": 430.9096397440549,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "slope_mean": {
+      "mean": 1.0072663599947682,
+      "std": 0.1107545792611282,
+      "min": 0.8516087253955027,
+      "q25": 0.9244989860901756,
+      "median": 0.9859661045421555,
+      "q75": 1.073346764828507,
+      "max": 1.2750015265106414,
+      "missing": 0,
+      "missing_pct": 0.0
+    },
+    "water_occurrence_mean": {
+      "mean": 1.0390357320914119,
+      "std": 0.853885379824586,
+      "min": 0.0,
+      "q25": 0.0,
+      "median": 1.0783410493137953,
+      "q75": 1.8624944756209505,
+      "max": 2.2369495278103964,
+      "missing": 19,
+      "missing_pct": 15.079365079365079
+    }
+  },
+  "distribution_analysis": {
+    "most_discriminative": [
+      {
+        "feature": "precipitation_sum",
+        "separation_score": 1.0512935281713915
+      },
+      {
+        "feature": "precipitation_max",
+        "separation_score": 0.5143131526808996
+      },
+      {
+        "feature": "water_occurrence_mean",
+        "separation_score": 0.5053792046680677
+      },
+      {
+        "feature": "precipitation_mean",
+        "separation_score": 0.2052708634170642
+      },
+      {
+        "feature": "VH_min",
+        "separation_score": 0.14416574735050577
+      },
+      {
+        "feature": "VV_min",
+        "separation_score": 0.12363700432932705
+      },
+      {
+        "feature": "VV_mean",
+        "separation_score": 0.11693095719838903
+      },
+      {
+        "feature": "VH_mean",
+        "separation_score": 0.07187518255981191
+      },
+      {
+        "feature": "VV_std",
+        "separation_score": 0.04124772392121064
+      },
+      {
+        "feature": "slope_mean",
+        "separation_score": 0.03371247019391384
+      }
+    ]
+  },
+  "correlation_analysis": {
+    "target_correlations": {
+      "VV_max": NaN,
+      "VH_max": NaN,
+      "precipitation_sum": 0.5637109563248714,
+      "precipitation_max": 0.432705398935921,
+      "precipitation_mean": 0.17435263847721147,
+      "VH_min": -0.13434974263033697,
+      "VV_min": -0.11561343338630677,
+      "VV_mean": 0.1136391742016803,
+      "VH_mean": 0.06930799317178847,
+      "VV_std": -0.04009780339937547,
+      "slope_mean": -0.03077014111832674,
+      "VH_stdDev_mean": -0.018976139013338295,
+      "elevation_mean": -0.012434425447115503,
+      "VV_stdDev_mean": -0.008438967956668953,
+      "VH_std": 0.006760213206393598
+    },
+    "high_corr_pairs": [
+      {
+        "feature1": "VV_mean",
+        "feature2": "VV_std",
+        "correlation": -0.9048079070717869
+      },
+      {
+        "feature1": "VV_mean",
+        "feature2": "VH_mean",
+        "correlation": 0.989279851111008
+      },
+      {
+        "feature1": "VV_mean",
+        "feature2": "VH_std",
+        "correlation": -0.9008456393735431
+      },
+      {
+        "feature1": "VV_std",
+        "feature2": "VV_min",
+        "correlation": -0.935426462238188
+      },
+      {
+        "feature1": "VV_std",
+        "feature2": "VH_mean",
+        "correlation": -0.8844485075541826
+      },
+      {
+        "feature1": "VV_std",
+        "feature2": "VH_std",
+        "correlation": 0.9840559424768507
+      },
+      {
+        "feature1": "VV_std",
+        "feature2": "VH_min",
+        "correlation": -0.9129141849317466
+      },
+      {
+        "feature1": "VV_min",
+        "feature2": "VH_std",
+        "correlation": -0.9229709424715283
+      },
+      {
+        "feature1": "VV_min",
+        "feature2": "VH_min",
+        "correlation": 0.9807692658503777
+      },
+      {
+        "feature1": "VH_mean",
+        "feature2": "VH_std",
+        "correlation": -0.9052905490500631
+      },
+      {
+        "feature1": "VH_std",
+        "feature2": "VH_min",
+        "correlation": -0.9256732116613018
+      },
+      {
+        "feature1": "VV_stdDev_mean",
+        "feature2": "VH_stdDev_mean",
+        "correlation": 0.9949374888791823
+      }
+    ],
+    "multicollinearity_warning": true
+  },
+  "recommendations": {
+    "feature_selection": [
+      "precipitation_sum",
+      "precipitation_max",
+      "water_occurrence_mean",
+      "precipitation_mean",
+      "VH_min",
+      "VV_min",
+      "VV_mean",
+      "VH_mean",
+      "VV_std",
+      "slope_mean"
+    ],
+    "potential_redundancy": [
+      "VV_mean",
+      "VV_mean",
+      "VV_mean",
+      "VV_std",
+      "VV_std"
+    ],
+    "requires_scaling": true,
+    "class_imbalance": true
+  }
+}
