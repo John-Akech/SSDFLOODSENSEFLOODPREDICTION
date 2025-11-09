@@ -704,7 +704,9 @@ class ModelService:
         model_predictions = {m: predictions[m]['probability'] for m in predictions.keys()}
         inference_time = (time.time() - start_time) * 1000
         
-        logger.info(f"Ensemble result: prob={ensemble_prob:.3f}, conf={ensemble_conf:.3f}, agreement_std={prob_std:.3f if len(predictions) > 1 else 0.0}")
+        # Log results with proper formatting
+        prob_std_val = prob_std if len(predictions) > 1 else 0.0
+        logger.info(f"Ensemble result: prob={ensemble_prob:.3f}, conf={ensemble_conf:.3f}, agreement_std={prob_std_val:.3f}")
         
         return float(ensemble_prob), float(ensemble_conf), model_predictions, inference_time
 
