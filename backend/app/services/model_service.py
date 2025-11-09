@@ -611,20 +611,24 @@ class ModelService:
     def predict_ensemble(cls, features: Dict[str, Any]) -> Tuple[float, float, Dict[str, float], float]:
         """Ensemble prediction combining RF, GB, and TCN with weighted averaging
         
-        CONFIDENCE CALCULATION:
-        - Primary: Model agreement (1.0 - std_deviation of probabilities)
-        - Adjustment: Individual model confidence (entropy-based)
-        - Final: Weighted combination that reflects both agreement and certainty
+        CONFIDENCE CALCULATION (IMPROVED v2.0):
+        1. Model Agreement: How close are predictions? (std deviation)
+        2. Individual Certainty: Entropy-based confidence from each model
+        3. Probability Certainty: Lower confidence near decision boundary (0.5)
+        4. Model Performance: Weight by historical accuracy (RF:93.75%, GB:90.62%)
+        5. Extreme Disagreement Penalty: Reduce confidence if disagreement > 30%
         
         Returns:
             - probability: Weighted average flood probability
-            - confidence: How certain we are (0-1), based on model agreement and individual confidences
+            - confidence: How certain we are (0-1), multi-factor analysis
             - model_predictions: Individual model probabilities
             - inference_time: Total time in milliseconds
         """
         start_time = time.time()
         predictions = {}
-        weights = {'rf': 0.4, 'gb': 0.4, 'tcn': 0.2}
+        
+        # Model weights based on test accuracy (RF:93.75%, GB:90.62%, TCN:90.62%)
+        weights = {'rf': 0.40, 'gb': 0.38, 'tcn': 0.22}
         
         logger.info(f"Ensemble prediction starting with models: RF={cls.rf_model is not None}, GB={cls.gb_model is not None}, TCN={cls.tcn_model is not None}")
         
@@ -659,54 +663,103 @@ class ModelService:
             logger.error(f"No predictions available. RF={cls.rf_model is not None}, GB={cls.gb_model is not None}, TCN={cls.tcn_model is not None}")
             raise ValueError("No models available for ensemble prediction")
         
-        # Weighted average of probabilities
+        # Weighted average of probabilities using available models
         total_weight = sum(weights[m] for m in predictions.keys())
         ensemble_prob = sum(
             predictions[m]['probability'] * weights[m] 
             for m in predictions.keys()
         ) / total_weight
         
-        # ==== FIXED CONFIDENCE CALCULATION ====
-        # Confidence based on MODEL AGREEMENT (how much they agree on the prediction)
+        # ==== IMPROVED CONFIDENCE CALCULATION v2.0 ====
         probs = np.array([predictions[m]['probability'] for m in predictions.keys()])
         
         if len(predictions) == 1:
-            # Single model: use its confidence directly
-            ensemble_conf = list(predictions.values())[0]['confidence']
-        else:
-            # Multiple models: confidence = agreement + individual certainty
+            # Single model: use its confidence, but reduce if near decision boundary
+            base_conf = list(predictions.values())[0]['confidence']
             
-            # 1. Agreement score: How close are the predictions?
-            #    - If all models predict ~0.80, agreement is HIGH
-            #    - If models predict 0.30, 0.50, 0.90, agreement is LOW
+            # Reduce confidence if probability is near 0.5 (uncertain)
+            boundary_distance = abs(ensemble_prob - 0.5)  # 0 at boundary, 0.5 at extremes
+            boundary_penalty = min(boundary_distance * 2.0, 1.0)  # Scale to 0-1
+            
+            ensemble_conf = base_conf * (0.7 + 0.3 * boundary_penalty)
+        else:
+            # Multiple models: multi-factor confidence analysis
+            
+            # 1. Agreement Score: How close are the predictions?
             prob_std = np.std(probs)
-            # Convert std to agreement: low std = high agreement
-            # Max possible std for probabilities [0,1] is 0.5
-            agreement_score = 1.0 - min(prob_std / 0.3, 1.0)  # Normalize to 0-1
+            # Improved: Exponential penalty for disagreement
+            # Low std (< 0.05) = excellent, high std (> 0.3) = very poor
+            if prob_std < 0.05:
+                agreement_score = 1.0  # Perfect agreement
+            elif prob_std < 0.15:
+                agreement_score = 0.95 - (prob_std - 0.05) * 2.0  # 0.95 to 0.75
+            elif prob_std < 0.3:
+                agreement_score = 0.75 - (prob_std - 0.15) * 1.5  # 0.75 to 0.53
+            else:
+                agreement_score = 0.53 - min((prob_std - 0.3) * 1.0, 0.33)  # 0.53 to 0.20
             
             # 2. Average individual confidence (entropy-based from each model)
             avg_individual_conf = np.mean([predictions[m]['confidence'] for m in predictions.keys()])
             
-            # 3. Combine: 70% weight on agreement, 30% on individual confidence
-            #    This means: "We trust ensemble when models agree, even if individual entropy is high"
-            ensemble_conf = 0.7 * agreement_score + 0.3 * avg_individual_conf
+            # 3. Probability Certainty: Reduce confidence near decision boundary (0.5)
+            # Distance from 0.5: 0.0 = uncertain, 0.5 = very certain
+            boundary_distance = abs(ensemble_prob - 0.5)
+            if boundary_distance < 0.1:
+                # Very close to boundary (0.4-0.6)
+                probability_certainty = 0.5  # Low certainty
+            elif boundary_distance < 0.2:
+                # Near boundary (0.3-0.4 or 0.6-0.7)
+                probability_certainty = 0.5 + (boundary_distance - 0.1) * 2.5  # 0.5 to 0.75
+            else:
+                # Far from boundary (< 0.3 or > 0.7)
+                probability_certainty = 0.75 + (boundary_distance - 0.2) * 0.83  # 0.75 to 1.0
             
-            # 4. Extreme disagreement penalty: If max-min > 0.3, significantly reduce confidence
+            # 4. Model Performance Weighting
+            # RF: 93.75% accuracy, GB: 90.62% accuracy, TCN: 90.62% accuracy
+            model_quality = 0.92  # Average of available models (~92%)
+            
+            # 5. Combine all factors with weights
+            ensemble_conf = (
+                0.45 * agreement_score +           # Primary: Model agreement
+                0.25 * avg_individual_conf +       # Secondary: Individual certainty
+                0.20 * probability_certainty +     # Tertiary: Boundary distance
+                0.10 * model_quality               # Baseline: Model quality
+            )
+            
+            # 6. Extreme Disagreement Penalty
             disagreement = np.max(probs) - np.min(probs)
-            if disagreement > 0.3:
-                penalty = 1.0 - min((disagreement - 0.3) / 0.4, 0.5)  # Up to 50% penalty
+            if disagreement > 0.30:
+                # Severe disagreement (e.g., 30% vs 70%)
+                penalty = 1.0 - min((disagreement - 0.30) / 0.50, 0.60)  # Up to 60% penalty
                 ensemble_conf *= penalty
-                logger.warning(f"High model disagreement ({disagreement:.2f}): RF={probs[0]:.2f}, GB={probs[1] if len(probs)>1 else 'N/A'}. Confidence reduced to {ensemble_conf:.2%}")
+                logger.warning(
+                    f"HIGH MODEL DISAGREEMENT ({disagreement:.2%}): "
+                    f"Predictions={[f'{p:.2%}' for p in probs]}. "
+                    f"Confidence reduced by {(1-penalty)*100:.0f}% to {ensemble_conf:.2%}"
+                )
+            elif disagreement > 0.20:
+                # Moderate disagreement
+                penalty = 1.0 - (disagreement - 0.20) * 0.5  # Up to 5% penalty
+                ensemble_conf *= penalty
+            
+            # 7. Boost confidence if all models are very confident AND agree
+            if agreement_score > 0.90 and avg_individual_conf > 0.85:
+                boost = min((agreement_score - 0.90) * 0.5, 0.05)  # Up to 5% boost
+                ensemble_conf = min(ensemble_conf + boost, 0.99)
         
-        # Ensure confidence is in valid range
-        ensemble_conf = float(np.clip(ensemble_conf, 0.0, 0.99))
+        # Ensure confidence is in valid range [0.15, 0.99]
+        # Min 15% to avoid false precision (we can't be 0% confident)
+        ensemble_conf = float(np.clip(ensemble_conf, 0.15, 0.99))
         
         model_predictions = {m: predictions[m]['probability'] for m in predictions.keys()}
         inference_time = (time.time() - start_time) * 1000
         
         # Log results with proper formatting
         prob_std_val = prob_std if len(predictions) > 1 else 0.0
-        logger.info(f"Ensemble result: prob={ensemble_prob:.3f}, conf={ensemble_conf:.3f}, agreement_std={prob_std_val:.3f}")
+        logger.info(
+            f"Ensemble result: prob={ensemble_prob:.3f}, conf={ensemble_conf:.3f}, "
+            f"agreement_std={prob_std_val:.3f}, boundary_dist={abs(ensemble_prob-0.5):.3f}"
+        )
         
         return float(ensemble_prob), float(ensemble_conf), model_predictions, inference_time
 
