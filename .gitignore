@@ -73,6 +73,8 @@ coverage.xml
 *.sqlite
 *.sqlite3
 *.db-journal
+*.db-shm
+*.db-wal
 flood_prediction.db
 
 # =============================================================================
@@ -94,6 +96,23 @@ desktop.ini
 # Docker
 # =============================================================================
 docker-compose.override.yml
+docker-compose.prod.yml
+
+# =============================================================================
+# Deployment (Heroku, Render, etc.)
+# =============================================================================
+heroku.yml
+Dockerfile.heroku
+heroku-nginx.conf
+.slugignore
+deploy-heroku.ps1
+quick-deploy.ps1
+start-heroku.sh
+HEROKU_README.md
+DEPLOY_HEROKU.md
+DEPLOYMENT_CHECKLIST.md
+render.yaml
+.render/
 
 # =============================================================================
 # Backups and Temporary
