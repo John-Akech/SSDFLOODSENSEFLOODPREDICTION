@@ -22,7 +22,7 @@ const Analytics: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [allStates, setAllStates] = useState<string[]>([]);
 
-  // Fetch all data
+  // Fetch all data with auto-refresh
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -83,6 +83,10 @@ const Analytics: React.FC = () => {
       }
     };
     fetchData();
+
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Fetch live model stats whenever window changes
@@ -200,14 +204,33 @@ const Analytics: React.FC = () => {
 
   // State data based on actual alerts and predictions
   const stateData = allStates.map(state => {
+    // Count alerts for this state
+    const stateAlerts = alerts.filter(a =>
+      a.state === state ||
+      a.region === state ||
+      a.district?.includes(state.split(' ')[0])
+    );
+
+    // Get highest risk level from alerts
+    let riskLevel = 'Low';
+    if (stateAlerts.some(a => a.severity === 'critical')) riskLevel = 'Critical';
+    else if (stateAlerts.some(a => a.severity === 'high')) riskLevel = 'High';
+    else if (stateAlerts.some(a => a.severity === 'medium')) riskLevel = 'Medium';
+    else if (stateAlerts.length > 0) riskLevel = 'Low';
+
+    // Get last event date
+    const lastEventDate = stateAlerts.length > 0
+      ? new Date(Math.max(...stateAlerts.map(a => new Date(a.created_at).getTime())))
+      : null;
+
     const s = stateStats?.[state];
     return {
       state: state.split(' ')[0],
       fullName: state,
       population: s?.population_at_risk ?? stats?.population_by_state?.[state] ?? 0,
-      floodEvents: s?.flood_events ?? 0,
-      riskLevel: s?.risk_level ?? 'Low',
-      lastEvent: s?.last_event ?? 'None'
+      floodEvents: stateAlerts.length || s?.flood_events || 0,
+      riskLevel: riskLevel,
+      lastEvent: lastEventDate ? lastEventDate.toISOString().split('T')[0] : (s?.last_event ?? 'None')
     };
   });
 
@@ -260,9 +283,14 @@ const Analytics: React.FC = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
             <div>
-              Flood Analytics Dashboard
+              <div className="flex items-center gap-3">
+                Flood Analytics Dashboard
+                <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full animate-pulse">
+                  LIVE DATA
+                </span>
+              </div>
               <p className="text-lg font-normal text-gray-600 mt-1">
-                Comprehensive flood risk analysis and predictive insights
+                Real-time comprehensive flood risk analysis and predictive insights
               </p>
             </div>
           </h1>

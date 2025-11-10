@@ -16,6 +16,8 @@ import RealTimeMonitoring from './pages/RealTimeMonitoring';
 import GISAnalysis from './pages/GISAnalysis';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import './styles/professional-ui.css';
+import './styles/flood-colors.css';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -105,7 +107,7 @@ const AppContent: React.FC = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3 }}
             >
-              <div className={location.pathname === '/map' ? 'h-full w-full' : 'w-full max-w-[1920px] mx-auto'}>
+              <div className={['/map', '/gis-analysis'].includes(location.pathname) ? 'h-full w-full' : 'w-full max-w-[1920px] mx-auto'}>
                 <AnimatePresence mode="wait">
                   <Routes>
                     {/* Public Routes */}
@@ -120,6 +122,7 @@ const AppContent: React.FC = () => {
                     <Route path="/predictions" element={<PredictionCenter />} />
                     <Route path="/monitoring" element={<RealTimeMonitoring />} />
                     <Route path="/reports" element={<Analytics />} />
+                    <Route path="/map" element={<GISAnalysis />} />
                     <Route path="/gis-analysis" element={<GISAnalysis />} />
                     <Route path="/data-sources" element={<DataSharing />} />
 

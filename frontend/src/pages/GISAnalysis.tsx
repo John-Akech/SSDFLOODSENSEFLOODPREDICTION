@@ -20,13 +20,14 @@ const GISAnalysis: React.FC = () => {
   const [predictions, setPredictions] = useState<any[]>([]);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [mapStyle, setMapStyle] = useState<'street' | 'satellite'>('street');
 
   const [mapCenter] = useState<[number, number]>([7.5, 30.0]);
   const southSudanBounds: [[number, number], [number, number]] = [
     [3.5, 23.5], [12.0, 35.9]
   ];
 
-  // Fetch all data
+  // Fetch all data with auto-refresh
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -46,6 +47,9 @@ const GISAnalysis: React.FC = () => {
     };
 
     fetchData();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Analyze location when clicked
@@ -157,19 +161,32 @@ const GISAnalysis: React.FC = () => {
   return (
     <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 flex flex-col pb-16">
       {/* Header */}
-      <div className="bg-white shadow-md border-b border-gray-200 p-4 sm:p-6">
+      <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 shadow-lg border-b border-blue-700 p-4 sm:p-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-gray-800 flex items-center gap-3">
-            <svg className="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            <div>
-              GIS Analysis Dashboard
-              <p className="text-sm font-normal text-gray-600 mt-1">
-                Comprehensive flood risk assessment and geospatial analysis
-              </p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/10 backdrop-blur-sm p-3 rounded-xl">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+              </div>
+              <div className="text-white">
+                <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+                  Live GIS Analysis Dashboard
+                  <span className="px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded-full animate-pulse">
+                    LIVE
+                  </span>
+                </h1>
+                <p className="text-sm text-blue-100 mt-1">
+                  Real-time flood risk assessment with interactive geospatial analysis
+                </p>
+              </div>
             </div>
-          </h1>
+            <div className="hidden sm:flex items-center gap-3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-lg">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-white">Auto-refreshing every 30s</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -178,22 +195,64 @@ const GISAnalysis: React.FC = () => {
         <aside className="w-80 bg-white shadow-lg border-r border-gray-200 overflow-y-auto">
           <div className="p-4 space-y-4">
             {/* Quick Stats */}
-            <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-lg p-4 text-white">
-              <h2 className="text-lg font-semibold mb-3">Quick Statistics</h2>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
+            <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-600 rounded-xl p-5 text-white shadow-lg">
+              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Live Statistics
+              </h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center bg-white/10 backdrop-blur-sm rounded-lg p-2">
                   <span className="text-blue-100">Total Alerts:</span>
-                  <span className="font-bold">{alerts.length}</span>
+                  <span className="font-bold text-xl">{alerts.length}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center bg-white/10 backdrop-blur-sm rounded-lg p-2">
                   <span className="text-blue-100">High Risk Areas:</span>
-                  <span className="font-bold">
+                  <span className="font-bold text-xl text-red-200">
                     {alerts.filter(a => ['high', 'critical'].includes(a.severity)).length}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-blue-100">Predictions:</span>
-                  <span className="font-bold">{predictions.length}</span>
+                <div className="flex justify-between items-center bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                  <span className="text-blue-100">Active Predictions:</span>
+                  <span className="font-bold text-xl">{predictions.length}</span>
+                </div>
+                <div className="flex justify-between items-center bg-white/10 backdrop-blur-sm rounded-lg p-2">
+                  <span className="text-blue-100">Last Updated:</span>
+                  <span className="font-semibold text-sm">{new Date().toLocaleTimeString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Map Legend */}
+            <div className="bg-white rounded-xl p-4 shadow-md border border-gray-200">
+              <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+                Map Legend
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-red-600 border-2 border-white shadow"></div>
+                  <span className="text-gray-700">Critical Risk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-orange-500 border-2 border-white shadow"></div>
+                  <span className="text-gray-700">High Risk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-yellow-500 border-2 border-white shadow"></div>
+                  <span className="text-gray-700">Medium Risk</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 rounded-full bg-lime-500 border-2 border-white shadow"></div>
+                  <span className="text-gray-700">Low Risk</span>
+                </div>
+                <div className="pt-2 border-t border-gray-200 mt-2">
+                  <p className="text-xs text-gray-600">
+                    🔵 Circles = Risk zones • 📍 Markers = Predictions
+                  </p>
                 </div>
               </div>
             </div>
@@ -294,8 +353,12 @@ const GISAnalysis: React.FC = () => {
             boundsOptions={{ padding: [20, 20] }}
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url={mapStyle === 'satellite'
+                ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+                : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'}
+              attribution={mapStyle === 'satellite'
+                ? '&copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}
             />
 
             <MapClickHandler onMapClick={handleMapClick} />
@@ -373,13 +436,48 @@ const GISAnalysis: React.FC = () => {
 
           {/* Loading Overlay */}
           {loading && (
-            <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-blue-200">
+            <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-blue-200 z-[1000]">
               <div className="flex items-center gap-2">
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                 <span className="text-sm font-medium text-gray-700">Analyzing location...</span>
               </div>
             </div>
           )}
+
+          {/* Map Style Toggle */}
+          <div className="absolute top-4 left-4 z-[1000] flex gap-2">
+            <button
+              onClick={() => setMapStyle('street')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all shadow-lg ${mapStyle === 'street'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white/95 backdrop-blur-sm text-gray-700 hover:bg-white'
+                }`}
+            >
+              🗺️ Street
+            </button>
+            <button
+              onClick={() => setMapStyle('satellite')}
+              className={`px-4 py-2 rounded-lg font-medium transition-all shadow-lg ${mapStyle === 'satellite'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white/95 backdrop-blur-sm text-gray-700 hover:bg-white'
+                }`}
+            >
+              🛰️ Satellite
+            </button>
+          </div>
+
+          {/* Data Info Badge */}
+          <div className="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur-sm p-3 rounded-lg shadow-lg border border-gray-200">
+            <div className="text-xs space-y-1">
+              <div className="flex items-center gap-2 text-gray-700">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="font-semibold">Live Data from API</span>
+              </div>
+              <div className="text-gray-600">
+                {alerts.length} alerts • {predictions.length} predictions
+              </div>
+            </div>
+          </div>
         </main>
       </div>
     </div>
