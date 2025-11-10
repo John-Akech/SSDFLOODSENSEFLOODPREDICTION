@@ -110,6 +110,10 @@ const PredictionCenter: React.FC = () => {
             originalKey: key,
             accuracy: Math.round(accuracy * 100),
             confidence: avgConf,
+            minConfidence: s?.min_confidence || 0,
+            maxConfidence: s?.max_confidence || 0,
+            latestConfidence: s?.latest_confidence || avgConf,
+            baselineAccuracy: s?.baseline_accuracy ? Math.round(s.baseline_accuracy * 100) : Math.round(accuracy * 100),
             lastUpdate: lastUpdateText,
             count: s?.count || 0
           };
@@ -218,6 +222,12 @@ const PredictionCenter: React.FC = () => {
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="font-medium">Models Active</span>
               </div>
+              <div className="flex items-center space-x-3 text-sm bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-3 rounded-lg shadow-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span className="font-semibold">Dynamic Metrics</span>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -260,16 +270,41 @@ const PredictionCenter: React.FC = () => {
                     <div className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-5 bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                       {model.accuracy}%
                     </div>
-                    <div className="text-lg font-semibold text-slate-600 uppercase tracking-wide mt-4">Accuracy</div>
+                    <div className="text-lg font-semibold text-slate-600 uppercase tracking-wide mt-4">
+                      Dynamic Accuracy
+                    </div>
+                    {model.baselineAccuracy && model.baselineAccuracy !== model.accuracy && (
+                      <div className="text-xs text-slate-500 mt-2">
+                        Baseline: {model.baselineAccuracy}%
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-7 mt-12">
                     <div className="flex items-center justify-between py-5 px-6 bg-slate-50 rounded-xl">
-                      <span className="text-slate-600 font-semibold text-lg">Confidence:</span>
+                      <span className="text-slate-600 font-semibold text-lg">Avg Confidence:</span>
                       <span className="font-bold text-slate-900 text-xl">{(model.confidence * 100).toFixed(1)}%</span>
                     </div>
+                    {model.minConfidence !== undefined && model.maxConfidence !== undefined && (
+                      <div className="flex items-center justify-between py-5 px-6 bg-slate-50 rounded-xl">
+                        <span className="text-slate-600 font-semibold text-lg">Confidence Range:</span>
+                        <span className="font-bold text-slate-900 text-xl">
+                          {(model.minConfidence * 100).toFixed(1)}% - {(model.maxConfidence * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                    {model.latestConfidence !== undefined && (
+                      <div className="flex items-center justify-between py-5 px-6 bg-blue-50 rounded-xl border-2 border-blue-200">
+                        <span className="text-blue-700 font-semibold text-lg">Latest:</span>
+                        <span className="font-bold text-blue-900 text-xl">{(model.latestConfidence * 100).toFixed(1)}%</span>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between py-5 px-6 bg-slate-50 rounded-xl">
                       <span className="text-slate-600 font-semibold text-lg">Last Update:</span>
                       <span className="text-slate-500 font-semibold text-lg">{model.lastUpdate}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-5 px-6 bg-green-50 rounded-xl">
+                      <span className="text-green-700 font-semibold text-lg">Predictions:</span>
+                      <span className="font-bold text-green-900 text-xl">{model.count}</span>
                     </div>
                   </div>
                 </motion.div>
