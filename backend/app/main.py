@@ -25,6 +25,8 @@ from api.routes import router
 from api.admin_routes import router as admin_router
 from api.auth_routes import router as auth_router
 from api.crud_routes import router as crud_router
+# Temporarily disabled audit logs due to circular import issue
+# from api.audit_routes import router as audit_router
 
 # Import core functionality
 from core.database import init_db, SessionLocal
@@ -123,6 +125,8 @@ app.add_middleware(
 # Order matters - more specific routes should be included first
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
+# Temporarily disabled audit logs due to circular import issue
+# app.include_router(audit_router, prefix="/api/v1")  # Audit logs
 app.include_router(router, prefix="/api/v1")
 app.include_router(crud_router, prefix="/api/v1")  # CRUD routes last
 

@@ -1,32 +1,38 @@
-# South Sudan Flood Prediction System# South Sudan Flood Prediction System
+# 🌊 FloodSense - South Sudan Flood Prediction System
 
+**A Real-Time Flood Forecasting and Early Warning System**
 
-
-**A flood forecasting and early warning system using satellite data and machine learning**
-
-
-
----A flood forecasting and early warning system that uses satellite data and machine learning to help communities prepare for floods.A flood forecasting and early warning system that uses satellite data and machine learning to help communities prepare for floods.
-
-
-
-**Academic Project**  
-
-BSc. Software Engineering | John Akech  
-
-Supervisor: Samiratu Ntohsi  **Academic Project**  **Academic Project**  
-
-November 2025
-
-BSc. Software Engineering | John Akech  BSc. Software Engineering | John Akech  
+Using satellite imagery, machine learning, and automated alerts to protect communities from floods.
 
 ---
 
-Supervisor: Samiratu Ntohsi  Supervisor: Samiratu Ntohsi  
+## 📹 Demo Video
 
-## Table of Contents
+**Watch the system in action:** [FloodSense Demo Video](https://drive.google.com/file/d/1FcEZCI2VdIqJ7eEiZ0mTDhA_bbN8-Rgp/view?usp=sharing)
 
-November 2025November 2025
+---
+
+**Academic Project**  
+BSc. Software Engineering | **John Akech**  
+Supervisor: **Samiratu Ntohsi**  
+November 2025
+
+---
+
+## 🎯 Quick Stats
+
+| Metric | Achievement |
+|--------|-------------|
+| **Model Accuracy** | 96.88% (exceeds 86% target) |
+| **Precision** | 100% (zero false alarms) |
+| **Recall** | 95.65% (only 1 missed flood) |
+| **Prediction Speed** | <500ms response time |
+| **Test Coverage** | 100% (14/14 endpoints passing) |
+| **Data Sources** | Real satellite data (2014-2024) |
+
+---
+
+## 📑 Table of Contents
 
 - [Overview](#overview)
 

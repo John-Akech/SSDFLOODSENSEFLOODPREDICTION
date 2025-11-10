@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime
+import logging
 
 from core.database import get_db
 from schemas.schemas import *
@@ -16,6 +17,7 @@ from services.alert_service import alert_service
 from fastapi import Body
 
 router = APIRouter(tags=["crud"])
+logger = logging.getLogger(__name__)
 
 # User CRUD
 @router.get("/users", response_model=List[User])
@@ -165,6 +167,44 @@ async def create_alert(alert: AlertCreate, db: Session = Depends(get_db), curren
     db.add(db_alert)
     db.commit()
     db.refresh(db_alert)
+    
+    # Send push notifications to all subscribers
+    try:
+        from models.database_models import PushSubscription
+        subscriptions = db.query(PushSubscription).all()
+        
+        if subscriptions:
+            # Convert DB subscriptions to the format expected by alert_service
+            subscription_list = []
+            for sub in subscriptions:
+                subscription_list.append({
+                    "endpoint": sub.endpoint,
+                    "keys": {
+                        "p256dh": sub.p256dh,
+                        "auth": sub.auth
+                    }
+                })
+            
+            # Create an alert object for the service
+            from services.alert_service import Alert as ServiceAlert
+            from datetime import datetime
+            service_alert = ServiceAlert(
+                id=str(db_alert.id),
+                latitude=db_alert.latitude,
+                longitude=db_alert.longitude,
+                message=db_alert.message,
+                severity=db_alert.severity,
+                created_at=db_alert.created_at or datetime.utcnow(),
+                expires_at=db_alert.expires_at
+            )
+            
+            # Send push notifications asynchronously
+            from services.alert_service import alert_service
+            await alert_service.send_web_push_alert(service_alert, subscription_list)
+            logger.info(f"Push notifications sent for alert {db_alert.id}")
+    except Exception as e:
+        logger.error(f"Failed to send push notifications for alert {db_alert.id}: {e}")
+        # Don't fail the alert creation if push notifications fail
     
     # Convert to Alert response model
     return Alert(

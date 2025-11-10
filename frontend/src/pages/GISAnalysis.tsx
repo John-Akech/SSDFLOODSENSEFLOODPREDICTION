@@ -251,7 +251,7 @@ const GISAnalysis: React.FC = () => {
                 </div>
                 <div className="pt-2 border-t border-gray-200 mt-2">
                   <p className="text-xs text-gray-600">
-                    🔵 Circles = Risk zones • 📍 Markers = Predictions
+                    Circles = Risk zones • Markers = Predictions
                   </p>
                 </div>
               </div>
@@ -449,17 +449,17 @@ const GISAnalysis: React.FC = () => {
             <button
               onClick={() => setMapStyle('street')}
               className={`px-4 py-2 rounded-lg font-medium transition-all shadow-lg ${mapStyle === 'street'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/95 backdrop-blur-sm text-gray-700 hover:bg-white'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/95 backdrop-blur-sm text-gray-700 hover:bg-white'
                 }`}
             >
-              🗺️ Street
+              Street
             </button>
             <button
               onClick={() => setMapStyle('satellite')}
               className={`px-4 py-2 rounded-lg font-medium transition-all shadow-lg ${mapStyle === 'satellite'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white/95 backdrop-blur-sm text-gray-700 hover:bg-white'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white/95 backdrop-blur-sm text-gray-700 hover:bg-white'
                 }`}
             >
               🛰️ Satellite

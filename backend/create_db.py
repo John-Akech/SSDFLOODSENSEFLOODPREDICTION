@@ -11,6 +11,7 @@ from models.database_models import (
     User, FloodEvent, Prediction, Recommendation,
     Feedback, SARImage, RainfallRecord
 )
+from models.audit_log import AuditLog
 
 print("Creating all tables...")
 Base.metadata.create_all(bind=engine)
@@ -23,7 +24,8 @@ tables = inspector.get_table_names()
 print(f"\nTables created: {tables}")
 print(f"Total: {len(tables)} tables")
 
-if len(tables) == 7:
-    print("\n[SUCCESS] All 7 tables created successfully!")
+if len(tables) == 8:
+    print("\n[SUCCESS] All 8 tables created successfully!")
+    print("  - 7 main tables + 1 audit_logs table")
 else:
-    print(f"\n[WARNING] Expected 7 tables, got {len(tables)}")
+    print(f"\n[WARNING] Expected 8 tables, got {len(tables)}")
