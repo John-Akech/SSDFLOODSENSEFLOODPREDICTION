@@ -68,7 +68,7 @@ This system predicts floods in South Sudan using satellite imagery and machine l
 ```
 ┌────────────────────────────────────────────────────────────────┐
 │                     Client Applications                         │
-│  (Web Browser, Mobile App, NGO Dashboard, Community Portal)    │
+│  (Web Browser, Mobile browser, NGO Dashboard, Community Portal)    │
 └────────────────────────┬───────────────────────────────────────┘
                          │ HTTPS/REST API
                          ▼
