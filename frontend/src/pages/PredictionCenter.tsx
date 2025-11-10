@@ -33,22 +33,21 @@ const PredictionCenter: React.FC = () => {
 
       // Generate historical prediction data from actual predictions - use real model breakdown if available
       const history = preds.slice(-20).map((pred: any) => {
-        const baseConfidence = pred.confidence_score || 0;
         const timestamp = new Date(pred.created_at || Date.now());
 
-        // Try to extract individual model scores if available in prediction metadata
-        const ensemble = pred.confidence_score || baseConfidence;
-        const rf = pred.model_scores?.rf || pred.model_scores?.random_forest || (baseConfidence > 0 ? baseConfidence * 0.98 : null);
-        const tcn = pred.model_scores?.tcn || pred.model_scores?.temporal_cnn || (baseConfidence > 0 ? baseConfidence * 0.97 : null);
+        // Use ONLY actual model scores from prediction - no artificial multipliers
+        const ensemble = pred.confidence_score || null;
+        const rf = pred.model_scores?.rf || pred.model_scores?.random_forest || null;
+        const tcn = pred.model_scores?.tcn || pred.model_scores?.temporal_cnn || null;
 
         return {
           time: timestamp.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
           ensemble: ensemble,
-          rf: rf || ensemble * 0.98,
-          tcn: tcn || ensemble * 0.97,
+          rf: rf,
+          tcn: tcn,
           timestamp: timestamp.getTime()
         };
-      }).filter((h: any) => h.ensemble > 0);
+      }).filter((h: any) => h.ensemble !== null);
 
       // Sort by timestamp and take last 15 points for better visualization
       history.sort((a: any, b: any) => a.timestamp - b.timestamp);
@@ -222,12 +221,6 @@ const PredictionCenter: React.FC = () => {
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 <span className="font-medium">Models Active</span>
               </div>
-              <div className="flex items-center space-x-3 text-sm bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-4 py-3 rounded-lg shadow-sm">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span className="font-semibold">Dynamic Metrics</span>
-              </div>
             </div>
           </div>
         </motion.div>
@@ -271,11 +264,11 @@ const PredictionCenter: React.FC = () => {
                       {model.accuracy}%
                     </div>
                     <div className="text-lg font-semibold text-slate-600 uppercase tracking-wide mt-4">
-                      Dynamic Accuracy
+                      Accuracy
                     </div>
                     {model.baselineAccuracy && model.baselineAccuracy !== model.accuracy && (
                       <div className="text-xs text-slate-500 mt-2">
-                        Baseline: {model.baselineAccuracy}%
+                        Training: {model.baselineAccuracy}%
                       </div>
                     )}
                   </div>

@@ -104,6 +104,8 @@ class FloodDetectionResponse(BaseModel):
     after_tile: str
     flood_tile: str
     flood_area_ha: Optional[float] = None
+    confidence: Optional[float] = None
+    flood_patches: Optional[int] = None
     metadata: dict
 
 class FeatureExtractionRequest(BaseModel):
@@ -271,12 +273,16 @@ async def flood_display(request: FloodDetectionRequest):
         # Extract numeric flood area for frontend display
         area_stats = flood_added.get("flood_area_stats") or {}
         area_ha = area_stats.get("area_hectares") if isinstance(area_stats, dict) else None
+        confidence = area_stats.get("mean_confidence", 0.0) if isinstance(area_stats, dict) else 0.0
+        flood_patches = area_stats.get("flood_patches", 0) if isinstance(area_stats, dict) else 0
 
         return FloodDetectionResponse(
             before_tile=tileids.get("before_flood", ""),
             after_tile=tileids.get("after_flood", ""),
             flood_tile=tileids.get("flood_results", ""),
             flood_area_ha=area_ha,
+            confidence=confidence,
+            flood_patches=flood_patches,
             metadata={
                 "base_period": f"{request.init_start} to {request.init_last}",
                 "flood_period": f"{request.flood_start} to {request.flood_last}",

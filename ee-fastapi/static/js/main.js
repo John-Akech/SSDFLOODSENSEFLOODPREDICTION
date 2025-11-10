@@ -11,7 +11,7 @@ async function searchLocation(placeName) {
             { headers: { 'User-Agent': 'FloodSense/1.0' } }
         );
         const data = await response.json();
-        
+
         if (data && data.length > 0) {
             for (const item of data) {
                 const lat = parseFloat(item.lat);
@@ -33,7 +33,7 @@ async function checkAuthStatus() {
     try {
         const response = await fetch(`${baseUrl}/gee/status`);
         const data = await response.json();
-        
+
         if (data.initialized) {
             isAuthenticated = true;
             document.getElementById('statusBadge').textContent = 'LIVE MONITORING';
@@ -55,26 +55,26 @@ async function checkAuthStatus() {
 }
 
 // Authenticate with GEE
-document.getElementById('authenticateBtn').addEventListener('click', async function() {
+document.getElementById('authenticateBtn').addEventListener('click', async function () {
     const projectId = document.getElementById('projectId').value.trim();
     const btn = this;
     const originalText = btn.innerHTML;
-    
+
     btn.disabled = true;
     btn.innerHTML = '<span>⏳ Initializing...</span>';
-    
+
     try {
-        const url = projectId 
+        const url = projectId
             ? `${baseUrl}/gee/authenticate?project_id=${encodeURIComponent(projectId)}`
             : `${baseUrl}/gee/authenticate`;
-            
+
         const response = await fetch(url, { method: 'POST' });
         const data = await response.json();
-        
+
         if (response.ok) {
             document.getElementById('authAlert').className = 'alert alert-success';
             document.getElementById('authAlert').innerHTML = '<strong>Success!</strong><br>Earth Engine authenticated successfully.';
-            
+
             setTimeout(() => {
                 document.getElementById('authModal').classList.remove('active');
                 checkAuthStatus();
@@ -91,7 +91,7 @@ document.getElementById('authenticateBtn').addEventListener('click', async funct
 });
 
 // Retry connection
-document.getElementById('skipAuthBtn').addEventListener('click', function() {
+document.getElementById('skipAuthBtn').addEventListener('click', function () {
     document.getElementById('authModal').classList.remove('active');
     checkAuthStatus();
 });
@@ -100,16 +100,16 @@ document.getElementById('skipAuthBtn').addEventListener('click', function() {
 checkAuthStatus();
 
 // Location search handler
-window.handleLocationSearch = async function() {
+window.handleLocationSearch = async function () {
     const searchInput = document.getElementById('locationSearch');
     const searchBtn = document.getElementById('searchLocationBtn');
     const placeName = searchInput.value.trim();
-    
+
     if (!placeName) return;
-    
+
     searchBtn.disabled = true;
     searchBtn.innerHTML = '<span>Searching...</span>';
-    
+
     try {
         const result = await searchLocation(placeName);
         if (result) {
@@ -132,18 +132,18 @@ window.handleLocationSearch = async function() {
         searchBtn.innerHTML = '<span>Search</span>';
     }
 };
-    
+
 // raster layer (OSM)
-var raster = new ol.layer.Tile({    
-    title:"basemap",
+var raster = new ol.layer.Tile({
+    title: "basemap",
     source: new ol.source.OSM(),
 })
 
 // vector layer (bbox)
-var source = new ol.source.Vector({wrapX: false});
+var source = new ol.source.Vector({ wrapX: false });
 var vector = new ol.layer.Vector({
-    title:"geometry",
-    source: source,    
+    title: "geometry",
+    source: source,
 });
 
 // Keep references to SAR layers so we can replace/clear them
@@ -159,12 +159,12 @@ function CreateMap(layers) {
         view: new ol.View({
             center: ol.proj.transform([31.307, 6.877], 'EPSG:4326', 'EPSG:3857'),
             zoom: 7
-        })    
+        })
     });
-    return map        
+    return map
 }
 
-var map = CreateMap(layers=[raster, vector]);
+var map = CreateMap(layers = [raster, vector]);
 map.getView().setCenter(ol.proj.transform([31.307, 6.877], 'EPSG:4326', 'EPSG:3857'));
 map.getView().setZoom(7);
 
@@ -217,15 +217,15 @@ function drawLine() {
 document.getElementById('undo').addEventListener('click', function () {
     const layers = map.getLayers().getArray().slice();
     layers.forEach(layer => {
-      const title = layer.get('title');
-      if (title === "Flood Area" || title === "After Flood" || title === "Before Flood"){
-          map.removeLayer(layer);
-      }
+        const title = layer.get('title');
+        if (title === "Flood Area" || title === "After Flood" || title === "Before Flood") {
+            map.removeLayer(layer);
+        }
     });
     source.clear();
     document.getElementById('result').classList.remove('active');
 });
-  
+
 var downloadController = null;
 var downloadProgress = 0;
 var downloadBlob = null;
@@ -253,15 +253,15 @@ document.getElementById('download').addEventListener('click', function () {
     var geom3857 = lastFeature.getGeometry();
     var extent4326 = geom3857.clone().transform('EPSG:3857', 'EPSG:4326').getExtent();
     var bbox = extent4326.toString();
-    
+
     var init_start = document.getElementById("init_start").value;
     var init_last = document.getElementById("init_last").value;
     var flood_start = document.getElementById("flood_start").value;
     var flood_last = document.getElementById("flood_last").value;
     var flood_threshold = parseFloat(document.getElementById("threshold").value);
-    
+
     downloadController = new AbortController();
-    
+
     fetch(`${baseUrl}/flood_download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -275,31 +275,31 @@ document.getElementById('download').addEventListener('click', function () {
         }),
         signal: downloadController.signal
     })
-    .then(response => {
-        if (response.ok) {
-            return response.blob();
-        } else {
-            return response.json().then(err => { throw new Error(err.detail); });
-        }
-    })
-    .then(blob => {
-        downloadBlob = blob;
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `flood_area_${Date.now()}.gpkg`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.getElementById('loading').classList.remove('active');
-        document.getElementById('download').disabled = false;
-    })
-    .catch(error => {
-        console.error(error);
-        alert('Download failed: ' + error.message);
-        document.getElementById('loading').classList.remove('active');
-        document.getElementById('download').disabled = false;
-    });      
+        .then(response => {
+            if (response.ok) {
+                return response.blob();
+            } else {
+                return response.json().then(err => { throw new Error(err.detail); });
+            }
+        })
+        .then(blob => {
+            downloadBlob = blob;
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `flood_area_${Date.now()}.gpkg`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('download').disabled = false;
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Download failed: ' + error.message);
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('download').disabled = false;
+        });
 });
 
 document.getElementById('display').addEventListener('click', function () {
@@ -313,7 +313,7 @@ document.getElementById('display').addEventListener('click', function () {
     document.getElementById('display').disabled = true;
     document.getElementById('result').classList.remove('active');
     simulateProgress();
-    
+
     var features = source.getFeatures();
     if (features.length === 0) {
         alert('[WARNING] Please draw a rectangle on the map first');
@@ -324,13 +324,13 @@ document.getElementById('display').addEventListener('click', function () {
 
     var lastFeature = features[features.length - 1].clone();
     var bbox = lastFeature.getGeometry().transform('EPSG:3857', 'EPSG:4326').getExtent().toString();
-    
+
     var init_start = document.getElementById("init_start").value;
     var init_last = document.getElementById("init_last").value;
     var flood_start = document.getElementById("flood_start").value;
     var flood_last = document.getElementById("flood_last").value;
     var flood_threshold = parseFloat(document.getElementById("threshold").value);
-    
+
     fetch(`${baseUrl}/flood_display`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -343,62 +343,74 @@ document.getElementById('display').addEventListener('click', function () {
             flood_threshold: flood_threshold
         })
     })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            return response.json().then(err => { throw new Error(err.detail); });
-        }
-    })
-    .then(response => {
-        // Defensive checks
-        if (!response.before_tile || !response.after_tile || !response.flood_tile) {
-            throw new Error('Tiles not returned. Try adjusting dates/threshold or ensure GEE auth.');
-        }
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                return response.json().then(err => { throw new Error(err.detail); });
+            }
+        })
+        .then(response => {
+            // Defensive checks
+            if (!response.before_tile || !response.after_tile || !response.flood_tile) {
+                throw new Error('Tiles not returned. Try adjusting dates/threshold or ensure GEE auth.');
+            }
 
-        // Remove existing SAR layers
-        [layerBefore, layerAfter, layerFlood].forEach(l => { if (l) map.removeLayer(l); });
+            // Remove existing SAR layers
+            [layerBefore, layerAfter, layerFlood].forEach(l => { if (l) map.removeLayer(l); });
 
-        // Create new layers
-        layerBefore = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.before_tile }), title: 'Before Flood' });
-        layerAfter  = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.after_tile  }), title: 'After Flood'  });
-        layerFlood  = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.flood_tile  }), title: 'Flood Area'   });
+            // Create new layers
+            layerBefore = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.before_tile }), title: 'Before Flood' });
+            layerAfter = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.after_tile }), title: 'After Flood' });
+            layerFlood = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.flood_tile }), title: 'Flood Area' });
 
-        // Apply opacity from UI
-        var sarOpacityVal = parseInt(document.getElementById('sarOpacity')?.value || '80', 10) / 100;
-        layerBefore.setOpacity(sarOpacityVal);
-        layerAfter.setOpacity(sarOpacityVal);
-        layerFlood.setOpacity(0.9);
+            // Apply opacity from UI
+            var sarOpacityVal = parseInt(document.getElementById('sarOpacity')?.value || '80', 10) / 100;
+            layerBefore.setOpacity(sarOpacityVal);
+            layerAfter.setOpacity(sarOpacityVal);
+            layerFlood.setOpacity(0.9);
 
-        // Add in sensible order (flood on top)
-        map.addLayer(layerBefore);
-        map.addLayer(layerAfter);
-        map.addLayer(layerFlood);
+            // Set initial visibility based on checkbox state (default: all visible)
+            layerBefore.setVisible(document.getElementById('toggleBefore')?.checked !== false);
+            layerAfter.setVisible(document.getElementById('toggleAfter')?.checked !== false);
+            layerFlood.setVisible(document.getElementById('toggleFlood')?.checked !== false);
 
-        // Fit view to drawn extent
-        try {
-            var extent3857 = ol.proj.transformExtent(extent4326, 'EPSG:4326', 'EPSG:3857');
-            map.getView().fit(extent3857, { duration: 600, padding: [40,40,40,40] });
-        } catch (_) {}
+            // Add in sensible order (flood on top)
+            map.addLayer(layerBefore);
+            map.addLayer(layerAfter);
+            map.addLayer(layerFlood);
 
-        // Results panel
-        if (typeof response.flood_area_ha === 'number') {
-            document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
-            document.getElementById('result').classList.add('active');
-        } else {
-            document.getElementById('result').classList.add('active');
-            document.getElementById('floodArea').textContent = '0.00';
-        }
+            // Show layer controls
+            document.getElementById('layerControls').style.display = 'block';
 
-        document.getElementById('loading').classList.remove('active');
-        document.getElementById('display').disabled = false;
-    })
-    .catch(error => {
-        console.error(error);
-        alert('[ERROR] Detection failed: ' + error.message);
-        document.getElementById('loading').classList.remove('active');
-        document.getElementById('display').disabled = false;
-    });
+            // Fit view to drawn extent
+            try {
+                var extent3857 = ol.proj.transformExtent(extent4326, 'EPSG:4326', 'EPSG:3857');
+                map.getView().fit(extent3857, { duration: 600, padding: [40, 40, 40, 40] });
+            } catch (_) { }
+
+            // Results panel
+            if (typeof response.flood_area_ha === 'number') {
+                document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
+                document.getElementById('confidence').textContent = (response.confidence || 0).toFixed(1) + '%';
+                document.getElementById('floodCount').textContent = response.flood_patches || 0;
+                document.getElementById('result').classList.add('active');
+            } else {
+                document.getElementById('result').classList.add('active');
+                document.getElementById('floodArea').textContent = '0.00';
+                document.getElementById('confidence').textContent = '0.0%';
+                document.getElementById('floodCount').textContent = '0';
+            }
+
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('display').disabled = false;
+        })
+        .catch(error => {
+            console.error(error);
+            alert('[ERROR] Detection failed: ' + error.message);
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('display').disabled = false;
+        });
 });
 
 function clearDrawing() {
@@ -431,7 +443,7 @@ if (document.getElementById('searchLocationBtn')) {
 }
 
 // Keyboard shortcuts
-document.addEventListener('keydown', function(e) {
+document.addEventListener('keydown', function (e) {
     // Ctrl+M - Toggle sidebar
     if (e.ctrlKey && e.key === 'm') {
         e.preventDefault();
@@ -482,7 +494,7 @@ function simulateProgress() {
 function toggleAdvancedOptions() {
     const panel = document.getElementById('advancedPanel');
     const checkbox = document.getElementById('advancedOptions');
-    
+
     if (checkbox && panel) {
         if (checkbox.checked) {
             panel.style.display = 'block';
@@ -497,9 +509,9 @@ function toggleAdvancedOptions() {
 function updateRangeValue(sliderId, valueId, suffix = '') {
     const slider = document.getElementById(sliderId);
     const valueDisplay = document.getElementById(valueId);
-    
+
     if (slider && valueDisplay) {
-        slider.addEventListener('input', function() {
+        slider.addEventListener('input', function () {
             valueDisplay.textContent = this.value + suffix;
         });
     }
@@ -520,7 +532,7 @@ function startProcessing() {
     // Show loading panel
     const loadingPanel = document.getElementById('loading');
     const resultPanel = document.getElementById('result');
-    
+
     if (loadingPanel) loadingPanel.classList.add('active');
     if (resultPanel) resultPanel.classList.remove('active');
     // Simple progress will be handled by simulateProgress()
@@ -530,15 +542,15 @@ function updateProgress(percentage) {
     const progressFill = document.getElementById('progressFill');
     const progressText = document.getElementById('progressText');
     const processingTime = document.getElementById('processingTime');
-    
+
     if (progressFill) {
         progressFill.style.width = percentage + '%';
     }
-    
+
     if (progressText) {
         progressText.textContent = Math.round(percentage) + '%';
     }
-    
+
     if (processingTime) {
         const elapsed = Math.round((Date.now() - processingStartTime) / 1000);
         processingTime.textContent = elapsed + 's';
@@ -549,17 +561,17 @@ function completeProcessing() {
     // Hide loading panel
     const loadingPanel = document.getElementById('loading');
     if (loadingPanel) loadingPanel.classList.remove('active');
-    
+
     // Show results with enhanced data
     const resultPanel = document.getElementById('result');
     if (resultPanel) resultPanel.classList.add('active');
-    
+
     // Simulate enhanced results
     const floodArea = Math.floor(Math.random() * 500) + 50;
     const confidence = Math.floor(Math.random() * 30) + 70;
     const floodCount = Math.floor(Math.random() * 10) + 1;
     const processingTime = Math.round((Date.now() - processingStartTime) / 1000);
-    
+
     // Update result values
     const floodAreaEl = document.getElementById('floodArea');
     const confidenceEl = document.getElementById('confidence');
@@ -567,14 +579,14 @@ function completeProcessing() {
     const detectionMethodEl = document.getElementById('detectionMethod');
     const finalProcessingTimeEl = document.getElementById('finalProcessingTime');
     const dataQualityEl = document.getElementById('dataQuality');
-    
+
     if (floodAreaEl) floodAreaEl.textContent = floodArea;
     if (confidenceEl) confidenceEl.textContent = confidence + '%';
     if (floodCountEl) floodCountEl.textContent = floodCount;
     if (detectionMethodEl) detectionMethodEl.textContent = document.getElementById('thresholdMethod').value;
     if (finalProcessingTimeEl) finalProcessingTimeEl.textContent = processingTime + 's';
     if (dataQualityEl) dataQualityEl.textContent = confidence > 80 ? 'Excellent' : confidence > 60 ? 'Good' : 'Fair';
-    
+
     // Enable download button
     const downloadBtn = document.getElementById('download');
     if (downloadBtn) downloadBtn.disabled = false;
@@ -585,7 +597,7 @@ function initializeMapControls() {
     // Base map control
     const baseMapSelect = document.getElementById('baseMap');
     if (baseMapSelect) {
-        baseMapSelect.addEventListener('change', function() {
+        baseMapSelect.addEventListener('change', function () {
             let src;
             switch (this.value) {
                 case 'terrain':
@@ -604,21 +616,21 @@ function initializeMapControls() {
             raster.setSource(src);
         });
     }
-    
+
     // SAR opacity control
     const sarOpacitySlider = document.getElementById('sarOpacity');
     if (sarOpacitySlider) {
-        sarOpacitySlider.addEventListener('input', function() {
+        sarOpacitySlider.addEventListener('input', function () {
             const val = parseInt(this.value, 10) / 100;
             if (layerBefore) layerBefore.setOpacity(val);
-            if (layerAfter)  layerAfter.setOpacity(val);
+            if (layerAfter) layerAfter.setOpacity(val);
         });
     }
-    
+
     // Flood style control
     const floodStyleSelect = document.getElementById('floodStyle');
     if (floodStyleSelect) {
-        floodStyleSelect.addEventListener('change', function() {
+        floodStyleSelect.addEventListener('change', function () {
             console.log('Flood style changed to:', this.value);
             // Implementation for flood layer styling would go here
         });
@@ -640,13 +652,13 @@ function detectFloodEnhanced() {
         alert('Please authenticate with Google Earth Engine first.');
         return;
     }
-    
+
     var features = source.getFeatures();
     if (features.length === 0) {
         alert('[WARNING] Please draw a rectangle on the map first');
         return;
     }
-    
+
     // Get all parameters
     const params = {
         bbox: getBoundingBox(),
@@ -666,15 +678,15 @@ function detectFloodEnhanced() {
         morphology: document.getElementById('morphology') ? document.getElementById('morphology').value : 'none',
         confidence_threshold: document.getElementById('confidenceThreshold') ? parseInt(document.getElementById('confidenceThreshold').value) : 75
     };
-    
+
     console.log('Enhanced flood detection parameters:', params);
-    
+
     // Start processing
     document.getElementById('loading').classList.add('active');
     document.getElementById('display').disabled = true;
     document.getElementById('result').classList.remove('active');
     startProcessing();
-    
+
     // Prepare abort controller with timeout (3 minutes)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 180000);
@@ -687,57 +699,57 @@ function detectFloodEnhanced() {
         body: JSON.stringify(params),
         signal: controller.signal
     })
-    .then(response => {
-        if (response.ok) {
-            return response.json();
-        } else {
-            return response.json().then(err => { throw new Error(err.detail); });
-        }
-    })
-    .then(response => {
-        clearTimeout(timeoutId);
-        console.log('Flood detection completed with enhanced parameters');
-        // Process the response data
-        var bflood = new ol.layer.Tile({
-          source: new ol.source.XYZ({ url: response.before_tile }),
-          title: "Before Flood"
+        .then(response => {
+            if (response.ok) {
+                return response.json();
+            } else {
+                return response.json().then(err => { throw new Error(err.detail); });
+            }
+        })
+        .then(response => {
+            clearTimeout(timeoutId);
+            console.log('Flood detection completed with enhanced parameters');
+            // Process the response data
+            var bflood = new ol.layer.Tile({
+                source: new ol.source.XYZ({ url: response.before_tile }),
+                title: "Before Flood"
+            });
+            var aflood = new ol.layer.Tile({
+                source: new ol.source.XYZ({ url: response.after_tile }),
+                title: "After Flood"
+            });
+            var final = new ol.layer.Tile({
+                source: new ol.source.XYZ({ url: response.flood_tile }),
+                title: "Flood Area"
+            });
+
+            map.addLayer(bflood);
+            map.addLayer(aflood);
+            map.addLayer(final);
+
+            if (response.flood_area_ha) {
+                document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
+                document.getElementById('result').classList.add('active');
+            }
+
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('display').disabled = false;
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            console.error('Flood detection failed:', error);
+            let message = error && error.message ? error.message : 'Unknown error';
+            if (error.name === 'AbortError') {
+                message = 'Request timed out. Try a smaller area or narrower date range.';
+            } else if (!navigator.onLine) {
+                message = 'You appear to be offline. Please check your connection.';
+            } else if (message === 'Failed to fetch') {
+                message = 'Network error or server unavailable. Ensure backend is running and GEE is authenticated.';
+            }
+            alert('[ERROR] Detection failed: ' + message);
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('display').disabled = false;
         });
-        var aflood = new ol.layer.Tile({
-          source: new ol.source.XYZ({ url: response.after_tile }),
-          title: "After Flood"
-        });
-        var final = new ol.layer.Tile({
-          source: new ol.source.XYZ({ url: response.flood_tile }),
-          title: "Flood Area"
-        });
-        
-        map.addLayer(bflood);
-        map.addLayer(aflood);
-        map.addLayer(final);
-        
-        if (response.flood_area_ha) {
-          document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
-          document.getElementById('result').classList.add('active');
-        }
-        
-        document.getElementById('loading').classList.remove('active');
-        document.getElementById('display').disabled = false;
-    })
-    .catch(error => {
-        clearTimeout(timeoutId);
-        console.error('Flood detection failed:', error);
-        let message = error && error.message ? error.message : 'Unknown error';
-        if (error.name === 'AbortError') {
-            message = 'Request timed out. Try a smaller area or narrower date range.';
-        } else if (!navigator.onLine) {
-            message = 'You appear to be offline. Please check your connection.';
-        } else if (message === 'Failed to fetch') {
-            message = 'Network error or server unavailable. Ensure backend is running and GEE is authenticated.';
-        }
-        alert('[ERROR] Detection failed: ' + message);
-        document.getElementById('loading').classList.remove('active');
-        document.getElementById('display').disabled = false;
-    });
 }
 
 // Legend Control Functions
@@ -782,11 +794,11 @@ function exportLegend() {
             'Processing Error': 'Red gradient'
         }
     };
-    
+
     // Convert to downloadable text
     let legendText = 'FloodSense SAR Detection Legend\n';
     legendText += '=====================================\n\n';
-    
+
     Object.entries(legendData).forEach(([category, items]) => {
         legendText += `${category}:\n`;
         Object.entries(items).forEach(([item, description]) => {
@@ -794,10 +806,10 @@ function exportLegend() {
         });
         legendText += '\n';
     });
-    
+
     legendText += 'Generated by FloodSense SAR Detection System\n';
     legendText += `Date: ${new Date().toLocaleString()}\n`;
-    
+
     // Create and download file
     const blob = new Blob([legendText], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
@@ -813,7 +825,7 @@ function exportLegend() {
 // Update legend based on current processing state
 function updateLegendStatus(status) {
     const legendItems = document.querySelectorAll('.legend-item');
-    
+
     // Reset all status indicators
     legendItems.forEach(item => {
         const colorBox = item.querySelector('.legend-color');
@@ -821,7 +833,7 @@ function updateLegendStatus(status) {
             colorBox.classList.remove('processing-active', 'processing-complete', 'processing-error');
         }
     });
-    
+
     // Update based on status
     if (status === 'processing') {
         const activeItems = document.querySelectorAll('.legend-color.processing-active');
@@ -842,17 +854,46 @@ function updateLegendStatus(status) {
 }
 
 // Initialize enhanced features when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initializeRangeSliders();
     initializeMapControls();
-    
+
+    // Set up layer toggle event listeners
+    const toggleBefore = document.getElementById('toggleBefore');
+    const toggleAfter = document.getElementById('toggleAfter');
+    const toggleFlood = document.getElementById('toggleFlood');
+
+    if (toggleBefore) {
+        toggleBefore.addEventListener('change', function () {
+            if (layerBefore) {
+                layerBefore.setVisible(this.checked);
+            }
+        });
+    }
+
+    if (toggleAfter) {
+        toggleAfter.addEventListener('change', function () {
+            if (layerAfter) {
+                layerAfter.setVisible(this.checked);
+            }
+        });
+    }
+
+    if (toggleFlood) {
+        toggleFlood.addEventListener('change', function () {
+            if (layerFlood) {
+                layerFlood.setVisible(this.checked);
+            }
+        });
+    }
+
     // Update the main detect button to use enhanced function
     const detectButton = document.getElementById('display');
     if (detectButton) {
         // Add event listener for the enhanced detection function
         detectButton.addEventListener('click', detectFloodEnhanced);
     }
-    
+
     // Initialize legend
     updateLegendStatus('pending');
 });

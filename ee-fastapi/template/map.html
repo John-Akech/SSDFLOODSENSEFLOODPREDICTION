@@ -1,17 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <title>FloodSense - SAR Flood Detection</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
-    <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=AAAA"/>
-    
+    <link rel="icon" href="data:image/png;base64,iVBORw0KGgo=AAAA" />
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v7.5.2/ol.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #1a1a2e;
@@ -63,7 +68,9 @@
             transition: all 0.3s ease;
         }
 
-        .sidebar-toggle:hover { box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6); }
+        .sidebar-toggle:hover {
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
 
         .sidebar-toggle span {
             display: block;
@@ -84,8 +91,13 @@
             transition: all 0.3s ease;
         }
 
-        .sidebar-toggle span::before { top: -8px; }
-        .sidebar-toggle span::after { top: 8px; }
+        .sidebar-toggle span::before {
+            top: -8px;
+        }
+
+        .sidebar-toggle span::after {
+            top: 8px;
+        }
 
         .sidebar-toggle.active span {
             background: transparent;
@@ -189,7 +201,9 @@
             font-size: 18px;
         }
 
-        input[type="date"], input[type="text"], select {
+        input[type="date"],
+        input[type="text"],
+        select {
             width: 100%;
             padding: 14px 18px;
             border: 2px solid #e8e8e8;
@@ -201,7 +215,9 @@
             font-family: 'Inter', sans-serif;
         }
 
-        input[type="date"]:focus, input[type="text"]:focus, select:focus {
+        input[type="date"]:focus,
+        input[type="text"]:focus,
+        select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
@@ -296,8 +312,13 @@
         }
 
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
 
         .progress-bar {
@@ -339,8 +360,15 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .result-title {
@@ -541,12 +569,12 @@
             transition: all 0.3s ease;
         }
 
-        .checkbox-label input[type="checkbox"]:checked + .checkmark {
+        .checkbox-label input[type="checkbox"]:checked+.checkmark {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-color: #667eea;
         }
 
-        .checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+        .checkbox-label input[type="checkbox"]:checked+.checkmark::after {
             content: 'OK';
             position: absolute;
             top: 50%;
@@ -567,8 +595,15 @@
         }
 
         @keyframes slideDown {
-            from { opacity: 0; max-height: 0; }
-            to { opacity: 1; max-height: 500px; }
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
         }
 
         .action-buttons {
@@ -766,20 +801,20 @@
                 width: 100%;
                 left: -100%;
             }
-            
+
             .result-stats {
                 grid-template-columns: 1fr;
                 gap: 10px;
             }
-            
+
             .stat-value {
                 font-size: 20px;
             }
-            
+
             .action-buttons {
                 gap: 8px;
             }
-            
+
             .btn {
                 padding: 12px;
                 font-size: 14px;
@@ -792,7 +827,8 @@
             outline-offset: 2px;
         }
 
-        input:focus, select:focus {
+        input:focus,
+        select:focus {
             outline: 3px solid #667eea;
             outline-offset: 2px;
         }
@@ -837,7 +873,7 @@
             border-radius: 6px;
             margin-right: 12px;
             border: 3px solid #fff;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
             flex-shrink: 0;
             position: relative;
         }
@@ -956,9 +992,17 @@
 
         /* Legend Animation */
         @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+
+            100% {
+                opacity: 1;
+            }
         }
 
         /* Legend Toggle States */
@@ -994,8 +1038,15 @@
         }
 
         @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
         .floating-legend .legend-group {
@@ -1095,12 +1146,12 @@
                 max-width: none;
                 padding: 15px;
             }
-            
+
             .legend-group {
                 padding: 12px;
                 margin-bottom: 15px;
             }
-            
+
             .legend-item {
                 font-size: 11px;
             }
@@ -1114,6 +1165,7 @@
         }
     </style>
 </head>
+
 <body>
     <div id="map"></div>
 
@@ -1123,7 +1175,7 @@
             <h3>Map Legend</h3>
             <button class="legend-close" onclick="toggleFloatingLegend()">×</button>
         </div>
-        
+
         <!-- Flood Detection Legend (Most Important) -->
         <div class="legend-group">
             <h4 class="legend-title">Flood Detection</h4>
@@ -1141,7 +1193,7 @@
             </div>
             <div class="legend-item">
                 <div class="legend-color flood-uncertain"></div>
-                <span class="legend-label">Uncertain (<50%)</span>
+                <span class="legend-label">Uncertain (<50%)< /span>
             </div>
         </div>
 
@@ -1183,7 +1235,9 @@
     <!-- Legend Toggle Button -->
     <button class="legend-toggle" onclick="toggleFloatingLegend()" title="Toggle Legend">
         <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+            </path>
         </svg>
     </button>
 
@@ -1203,8 +1257,10 @@
             <div class="input-group">
                 <label class="input-label">Find Location</label>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" id="locationSearch" placeholder="Enter place name (e.g., Juba, Bor)" style="flex: 1;">
-                    <button class="btn btn-primary" id="searchLocationBtn" style="width: auto; padding: 14px 24px; margin: 0;">Search</button>
+                    <input type="text" id="locationSearch" placeholder="Enter place name (e.g., Juba, Bor)"
+                        style="flex: 1;">
+                    <button class="btn btn-primary" id="searchLocationBtn"
+                        style="width: auto; padding: 14px 24px; margin: 0;">Search</button>
                 </div>
             </div>
         </div>
@@ -1221,7 +1277,8 @@
             </div>
             <div style="display:flex; gap:8px;">
                 <button class="btn btn-danger" onclick="clearDrawing()" style="margin:0;">Clear</button>
-                <button class="btn btn-secondary" onclick="window.location.href='http://localhost:3000'" style="margin:0;">Main App</button>
+                <button class="btn btn-secondary" onclick="window.location.href='http://localhost:3000'"
+                    style="margin:0;">Main App</button>
             </div>
         </div>
 
@@ -1251,7 +1308,7 @@
 
         <div class="sidebar-section">
             <div class="section-title">Detection Settings</div>
-            
+
             <!-- SAR Processing Parameters -->
             <div class="input-group">
                 <label class="input-label">Polarization Mode</label>
@@ -1352,15 +1409,17 @@
             </div>
 
             <div class="info-box">
-                <p><strong>South Sudan Flood Season:</strong> Rainy season April-October, peak flooding August-November. Higher threshold = stricter detection.</p>
-                <p><strong>Tip:</strong> Use adaptive thresholding for varying terrain conditions. VH polarization works best for flood detection.</p>
+                <p><strong>South Sudan Flood Season:</strong> Rainy season April-October, peak flooding August-November.
+                    Higher threshold = stricter detection.</p>
+                <p><strong>Tip:</strong> Use adaptive thresholding for varying terrain conditions. VH polarization works
+                    best for flood detection.</p>
             </div>
         </div>
 
         <!-- Visualization Controls -->
         <div class="sidebar-section">
             <div class="section-title">Map Visualization</div>
-            
+
             <div class="input-group">
                 <label class="input-label">Base Map</label>
                 <select id="baseMap">
@@ -1404,45 +1463,105 @@
             </div>
         </div>
 
+        <!-- Layer Controls - Toggle visibility of detection results -->
+        <div class="sidebar-section" id="layerControls" style="display: none;">
+            <div class="section-title">Layer Visibility</div>
+
+            <div class="info-box" style="margin-bottom: 15px;">
+                <p><strong>Toggle Detection Layers:</strong> Check/uncheck to show or hide layers on the map. All layers
+                    are displayed over the drawn area.</p>
+            </div>
+
+            <div class="input-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="toggleBefore" checked>
+                    <span class="checkmark"></span>
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span
+                            style="display: inline-block; width: 20px; height: 20px; background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%); border-radius: 4px; border: 2px solid #1e40af;"></span>
+                        Before Flood (Baseline)
+                    </span>
+                </label>
+            </div>
+
+            <div class="input-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="toggleAfter" checked>
+                    <span class="checkmark"></span>
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span
+                            style="display: inline-block; width: 20px; height: 20px; background: linear-gradient(135deg, #7c2d12 0%, #ea580c 50%, #f97316 100%); border-radius: 4px; border: 2px solid #7c2d12;"></span>
+                        After Flood (Current)
+                    </span>
+                </label>
+            </div>
+
+            <div class="input-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="toggleFlood" checked>
+                    <span class="checkmark"></span>
+                    <span style="display: flex; align-items: center; gap: 8px;">
+                        <span
+                            style="display: inline-block; width: 20px; height: 20px; background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 50%, #fca5a5 100%); border-radius: 4px; border: 2px solid #7f1d1d;"></span>
+                        Flood Detection
+                    </span>
+                </label>
+            </div>
+
+            <div class="info-box">
+                <p><strong>Tip:</strong> Toggle layers to compare before/after conditions or focus on specific detection
+                    results. The flood layer shows areas with significant water increase.</p>
+            </div>
+        </div>
+
         <div class="sidebar-section">
             <div class="section-title">Processing Actions</div>
             <div class="alert alert-warning" id="authWarning" style="display: none;">
                 <strong>Not Authenticated</strong><br>
                 Please authenticate with Google Earth Engine first.
             </div>
-            
+
             <div class="action-buttons">
                 <button class="btn btn-primary" id="display" disabled>
                     <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                        </path>
                     </svg>
                     <span>Detect Flood</span>
                 </button>
-                
+
                 <button class="btn btn-secondary" id="download" disabled>
                     <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                        </path>
                     </svg>
                     <span id="downloadText">Download GeoPackage</span>
                 </button>
-                
+
                 <button class="btn btn-secondary" id="pauseDownload" disabled style="display: none;">
                     <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
                     <span>Pause Download</span>
                 </button>
-                
+
                 <button class="btn btn-secondary" id="resumeDownload" disabled style="display: none;">
                     <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-6a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-6a9 9 0 11-18 0 9 9 0 0118 0z">
+                        </path>
                     </svg>
                     <span>Resume Download</span>
                 </button>
-                
+
                 <button class="btn btn-danger" id="undo">
                     <svg class="btn-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                        </path>
                     </svg>
                     <span>Clear Map</span>
                 </button>
@@ -1452,7 +1571,9 @@
             <div class="loading" id="loading">
                 <div class="spinner"></div>
                 <div class="progress-container">
-                    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
                     <div class="progress-text" id="progressText">0%</div>
                 </div>
             </div>
@@ -1462,7 +1583,7 @@
                 <div class="result-header">
                     <div class="result-title">Flood Detection Results</div>
                 </div>
-                
+
                 <div class="result-stats">
                     <div class="stat-item">
                         <div class="stat-value" id="floodArea">0</div>
@@ -1477,7 +1598,7 @@
                         <div class="stat-label">Flood Patches</div>
                     </div>
                 </div>
-                
+
                 <div class="result-details" id="resultDetails">
                     <div class="detail-item">
                         <span class="detail-label">Detection Method:</span>
@@ -1518,7 +1639,8 @@
             <div class="modal-header">
                 <div class="modal-icon">AUTH</div>
                 <h2 class="modal-title">Google Earth Engine Authentication</h2>
-                <p class="modal-subtitle">This system requires Google Earth Engine access to process satellite imagery</p>
+                <p class="modal-subtitle">This system requires Google Earth Engine access to process satellite imagery
+                </p>
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning" id="authAlert">
@@ -1528,11 +1650,13 @@
                 <div class="auth-steps">
                     <div class="auth-step">
                         <div class="step-number">1</div>
-                        <div class="step-text">Sign up for <a href="https://earthengine.google.com/signup/" target="_blank">Google Earth Engine</a></div>
+                        <div class="step-text">Sign up for <a href="https://earthengine.google.com/signup/"
+                                target="_blank">Google Earth Engine</a></div>
                     </div>
                     <div class="auth-step">
                         <div class="step-number">2</div>
-                        <div class="step-text">Create a <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Project</a></div>
+                        <div class="step-text">Create a <a href="https://console.cloud.google.com/"
+                                target="_blank">Google Cloud Project</a></div>
                     </div>
                     <div class="auth-step">
                         <div class="step-number">3</div>
@@ -1540,7 +1664,9 @@
                     </div>
                     <div class="auth-step">
                         <div class="step-number">4</div>
-                        <div class="step-text">Run: <code style="background: #e8e8e8; padding: 2px 6px; border-radius: 4px; font-family: monospace;">earthengine authenticate</code></div>
+                        <div class="step-text">Run: <code
+                                style="background: #e8e8e8; padding: 2px 6px; border-radius: 4px; font-family: monospace;">earthengine authenticate</code>
+                        </div>
                     </div>
                 </div>
                 <div class="input-group">
@@ -1560,4 +1686,5 @@
     <script src="https://cdn.jsdelivr.net/npm/ol@v7.5.2/dist/ol.js"></script>
     <script src="/static/js/main.js"></script>
 </body>
+
 </html>

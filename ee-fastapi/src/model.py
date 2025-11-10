@@ -446,9 +446,130 @@ def flood_estimation(
             except:
                 flood_area_ha = 0
             
+            # Calculate flood patch count (connected components with morphological cleanup)
+            try:
+                if flood_area_ha > 0:
+                    # Simpler approach: Apply morphological operations and count patches
+                    # Use moderate smoothing to group nearby flood pixels
+                    smoothed = flooded.focal_max(radius=50, kernelType='circle', units='meters') \
+                                     .focal_min(radius=50, kernelType='circle', units='meters')
+                    
+                    # Label connected flood patches
+                    # Pixels within 100m are considered part of the same patch
+                    connected = smoothed.connectedComponents(
+                        connectedness=ee.Kernel.square(100, 'meters'),
+                        maxSize=256
+                    )
+                    
+                    # Count distinct patches (simplified approach)
+                    patch_stats = connected.select('labels').reduceRegion(
+                        reducer=ee.Reducer.countDistinct(),
+                        geometry=aoi_geom,
+                        scale=100,
+                        bestEffort=True,
+                        maxPixels=1e8
+                    ).getInfo()
+                    
+                    # Get patch count (subtract 1 for background/0 value)
+                    raw_count = patch_stats.get('labels', 0) if patch_stats else 0
+                    flood_patches = max(1, raw_count - 1) if raw_count > 1 else 1
+                    
+                    # If patch count seems unreasonably high (>100), estimate from area
+                    if flood_patches > 100:
+                        # Likely too many small patches = noise
+                        # Estimate: assume average patch is ~5 hectares
+                        flood_patches = max(1, int(flood_area_ha / 5))
+                        
+                else:
+                    flood_patches = 0
+            except Exception as e:
+                logger.warning(f"Error calculating flood patches: {e}")
+                # Fallback: estimate from area (assume average patch is ~10 hectares)
+                if flood_area_ha > 0:
+                    flood_patches = max(1, int(flood_area_ha / 10))
+                else:
+                    flood_patches = 0
+            
+            # Calculate DYNAMIC confidence based on actual flood detection
+            try:
+                if flood_area_ha > 0:
+                    # Get total area of interest
+                    total_area = aoi_geom.area().divide(10000).getInfo()  # Convert to hectares
+                    
+                    # Calculate flood percentage
+                    flood_percentage = (flood_area_ha / total_area) * 100 if total_area > 0 else 0
+                    
+                    # Get ratio statistics for flooded areas only
+                    flooded_mask = flooded.updateMask(flooded)
+                    ratio_stats = ratio_difference.updateMask(flooded_mask).reduceRegion(
+                        reducer=ee.Reducer.mean().combine(ee.Reducer.stdDev(), '', True),
+                        geometry=aoi_geom,
+                        scale=50,
+                        bestEffort=True,
+                        maxPixels=1e8
+                    ).getInfo()
+                    
+                    mean_ratio = ratio_stats.get(polarization + '_mean', 0) if ratio_stats else 0
+                    std_ratio = ratio_stats.get(polarization + '_stdDev', 0) if ratio_stats else 0
+                    
+                    # Dynamic confidence based on multiple factors:
+                    # 1. How much the ratio exceeds the threshold (signal strength)
+                    ratio_factor = min(1.0, (mean_ratio - difference_threshold) / difference_threshold) if mean_ratio > difference_threshold else 0
+                    
+                    # 2. Consistency of detection (lower std = higher confidence)
+                    consistency_factor = 1.0 - min(0.5, std_ratio / 2.0) if mean_ratio > 0 else 0
+                    
+                    # 3. Spatial extent (more area = higher confidence, but cap it)
+                    extent_factor = min(1.0, flood_percentage / 10.0)  # Cap at 10% coverage
+                    
+                    # 4. Number of patches - CRITICAL for quality assessment
+                    # Ideal: 1-5 large coherent patches = real flooding
+                    # Bad: 50+ patches = likely noise/false detections
+                    if flood_patches == 0:
+                        patch_factor = 0.3  # No patches identified = low confidence
+                    elif flood_patches <= 5:
+                        patch_factor = 1.0  # 1-5 patches = excellent (coherent flooding)
+                    elif flood_patches <= 10:
+                        patch_factor = 0.85  # 6-10 patches = good
+                    elif flood_patches <= 20:
+                        patch_factor = 0.6  # 11-20 patches = moderate
+                    elif flood_patches <= 50:
+                        patch_factor = 0.3  # 21-50 patches = questionable
+                    else:
+                        # 50+ patches = very likely noise, heavy penalty
+                        patch_factor = max(0.05, 0.3 - (flood_patches - 50) / 200.0)
+                    
+                    # Combine factors into overall confidence (weighted average)
+                    raw_confidence = (
+                        ratio_factor * 0.35 +        # Signal strength
+                        consistency_factor * 0.25 +  # Consistency 
+                        extent_factor * 0.15 +       # Spatial extent
+                        patch_factor * 0.25          # Patch coherence (INCREASED weight)
+                    ) * 100
+                    
+                    # Apply strict confidence bounds
+                    if flood_patches > 100:
+                        # Too many patches = maximum 40% confidence (likely noise)
+                        confidence = min(40.0, raw_confidence)
+                    elif flood_patches > 50:
+                        # 50-100 patches = maximum 60% confidence
+                        confidence = min(60.0, raw_confidence)
+                    else:
+                        # Normal range for reasonable patch counts
+                        confidence = max(10.0, min(99.0, raw_confidence))
+                else:
+                    # No flood detected = 0% confidence
+                    confidence = 0.0
+                    
+            except Exception as e:
+                logger.warning(f"Error calculating dynamic confidence: {e}")
+                # Fallback: if flood area exists but confidence calc failed
+                confidence = 50.0 if flood_area_ha > 0 else 0.0
+            
             dict_db["flood_area_stats"] = {
                 "area_hectares": round(flood_area_ha, 2),
-                "mean_confidence": 0.75,  # Default value to skip calculation
+                "mean_confidence": round(confidence, 1),
+                "flood_patches": int(flood_patches) if flood_patches else 0,
                 "quality_score": 0.75
             }
         

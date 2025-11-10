@@ -341,7 +341,9 @@ const Analytics: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className="text-gray-700 font-medium">Accuracy:</span>
                 <span className="text-xl font-bold text-green-600">
-                  {Math.round((stats.accuracy_metrics?.overall_accuracy || 0.87) * 100)}%
+                  {stats.accuracy_metrics?.overall_accuracy
+                    ? Math.round(stats.accuracy_metrics.overall_accuracy * 100) + '%'
+                    : '-'}
                 </span>
               </div>
             </div>
