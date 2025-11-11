@@ -49,12 +49,16 @@ jobs:
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /root/SSDFLOODSENSEFLOODPREDICTION
+            if [ ! -d "SSDFLOODSENSEFLOODPREDICTION" ]; then
+              git clone https://github.com/John-Akech/SSDFLOODSENSEFLOODPREDICTION.git
+            fi
+            cd SSDFLOODSENSEFLOODPREDICTION
+            git pull origin master
             export TAG=${{ github.sha }}
             export DATABASE_URL=${{ secrets.DATABASE_URL }}
             export SECRET_KEY=${{ secrets.SECRET_KEY }}
             export VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
             export VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
             export DROPLET_IP=${{ secrets.DROPLET_IP }}
-            docker-compose -f docker-compose.prod.yml pull
-            docker-compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
