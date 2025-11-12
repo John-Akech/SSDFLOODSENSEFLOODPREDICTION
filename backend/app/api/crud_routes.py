@@ -96,7 +96,7 @@ async def get_predictions(skip: int = 0, limit: int = 100, db: Session = Depends
                 "flood_probability": p.flood_probability,
                 "model_type": p.model_type,
                 "lead_time_hours": p.lead_time_hours,
-                "confidence_score": p.confidence_score,
+                "confidence_score": p.confidence_score if p.confidence_score is not None else p.flood_probability,
                 "risk_level": p.risk_level,
                 "created_at": p.created_at.isoformat() if p.created_at else None
             } for p in predictions

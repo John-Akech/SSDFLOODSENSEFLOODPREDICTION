@@ -1015,16 +1015,16 @@ const Admin: React.FC = () => {
                     type="number"
                     step="0.0001"
                     placeholder="Latitude"
-                    value={newAlert.latitude}
-                    onChange={(e) => setNewAlert({ ...newAlert, latitude: parseFloat(e.target.value) })}
+                    value={newAlert.latitude || ''}
+                    onChange={(e) => setNewAlert({ ...newAlert, latitude: e.target.value ? parseFloat(e.target.value) : 0 })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
                   />
                   <input
                     type="number"
                     step="0.0001"
                     placeholder="Longitude"
-                    value={newAlert.longitude}
-                    onChange={(e) => setNewAlert({ ...newAlert, longitude: parseFloat(e.target.value) })}
+                    value={newAlert.longitude || ''}
+                    onChange={(e) => setNewAlert({ ...newAlert, longitude: e.target.value ? parseFloat(e.target.value) : 0 })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
                   />
                   <select
@@ -1167,8 +1167,8 @@ const Admin: React.FC = () => {
                       type="number"
                       step="0.0001"
                       placeholder="6.8770 (South Sudan)"
-                      value={newPrediction.latitude}
-                      onChange={(e) => setNewPrediction({ ...newPrediction, latitude: parseFloat(e.target.value) })}
+                      value={newPrediction.latitude || ''}
+                      onChange={(e) => setNewPrediction({ ...newPrediction, latitude: e.target.value ? parseFloat(e.target.value) : 0 })}
                       className="w-full border-2 border-cyan-300 rounded-lg px-4 py-3 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-200 transition-all font-mono text-sm"
                     />
                   </div>
@@ -1180,8 +1180,8 @@ const Admin: React.FC = () => {
                       type="number"
                       step="0.0001"
                       placeholder="31.3070 (South Sudan)"
-                      value={newPrediction.longitude}
-                      onChange={(e) => setNewPrediction({ ...newPrediction, longitude: parseFloat(e.target.value) })}
+                      value={newPrediction.longitude || ''}
+                      onChange={(e) => setNewPrediction({ ...newPrediction, longitude: e.target.value ? parseFloat(e.target.value) : 0 })}
                       className="w-full border-2 border-cyan-300 rounded-lg px-4 py-3 focus:border-cyan-500 focus:ring-4 focus:ring-cyan-200 transition-all font-mono text-sm"
                     />
                   </div>
