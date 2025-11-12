@@ -1,0 +1,55 @@
+services:
+  backend:
+    image: registry.digitalocean.com/floodsense-registry/floodsense-backend:${TAG:-latest}
+    container_name: floodsense-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=HS256
+      - ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - CORS_ORIGINS=http://${DROPLET_IP},http://${DROPLET_IP}:80,https://${DROPLET_IP}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY}
+      - VAPID_SUBJECT=mailto:admin@floodsense.org
+      - SAR_SERVICE_URL=http://sar-detection:8080
+    volumes:
+      - ./backend/logs:/app/logs
+    depends_on:
+      - sar-detection
+    restart: unless-stopped
+    networks:
+      - floodsense-network
+
+  sar-detection:
+    image: registry.digitalocean.com/floodsense-registry/floodsense-sar:${TAG:-latest}
+    container_name: floodsense-sar
+    ports:
+      - "8080:8080"
+    environment:
+      - GEE_PROJECT_ID=ace-connection-474712-p1
+      - API_HOST=0.0.0.0
+      - API_PORT=8080
+    volumes:
+      - ./ee-fastapi/output:/app/output
+    restart: unless-stopped
+    networks:
+      - floodsense-network
+
+  frontend:
+    image: registry.digitalocean.com/floodsense-registry/floodsense-frontend:${TAG:-latest}
+    container_name: floodsense-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - sar-detection
+    restart: unless-stopped
+    networks:
+      - floodsense-network
+
+networks:
+  floodsense-network:
+    driver: bridge
+    name: floodsense-network
