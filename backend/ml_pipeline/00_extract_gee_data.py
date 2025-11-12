@@ -406,8 +406,8 @@ try:
         saved_count += 1
     
     db.commit()
-    print(f"   ✓ Saved {saved_count} records to database (gee_extracted_features table)")
-    print(f"   ✓ Database: {os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'database', 'floodsense.db'))}")
+    print(f"   Saved {saved_count} records to database (gee_extracted_features table)")
+    print(f"   Database: {os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'database', 'floodsense.db'))}")
 except Exception as e:
     print(f"   ✗ Error saving to database: {e}")
     db.rollback()
@@ -449,7 +449,7 @@ print(f"Saved metadata: {metadata_path}")
 print("\n" + "=" * 80)
 print("STEP 0 COMPLETE")
 print("=" * 80)
-print(f"✓ GEE data extraction successful")
+print(f"GEE data extraction successful")
 print(f"\nData saved to:")
 print(f"  1. Database: gee_extracted_features table ({saved_count} records)")
 print(f"  2. CSV backup: {output_csv}")

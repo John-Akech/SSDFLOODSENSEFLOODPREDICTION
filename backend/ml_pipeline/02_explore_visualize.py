@@ -322,7 +322,7 @@ if len(valid_features) >= 2:  # Need at least 2 features for scatter matrix
     plt.close()
     viz_count += 1
 else:
-    print("   ⚠ Skipping scatter matrix - not enough valid features")
+    print("   WARNING: Skipping scatter matrix - not enough valid features")
     # Create a simple message instead
     fig, ax = plt.subplots(figsize=(10, 6))
     ax.text(0.5, 0.5, 'Scatter Matrix\n(Skipped - insufficient variable features)',
@@ -388,7 +388,7 @@ if missing_pct.max() > 0:
     plt.title('Missing Data Analysis', fontsize=14, fontweight='bold')
     plt.grid(axis='y', alpha=0.3)
 else:
-    plt.text(0.5, 0.5, 'No Missing Data Found!\n✓ Dataset is Complete', 
+    plt.text(0.5, 0.5, 'No Missing Data Found!\nDataset is Complete', 
              ha='center', va='center', fontsize=20, fontweight='bold', color='#27ae60')
     plt.title('Missing Data Analysis', fontsize=14, fontweight='bold')
 plt.tight_layout()
@@ -396,7 +396,7 @@ plt.savefig(VIZ_DIR / '08_missing_data.png', dpi=300, bbox_inches='tight')
 plt.close()
 viz_count += 1
 
-print(f"   ✓ Created {viz_count} visualizations in {VIZ_DIR}/")
+print(f"   Created {viz_count} visualizations in {VIZ_DIR}/")
 
 # ============================================================================
 # 5. SAVE ANALYSIS REPORT

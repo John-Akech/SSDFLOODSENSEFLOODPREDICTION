@@ -33,7 +33,7 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    print("⚠ PyTorch not available. TCN and LSTM evaluation will be skipped.")
+    print("WARNING: PyTorch not available. TCN and LSTM evaluation will be skipped.")
 
 # Set plotting style
 sns.set_style("whitegrid")
@@ -429,7 +429,7 @@ table_data.append(['Model', 'Accuracy', 'Precision', 'Recall', 'F1-Score', 'ROC-
 for name in models.keys():
     metrics = results[name]['test_metrics']
     cv = results[name]['cross_validation']
-    passes = '✓' if results[name]['passes_86'] else '✗'
+    passes = 'PASS' if results[name]['passes_86'] else 'FAIL'
     
     table_data.append([
         name.replace('_', ' ').title(),

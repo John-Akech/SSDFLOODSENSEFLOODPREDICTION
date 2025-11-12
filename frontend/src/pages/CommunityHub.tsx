@@ -657,7 +657,7 @@ const CommunityHub: React.FC = () => {
                                                         <p className="text-sm text-slate-500 mt-2">CSV, Excel, JSON, GeoJSON, GeoTIFF, Shapefile</p>
                                                         {shareData.file && (
                                                             <div className="mt-4 text-sm text-green-600 font-semibold">
-                                                                ✓ {shareData.file.name}
+                                                                Selected: {shareData.file.name}
                                                             </div>
                                                         )}
                                                     </div>

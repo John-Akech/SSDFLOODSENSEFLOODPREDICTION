@@ -462,7 +462,7 @@ const GISAnalysis: React.FC = () => {
                 : 'bg-white/95 backdrop-blur-sm text-gray-700 hover:bg-white'
                 }`}
             >
-              🛰️ Satellite
+              Satellite
             </button>
           </div>
 

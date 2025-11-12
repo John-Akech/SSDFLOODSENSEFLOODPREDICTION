@@ -95,24 +95,24 @@ class AlertService:
             else:
                 severity = "critical"
                 action = "Begin evacuation"
-                message = f"⚠️ CRITICAL FLOOD WARNING for {location_str}: {action}. Very high flood risk ({flood_probability:.0%}) predicted within {lead_time_hours} hours. Prepare emergency supplies, identify evacuation routes, secure property."
+                message = f"CRITICAL FLOOD WARNING for {location_str}: {action}. Very high flood risk ({flood_probability:.0%}) predicted within {lead_time_hours} hours. Prepare emergency supplies, identify evacuation routes, secure property."
                 
         elif effective_probability >= 0.6:
             # HIGH: Significant risk
             if lead_time_hours <= 24:
                 severity = "high"
                 action = "Prepare to evacuate"
-                message = f"⚠️ FLOOD WARNING for {location_str}: {action}. High flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Pack emergency kit, move valuables to higher ground, monitor updates closely."
+                message = f"FLOOD WARNING for {location_str}: {action}. High flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Pack emergency kit, move valuables to higher ground, monitor updates closely."
             else:
                 severity = "high"
                 action = "Heightened alert"
-                message = f"⚠️ FLOOD WATCH for {location_str}: {action}. High flood risk ({flood_probability:.0%}) possible within {lead_time_hours} hours. Review evacuation plans, prepare supplies, stay informed."
+                message = f"FLOOD WATCH for {location_str}: {action}. High flood risk ({flood_probability:.0%}) possible within {lead_time_hours} hours. Review evacuation plans, prepare supplies, stay informed."
                 
         elif effective_probability >= 0.4:
             # MEDIUM: Moderate risk
             severity = "medium"
             action = "Monitor conditions"
-            message = f"🟡 FLOOD ADVISORY for {location_str}: {action}. Moderate flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Stay alert, avoid low-lying areas, prepare emergency contacts."
+            message = f"FLOOD ADVISORY for {location_str}: {action}. Moderate flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Stay alert, avoid low-lying areas, prepare emergency contacts."
             
         else:
             # LOW: Minor risk

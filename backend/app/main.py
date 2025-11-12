@@ -48,11 +48,11 @@ async def lifespan(app: FastAPI):
     This runs once when the app starts and once when it shuts down.
     """
     # Startup: Initialize database and load ML models
-    print("🔄 Starting application initialization...")
+    print("Starting application initialization...")
     init_db()
     print("[OK] Database initialized")
     
-    print("🔄 Loading ML models...")
+    print("Loading ML models...")
     try:
         await ModelService.load_models()
         print(f"[OK] Models loaded: {ModelService.models_loaded}")

@@ -22,11 +22,11 @@ def verify_model_metadata_exists():
     metadata_file = models_dir / "model_metadata_pipeline_20251109_181046.json"
     
     if not metadata_file.exists():
-        print("❌ FAIL: Model metadata file not found!")
+        print("FAIL: Model metadata file not found!")
         print(f"   Expected: {metadata_file}")
         return False
     
-    print(f"✅ PASS: Model metadata file exists")
+    print(f"PASS: Model metadata file exists")
     print(f"   Location: {metadata_file}")
     
     # Load and verify contents
@@ -40,7 +40,7 @@ def verify_model_metadata_exists():
         recall = performance.get("recall", 0)
         f1_score = performance.get("f1_score", 0)
         
-        print("\n📊 Real Model Performance Metrics:")
+        print("\nReal Model Performance Metrics:")
         print(f"   Test Accuracy: {test_accuracy:.4f} ({test_accuracy*100:.2f}%)")
         print(f"   Precision:     {precision:.4f} ({precision*100:.2f}%)")
         print(f"   Recall:        {recall:.4f} ({recall*100:.2f}%)")
@@ -48,18 +48,18 @@ def verify_model_metadata_exists():
         
         # Verify these are NOT hardcoded demo values
         if test_accuracy == 0.87:
-            print("\n⚠️  WARNING: Accuracy is 0.87 - might be hardcoded!")
+            print("\nWARNING: Accuracy is 0.87 - might be hardcoded!")
             return False
         
         if test_accuracy > 0.8:
-            print(f"\n✅ PASS: Real model accuracy loaded ({test_accuracy*100:.2f}%)")
+            print(f"\nPASS: Real model accuracy loaded ({test_accuracy*100:.2f}%)")
             return True
         else:
-            print(f"\n❌ FAIL: Unexpected accuracy value: {test_accuracy}")
+            print(f"\nFAIL: Unexpected accuracy value: {test_accuracy}")
             return False
             
     except Exception as e:
-        print(f"❌ FAIL: Error loading metadata: {e}")
+        print(f"FAIL: Error loading metadata: {e}")
         return False
 
 
@@ -72,10 +72,10 @@ def verify_no_hardcoded_values_in_backend():
     crud_routes_file = Path(__file__).parent.parent / "app" / "api" / "crud_routes.py"
     
     if not crud_routes_file.exists():
-        print("❌ FAIL: Backend routes file not found!")
+        print("FAIL: Backend routes file not found!")
         return False
     
-    print(f"✅ PASS: Backend routes file exists")
+    print(f"PASS: Backend routes file exists")
     
     # Read file and check for hardcoded accuracy values
     with open(crud_routes_file, 'r') as f:
@@ -83,27 +83,27 @@ def verify_no_hardcoded_values_in_backend():
     
     # Check that we're loading from metadata file
     if 'model_metadata_pipeline_20251109_181046.json' in content:
-        print("✅ PASS: Backend loads from model metadata file")
+        print("PASS: Backend loads from model metadata file")
     else:
-        print("⚠️  WARNING: Backend might not be loading from metadata file")
+        print("WARNING: Backend might not be loading from metadata file")
     
     # Check for suspicious hardcoded values (old values)
     if '"overall_accuracy": 0.87,' in content:
-        print("❌ FAIL: Hardcoded accuracy 0.87 found in backend!")
+        print("FAIL: Hardcoded accuracy 0.87 found in backend!")
         return False
     
     if '"accuracy": 0.87,' in content:
-        print("❌ FAIL: Hardcoded accuracy 0.87 found in predictions stats!")
+        print("FAIL: Hardcoded accuracy 0.87 found in predictions stats!")
         return False
     
-    print("✅ PASS: No hardcoded 0.87 accuracy values found")
+    print("PASS: No hardcoded 0.87 accuracy values found")
     
     # Verify we're using json.load to read metadata
     if 'json.load(' in content or 'json.loads(' in content:
-        print("✅ PASS: Backend uses JSON loading (dynamic data)")
+        print("PASS: Backend uses JSON loading (dynamic data)")
         return True
     else:
-        print("⚠️  WARNING: JSON loading not detected in backend")
+        print("WARNING: JSON loading not detected in backend")
         return False
 
 
@@ -117,7 +117,7 @@ def verify_frontend_dynamic_loading():
     home_file = Path(__file__).parent.parent.parent / "frontend" / "src" / "pages" / "Home.tsx"
     
     if not home_file.exists():
-        print("❌ FAIL: Frontend Home.tsx not found!")
+        print("FAIL: Frontend Home.tsx not found!")
         return False
     
     with open(home_file, 'r') as f:
@@ -125,16 +125,16 @@ def verify_frontend_dynamic_loading():
     
     # Check for old hardcoded fallback
     if '|| 0.87' in home_content:
-        print("❌ FAIL: Home.tsx has hardcoded 0.87 fallback!")
+        print("FAIL: Home.tsx has hardcoded 0.87 fallback!")
         return False
     
-    print("✅ PASS: Home.tsx - No hardcoded 0.87 fallback")
+    print("PASS: Home.tsx - No hardcoded 0.87 fallback")
     
     # Check for API service usage
     if 'apiService.getSystemStats()' in home_content:
-        print("✅ PASS: Home.tsx - Fetches data from API")
+        print("PASS: Home.tsx - Fetches data from API")
     else:
-        print("⚠️  WARNING: Home.tsx might not be fetching from API")
+        print("WARNING: Home.tsx might not be fetching from API")
     
     # Check DataSharing.tsx
     data_sharing_file = Path(__file__).parent.parent.parent / "frontend" / "src" / "pages" / "DataSharing.tsx"
@@ -144,10 +144,10 @@ def verify_frontend_dynamic_loading():
             data_sharing_content = f.read()
         
         if "num: '96%'" in data_sharing_content:
-            print("❌ FAIL: DataSharing.tsx has hardcoded 96% value!")
+            print("FAIL: DataSharing.tsx has hardcoded 96% value!")
             return False
         
-        print("✅ PASS: DataSharing.tsx - No hardcoded 96% value")
+        print("PASS: DataSharing.tsx - No hardcoded 96% value")
     
     # Check Analytics.tsx
     analytics_file = Path(__file__).parent.parent.parent / "frontend" / "src" / "pages" / "Analytics.tsx"
@@ -158,9 +158,9 @@ def verify_frontend_dynamic_loading():
         
         # Check if states are extracted dynamically
         if 'statesFromData' in analytics_content:
-            print("✅ PASS: Analytics.tsx - States extracted dynamically")
+            print("PASS: Analytics.tsx - States extracted dynamically")
         else:
-            print("⚠️  WARNING: Analytics.tsx might have hardcoded states")
+            print("WARNING: Analytics.tsx might have hardcoded states")
     
     return True
 
@@ -168,7 +168,7 @@ def verify_frontend_dynamic_loading():
 def main():
     """Run all verification tests"""
     print("\n" + "=" * 70)
-    print("🎓 ACADEMIC DEFENSE VERIFICATION SCRIPT")
+    print("ACADEMIC DEFENSE VERIFICATION SCRIPT")
     print("   SSD FloodSense - Dynamic Data Integrity Check")
     print("=" * 70 + "\n")
     
@@ -192,18 +192,18 @@ def main():
     total = len(results)
     
     for test_name, result in results:
-        status = "✅ PASS" if result else "❌ FAIL"
+        status = "PASS" if result else "FAIL"
         print(f"{status}: {test_name}")
     
     print(f"\nTotal: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 ALL TESTS PASSED - System is academically sound!")
+        print("\nALL TESTS PASSED - System is academically sound!")
         print("   No hardcoded values detected.")
         print("   All data flows from real trained models.")
         return 0
     else:
-        print(f"\n⚠️  {total - passed} TEST(S) FAILED - Review needed!")
+        print(f"\n{total - passed} TEST(S) FAILED - Review needed!")
         return 1
 
 

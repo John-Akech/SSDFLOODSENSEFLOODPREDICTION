@@ -68,7 +68,7 @@ print("\n[1/3] LOADING DATA...")
 full_data_files = sorted(DATA_DIR.glob("flood_training_data_full_*.csv"), reverse=True)
 
 # ALWAYS use original aggregated dataset (properly curated, no leakage)
-print("✓ Using original aggregated dataset (properly balanced, no leakage)")
+print("Using original aggregated dataset (properly balanced, no leakage)")
 primary_path = TIME_SERIES_DIR / "aggregated_flood_events.csv"
 
 if not primary_path.exists():
@@ -99,23 +99,23 @@ missing_counts = df_merged.isnull().sum()
 total_missing = missing_counts.sum()
 
 if total_missing > 0:
-    print(f"  ⚠ Missing values found: {total_missing} total")
+    print(f"  WARNING: Missing values found: {total_missing} total")
     for col in missing_counts[missing_counts > 0].index:
         print(f"    - {col}: {missing_counts[col]} ({missing_counts[col]/len(df_merged)*100:.1f}%)")
     # Fill missing values
     df_merged = df_merged.fillna(0)
-    print(f"  ✓ Filled with zeros")
+    print(f"  Filled with zeros")
 else:
-    print("  ✓ No missing values")
+    print("  No missing values")
 
 # Check for duplicates
 duplicates = df_merged.duplicated().sum()
 if duplicates > 0:
-    print(f"  ⚠ Duplicate rows: {duplicates}")
+    print(f"  WARNING: Duplicate rows: {duplicates}")
     df_merged = df_merged.drop_duplicates()
-    print(f"  ✓ Removed duplicates")
+    print(f"  Removed duplicates")
 else:
-    print("  ✓ No duplicate rows")
+    print("  No duplicate rows")
 
 # Check target distribution
 flood_count = (df_merged['flood'] == 1).sum()
@@ -159,14 +159,14 @@ metadata = {
 # Save dataset
 output_path = OUTPUT_DIR / "01_merged_dataset.csv"
 df_merged.to_csv(output_path, index=False)
-print(f"  ✓ Saved: {output_path}")
+print(f"  Saved: {output_path}")
 print(f"    Size: {len(df_merged)} rows × {len(df_merged.columns)} columns")
 
 # Save metadata
 metadata_path = OUTPUT_DIR / "01_metadata.json"
 with open(metadata_path, "w") as f:
     json.dump(metadata, f, indent=2, cls=NumpyEncoder)
-print(f"  ✓ Saved: {metadata_path}")
+print(f"  Saved: {metadata_path}")
 
 # ============================================================================
 # SUMMARY
@@ -174,10 +174,10 @@ print(f"  ✓ Saved: {metadata_path}")
 print("\n" + "=" * 80)
 print("STEP 1 COMPLETE")
 print("=" * 80)
-print(f"✓ Dataset prepared: {len(df_merged)} samples with {len(df_merged.columns)} features")
-print(f"✓ Class distribution: {flood_count} floods ({flood_count/len(df_merged)*100:.1f}%), {non_flood_count} non-floods ({non_flood_count/len(df_merged)*100:.1f}%)")
-print(f"✓ Output: {output_path}")
-print(f"✓ Metadata: {metadata_path}")
+print(f"Dataset prepared: {len(df_merged)} samples with {len(df_merged.columns)} features")
+print(f"Class distribution: {flood_count} floods ({flood_count/len(df_merged)*100:.1f}%), {non_flood_count} non-floods ({non_flood_count/len(df_merged)*100:.1f}%)")
+print(f"Output: {output_path}")
+print(f"Metadata: {metadata_path}")
 print("=" * 80)
 print("Next: Run 03_preprocess_data.py to prepare features for training")
 print("=" * 80)

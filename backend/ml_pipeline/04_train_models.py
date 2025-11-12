@@ -40,7 +40,7 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    print("⚠ PyTorch not available. TCN and LSTM models will be skipped.")
+    print("WARNING: PyTorch not available. TCN and LSTM models will be skipped.")
     print("  Install with: pip install torch")
 
 # Configuration

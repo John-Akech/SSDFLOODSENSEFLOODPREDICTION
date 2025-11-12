@@ -365,7 +365,7 @@ const DataSharing: React.FC = () => {
                               animate={{ opacity: 1, scale: 1 }}
                               className="text-xs px-2 py-1 rounded-full bg-blue-500 text-white font-semibold inline-block mt-1"
                             >
-                              ✓ Selected
+                              Selected
                             </motion.span>
                           )}
                         </div>
