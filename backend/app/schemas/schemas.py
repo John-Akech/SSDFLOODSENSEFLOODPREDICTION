@@ -75,7 +75,7 @@ class TokenData(BaseModel):
 class PredictionRequest(BaseModel):
     latitude: float = Field(..., ge=-90, le=90, examples=[7.012])
     longitude: float = Field(..., ge=-180, le=180, examples=[31.3063])
-    model_type: ModelType = ModelType.RANDOM_FOREST
+    model_type: ModelType = ModelType.ENSEMBLE  # Changed to ENSEMBLE for better confidence and accuracy
     lead_time_hours: int = Field(default=48, ge=1, le=168, examples=[48])  # Changed default to 48 hours for better preparation
     features: Optional[Dict[str, float]] = None
     district: Optional[str] = Field(default=None, examples=["Twic East"])  # District/location name
@@ -207,8 +207,8 @@ class SystemStats(BaseModel):
 # Batch prediction schemas
 class BatchPredictionRequest(BaseModel):
     locations: List[Dict[str, float]]  # [{"lat": x, "lon": y}, ...]
-    model_type: ModelType = ModelType.RANDOM_FOREST
-    lead_time_hours: int = Field(default=12, ge=1, le=168)
+    model_type: ModelType = ModelType.ENSEMBLE  # Changed to ENSEMBLE for better confidence
+    lead_time_hours: int = Field(default=48, ge=1, le=168)  # Increased to 48 hours for better lead time
     
     model_config = {"protected_namespaces": ()}
 

@@ -266,7 +266,7 @@ const Map: React.FC = () => {
   );
 
   const filteredPredictions = [...predictions, ...existingPredictions].filter(pred =>
-    selectedRiskLevel === 'all' || (pred.risk_level || 'low') === selectedRiskLevel
+    selectedRiskLevel === 'all' || pred.risk_level === selectedRiskLevel
   );
 
   if (error) {
@@ -420,16 +420,16 @@ const Map: React.FC = () => {
             ))}
 
             {/* Prediction Markers */}
-            {filteredPredictions.map((prediction, idx) => (
+            {filteredPredictions.map((prediction) => (
               <Marker
-                key={`pred-${prediction.id || idx}`}
+                key={`pred-${prediction.id}`}
                 position={[prediction.latitude, prediction.longitude]}
-                icon={createRiskIcon(prediction.risk_level || 'low', 24)}
+                icon={createRiskIcon(prediction.risk_level, 24)}
               >
                 <Popup>
                   <div className="p-2">
                     <div className="flex items-center space-x-2 mb-2">
-                      <RiskBadge severity={prediction.risk_level || 'low'} />
+                      <RiskBadge severity={prediction.risk_level} />
                       <span className="font-semibold">Flood Prediction</span>
                     </div>
                     <p className="text-sm text-slate-600 mb-1">
@@ -437,13 +437,13 @@ const Map: React.FC = () => {
                         `${prediction.latitude.toFixed(4)}, ${prediction.longitude.toFixed(4)}`}
                     </p>
                     <p className="text-sm text-slate-700 font-semibold">
-                      Flood Probability: {Math.round((prediction.flood_probability || 0) * 100)}%
+                      Flood Probability: {Math.round(prediction.flood_probability * 100)}%
                     </p>
                     <p className="text-sm text-slate-500">
-                      Confidence: {Math.round((prediction.confidence_score || 0) * 100)}%
+                      Confidence: {Math.round(prediction.confidence_score * 100)}%
                     </p>
                     <p className="text-sm text-slate-500">
-                      Created: {new Date(prediction.created_at || Date.now()).toLocaleDateString()}
+                      Created: {new Date(prediction.created_at).toLocaleDateString()}
                     </p>
                   </div>
                 </Popup>

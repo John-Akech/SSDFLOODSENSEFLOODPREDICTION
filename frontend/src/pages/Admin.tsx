@@ -1273,13 +1273,12 @@ const Admin: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                            pred.risk_level === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
-                            pred.risk_level === 'high' ? 'bg-orange-200 text-orange-900 border border-orange-300' :
-                            pred.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
-                            pred.risk_level === 'uncertain' ? 'bg-gray-200 text-gray-900 border border-gray-300' :
-                            'bg-green-200 text-green-900 border border-green-300'
-                          }`}>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${pred.risk_level === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
+                              pred.risk_level === 'high' ? 'bg-orange-200 text-orange-900 border border-orange-300' :
+                                pred.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
+                                  pred.risk_level === 'uncertain' ? 'bg-gray-200 text-gray-900 border border-gray-300' :
+                                    'bg-green-200 text-green-900 border border-green-300'
+                            }`}>
                             {pred.risk_level.charAt(0).toUpperCase() + pred.risk_level.slice(1)}
                           </span>
                         </td>

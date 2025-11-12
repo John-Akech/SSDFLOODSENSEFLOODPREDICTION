@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 import httpx
+from collections import OrderedDict
+import hashlib
 
 import sys
 import os
@@ -24,9 +26,42 @@ router = APIRouter()
 # SAR service configuration
 SAR_SERVICE_URL = os.getenv("SAR_SERVICE_URL", "http://localhost:8080")
 
+# Feature cache to ensure consistency for same location within time window
+# Cache format: {location_hash: {"features": dict, "timestamp": datetime}}
+FEATURE_CACHE = OrderedDict()
+CACHE_TTL_MINUTES = 30  # Features valid for 30 minutes
+MAX_CACHE_SIZE = 1000  # Maximum cached locations
+
+
+def _get_location_hash(latitude: float, longitude: float, lead_time: int) -> str:
+    """Generate cache key for location with 4 decimal precision (~11m accuracy)"""
+    # Round to 4 decimals to group nearby requests (within ~11 meters)
+    lat_rounded = round(latitude, 4)
+    lon_rounded = round(longitude, 4)
+    key = f"{lat_rounded},{lon_rounded},{lead_time}"
+    return hashlib.md5(key.encode()).hexdigest()
+
+
+def _clean_cache():
+    """Remove expired entries from feature cache"""
+    now = datetime.now()
+    expired_keys = [
+        key for key, value in FEATURE_CACHE.items()
+        if (now - value["timestamp"]) > timedelta(minutes=CACHE_TTL_MINUTES)
+    ]
+    for key in expired_keys:
+        del FEATURE_CACHE[key]
+        logger.debug(f"Removed expired cache entry: {key}")
+    
+    # Also enforce max size (LRU - oldest entries removed first)
+    while len(FEATURE_CACHE) > MAX_CACHE_SIZE:
+        oldest_key = next(iter(FEATURE_CACHE))
+        del FEATURE_CACHE[oldest_key]
+        logger.debug(f"Removed old cache entry (size limit): {oldest_key}")
+
 
 async def fetch_gee_features(latitude: float, longitude: float, lead_time_hours: int = 12) -> dict:
-    """Fetch satellite features from SAR detection service
+    """Fetch satellite features from SAR detection service with caching for consistency
     
     Args:
         latitude: Location latitude
@@ -38,7 +73,23 @@ async def fetch_gee_features(latitude: float, longitude: float, lead_time_hours:
         
     Raises:
         HTTPException: If SAR service is unavailable or returns error
+        
+    Note:
+        Features are cached for 30 minutes to ensure consistency when making
+        multiple predictions for the same location. This prevents variations
+        due to real-time satellite data updates.
     """
+    # Check cache first
+    cache_key = _get_location_hash(latitude, longitude, lead_time_hours)
+    _clean_cache()
+    
+    if cache_key in FEATURE_CACHE:
+        cached_entry = FEATURE_CACHE[cache_key]
+        age_minutes = (datetime.now() - cached_entry["timestamp"]).total_seconds() / 60
+        logger.info(f"Using cached features for ({latitude}, {longitude}) - age: {age_minutes:.1f} minutes")
+        return cached_entry["features"]
+    
+    # Fetch from SAR service if not cached
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
@@ -53,8 +104,15 @@ async def fetch_gee_features(latitude: float, longitude: float, lead_time_hours:
             
             if response.status_code == 200:
                 gee_data = response.json()
-                logger.info(f"Successfully fetched GEE features for ({latitude}, {longitude})")
-                return gee_data.get("features", {})
+                features = gee_data.get("features", {})
+                
+                # Cache the features for consistency
+                FEATURE_CACHE[cache_key] = {
+                    "features": features,
+                    "timestamp": datetime.now()
+                }
+                logger.info(f"Successfully fetched and cached GEE features for ({latitude}, {longitude})")
+                return features
             else:
                 error_detail = response.json().get("detail", "Unknown error")
                 logger.error(f"SAR service error: {response.status_code} - {error_detail}")
