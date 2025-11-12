@@ -90,7 +90,7 @@ app.add_middleware(RateLimiter, requests=100, window=3600)
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=[
-        "localhost", "127.0.0.1", "*.floodsense.org", "testserver"
+        "localhost", "127.0.0.1", "*.floodsense.org", "testserver", "159.203.162.85"
     ]
 )
 
