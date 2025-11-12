@@ -31,8 +31,10 @@ services:
       - GEE_PROJECT_ID=ace-connection-474712-p1
       - API_HOST=0.0.0.0
       - API_PORT=8080
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/gee-service-account.json
     volumes:
       - sar-output:/app/output
+      - /root/gee-service-account.json:/app/gee-service-account.json:ro
     restart: unless-stopped
     networks:
       - floodsense-network

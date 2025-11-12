@@ -91,7 +91,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
       gradient: 'from-emerald-500 to-teal-500',
       submenu: [
         {
-          path: 'http://localhost:8080',
+          path: 'http://159.203.162.85:8080',
           label: 'SAR Detection',
           icon: MapIcon,
           description: 'Satellite-based flood detection',

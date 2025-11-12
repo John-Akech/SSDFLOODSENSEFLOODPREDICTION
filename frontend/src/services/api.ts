@@ -5,7 +5,7 @@ const API_BASE_URL = 'http://159.203.162.85:8000/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000, // Reduced from 120000ms to 5000ms (5 seconds)
+  timeout: 30000, // 30 seconds for reliable backend communication
   headers: { 'Content-Type': 'application/json' }
 });
 
