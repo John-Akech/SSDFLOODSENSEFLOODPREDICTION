@@ -34,6 +34,7 @@ class Settings(BaseSettings):
         "http://localhost:80",
         "http://127.0.0.1:80",
         "http://localhost",
+        "http://159.203.162.85",
         "https://floodsense.org",
         "https://www.floodsense.org"
     ]
