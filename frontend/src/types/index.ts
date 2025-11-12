@@ -6,9 +6,11 @@ export interface Prediction {
   model_type: string;
   lead_time_hours: number;
   confidence_score: number;
-  risk_level: 'low' | 'medium' | 'high' | 'critical';
+  risk_level: 'low' | 'medium' | 'high' | 'critical' | 'uncertain';
   created_at: string;
-  model_predictions?: { rf?: number; tcn?: number };
+  model_predictions?: { rf?: number; gb?: number; lstm?: number; tcn?: number };
+  is_reliable?: boolean;
+  warning?: string;
 }
 
 export interface Alert {

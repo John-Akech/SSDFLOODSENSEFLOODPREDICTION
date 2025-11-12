@@ -436,6 +436,9 @@ const Map: React.FC = () => {
                       {locationNames[`${prediction.latitude},${prediction.longitude}`] ||
                         `${prediction.latitude.toFixed(4)}, ${prediction.longitude.toFixed(4)}`}
                     </p>
+                    <p className="text-sm text-slate-700 font-semibold">
+                      Flood Probability: {Math.round((prediction.flood_probability || 0) * 100)}%
+                    </p>
                     <p className="text-sm text-slate-500">
                       Confidence: {Math.round((prediction.confidence_score || 0) * 100)}%
                     </p>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { apiService } from '../services/api';
 import '../styles/flood-colors.css';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Prediction } from '../types';
 
 interface User {
   id: number;
@@ -21,15 +22,6 @@ interface Alert {
   severity: string;
   message: string;
   is_active: boolean;
-  created_at: string;
-}
-
-interface Prediction {
-  id: number;
-  latitude: number;
-  longitude: number;
-  risk_level: string;
-  confidence_score: number;
   created_at: string;
 }
 
@@ -396,7 +388,8 @@ const Admin: React.FC = () => {
       low: predictions.filter(p => p.risk_level === 'low').length,
       medium: predictions.filter(p => p.risk_level === 'medium').length,
       high: predictions.filter(p => p.risk_level === 'high').length,
-      critical: predictions.filter(p => p.risk_level === 'critical').length
+      critical: predictions.filter(p => p.risk_level === 'critical').length,
+      uncertain: predictions.filter(p => p.risk_level === 'uncertain').length
     };
 
     const alertBySeverity = {
@@ -662,7 +655,8 @@ const Admin: React.FC = () => {
                     { risk: 'Low', count: stats.predictionDistribution.low },
                     { risk: 'Medium', count: stats.predictionDistribution.medium },
                     { risk: 'High', count: stats.predictionDistribution.high },
-                    { risk: 'Critical', count: stats.predictionDistribution.critical }
+                    { risk: 'Critical', count: stats.predictionDistribution.critical },
+                    { risk: 'Uncertain', count: stats.predictionDistribution.uncertain }
                   ]}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                     <XAxis dataKey="risk" stroke="#6b7280" fontSize={12} />
@@ -1244,7 +1238,7 @@ const Admin: React.FC = () => {
 
             {/* Filter Buttons */}
             <div className="mb-6 flex flex-wrap gap-2">
-              {['all', 'low', 'medium', 'high', 'critical'].map((level) => (
+              {['all', 'low', 'medium', 'high', 'critical', 'uncertain'].map((level) => (
                 <button
                   key={level}
                   onClick={() => setPredictionFilter(level)}
@@ -1265,7 +1259,7 @@ const Admin: React.FC = () => {
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Location</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Risk Level</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Confidence</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Flood Probability</th>
                       <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
                       <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
                     </tr>
@@ -1279,17 +1273,19 @@ const Admin: React.FC = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${pred.risk_level === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                            pred.risk_level === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
                             pred.risk_level === 'high' ? 'bg-orange-200 text-orange-900 border border-orange-300' :
-                              pred.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
-                                'bg-green-200 text-green-900 border border-green-300'
-                            }`}>
+                            pred.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
+                            pred.risk_level === 'uncertain' ? 'bg-gray-200 text-gray-900 border border-gray-300' :
+                            'bg-green-200 text-green-900 border border-green-300'
+                          }`}>
                             {pred.risk_level.charAt(0).toUpperCase() + pred.risk_level.slice(1)}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="text-sm font-semibold text-gray-900">{Math.round(pred.confidence_score * 100)}%</div>
+                            <div className="text-sm font-semibold text-gray-900">{Math.round(pred.flood_probability * 100)}%</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
