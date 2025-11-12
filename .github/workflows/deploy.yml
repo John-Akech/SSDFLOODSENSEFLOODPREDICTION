@@ -60,5 +60,6 @@ jobs:
             export VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
             export VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
             export DROPLET_IP=${{ secrets.DROPLET_IP }}
+            echo ${{ secrets.DO_PAT }} | docker login registry.digitalocean.com -u ${{ secrets.DO_PAT }} --password-stdin
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
