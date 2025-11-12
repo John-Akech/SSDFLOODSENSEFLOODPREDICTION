@@ -42,6 +42,9 @@ services:
   frontend:
     image: registry.digitalocean.com/floodsense-registry/floodsense-frontend:${TAG:-latest}
     container_name: floodsense-frontend
+    environment:
+      - VITE_API_URL=http://159.203.162.85:8000/api/v1
+      - VITE_SAR_URL=http://159.203.162.85:8080
     ports:
       - "80:80"
     depends_on:

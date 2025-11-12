@@ -1,7 +1,8 @@
 import axios from 'axios';
 import DOMPurify from 'dompurify';
 
-const API_BASE_URL = 'http://159.203.162.85:8000/api/v1';
+// Use environment variable or fallback to localhost for development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
