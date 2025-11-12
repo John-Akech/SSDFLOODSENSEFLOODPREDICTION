@@ -43,6 +43,8 @@ services:
       - GEE_PROJECT_ID=ace-connection-474712-p1
       - API_HOST=0.0.0.0
       - API_PORT=8080
+      # Note: GEE credentials should be at ~/.config/earthengine/ on host
+      # If you don't have credentials, the service will still start but GEE features won't work
     volumes:
       - ${USERPROFILE}/.config/earthengine:/home/appuser/.config/earthengine:ro
       - ./ee-fastapi/output:/app/output
