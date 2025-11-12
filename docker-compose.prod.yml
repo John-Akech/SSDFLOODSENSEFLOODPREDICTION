@@ -15,7 +15,7 @@ services:
       - VAPID_SUBJECT=mailto:admin@floodsense.org
       - SAR_SERVICE_URL=http://sar-detection:8080
     volumes:
-      - ./backend/logs:/app/logs
+      - backend-logs:/app/logs
     depends_on:
       - sar-detection
     restart: unless-stopped
@@ -32,7 +32,7 @@ services:
       - API_HOST=0.0.0.0
       - API_PORT=8080
     volumes:
-      - ./ee-fastapi/output:/app/output
+      - sar-output:/app/output
     restart: unless-stopped
     networks:
       - floodsense-network
@@ -53,3 +53,7 @@ networks:
   floodsense-network:
     driver: bridge
     name: floodsense-network
+
+volumes:
+  backend-logs:
+  sar-output:
