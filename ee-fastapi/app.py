@@ -428,6 +428,13 @@ async def flood_detect(request: FloodDetectionRequest, db: Session = Depends(get
             detail=f"Flood detection failed: {str(e)}"
         )
 
+# Backward compatibility endpoint (redirects to new flow)
+@app.post("/flood_download", tags=["Flood Detection"])
+async def flood_download_legacy(request: FloodDetectionRequest, db: Session = Depends(get_db)):
+    """Legacy endpoint - redirects to flood_detect for backward compatibility."""
+    logger.warning("Using legacy /flood_download endpoint. Please update to use /flood_detect instead.")
+    return await flood_detect(request, db)
+
 @app.get("/flood_download/{detection_id}", tags=["Flood Detection"])
 async def flood_download(detection_id: int, db: Session = Depends(get_db)):
     """Download flood detection geopackage from database by ID."""
