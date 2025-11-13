@@ -209,9 +209,18 @@ def db_creator(
         before_collection = collection.filterDate(base_period[0], base_period[1]).limit(max_images)
         after_collection = collection.filterDate(flood_period[0], flood_period[1]).limit(max_images)
 
-        # Quick validation without blocking getInfo() calls
+        # Validate that images exist for both periods
+        before_count = before_collection.size().getInfo()
+        after_count = after_collection.size().getInfo()
+        
+        if before_count == 0:
+            raise ValueError(f"No Sentinel-1 images found for baseline period {base_period[0]} to {base_period[1]}. Try expanding the date range or check if Sentinel-1 covers this area.")
+        
+        if after_count == 0:
+            raise ValueError(f"No Sentinel-1 images found for flood period {flood_period[0]} to {flood_period[1]}. Try expanding the date range or check if Sentinel-1 covers this area.")
+
         if not quiet:
-            logger.info(f"Processing SAR images for flood detection...")
+            logger.info(f"Found {before_count} baseline images and {after_count} flood images")
 
         # Create simple mosaics (faster than temporal weighting)
         before = before_collection.median().clip(geometry)
