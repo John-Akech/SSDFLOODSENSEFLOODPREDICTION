@@ -406,10 +406,18 @@ document.getElementById('display').addEventListener('click', function () {
             layerAfter.setOpacity(sarOpacityVal);
             layerFlood.setOpacity(0.9);
 
-            // Set initial visibility based on checkbox state (default: all visible)
-            layerBefore.setVisible(document.getElementById('toggleBefore')?.checked !== false);
-            layerAfter.setVisible(document.getElementById('toggleAfter')?.checked !== false);
-            layerFlood.setVisible(document.getElementById('toggleFlood')?.checked !== false);
+            // Set initial visibility based on legend checkbox state
+            const floodCheckbox = document.getElementById('toggleFloodLayers');
+            const sarCheckbox = document.getElementById('toggleSarLayers');
+            
+            const floodVisible = floodCheckbox ? floodCheckbox.checked : true;
+            const sarVisible = sarCheckbox ? sarCheckbox.checked : true;
+            
+            layerBefore.setVisible(sarVisible);
+            layerAfter.setVisible(sarVisible);
+            layerFlood.setVisible(floodVisible);
+
+            console.log(`Layers created - Flood visible: ${floodVisible}, SAR visible: ${sarVisible}`);
 
             // Add in sensible order (flood on top)
             map.addLayer(layerBefore);
@@ -431,11 +439,17 @@ document.getElementById('display').addEventListener('click', function () {
                 document.getElementById('confidence').textContent = (response.confidence || 0).toFixed(1) + '%';
                 document.getElementById('floodCount').textContent = response.flood_patches || 0;
                 document.getElementById('result').classList.add('active');
+                
+                // Update legend statistics
+                updateLegendStats(response.flood_area_ha, response.flood_patches, response.confidence);
             } else {
                 document.getElementById('result').classList.add('active');
                 document.getElementById('floodArea').textContent = '0.00';
                 document.getElementById('confidence').textContent = '0.0%';
                 document.getElementById('floodCount').textContent = '0';
+                
+                // Update legend with zero values
+                updateLegendStats(0, 0, 0);
             }
 
             document.getElementById('loading').classList.remove('active');
@@ -811,18 +825,90 @@ function toggleLayerGroup(groupType) {
         return;
     }
     
+    const isVisible = checkbox.checked;
+    
+    // Toggle legend items visibility
     const items = document.querySelectorAll(`.legend-item[data-layer="${groupType}"]`);
-
     items.forEach(item => {
-        item.style.display = checkbox.checked ? 'flex' : 'none';
+        item.style.display = isVisible ? 'flex' : 'none';
     });
 
-    // Toggle actual map layers if they exist
-    if (groupType === 'flood' && layerFlood) {
-        layerFlood.setVisible(checkbox.checked);
+    // Toggle actual map layers and sync with old individual checkboxes
+    if (groupType === 'flood') {
+        if (layerFlood) {
+            layerFlood.setVisible(isVisible);
+            console.log(`Flood layer visibility: ${isVisible}`);
+        }
+        // Sync old checkbox
+        const oldCheckbox = document.getElementById('toggleFlood');
+        if (oldCheckbox) oldCheckbox.checked = isVisible;
+        
     } else if (groupType === 'sar') {
-        if (layerBefore) layerBefore.setVisible(checkbox.checked);
-        if (layerAfter) layerAfter.setVisible(checkbox.checked);
+        if (layerBefore) {
+            layerBefore.setVisible(isVisible);
+            console.log(`Before layer visibility: ${isVisible}`);
+        }
+        if (layerAfter) {
+            layerAfter.setVisible(isVisible);
+            console.log(`After layer visibility: ${isVisible}`);
+        }
+        // Sync old checkboxes
+        const beforeCheckbox = document.getElementById('toggleBefore');
+        const afterCheckbox = document.getElementById('toggleAfter');
+        if (beforeCheckbox) beforeCheckbox.checked = isVisible;
+        if (afterCheckbox) afterCheckbox.checked = isVisible;
+        
+    } else if (groupType === 'reference') {
+        // Reference layers would go here when implemented
+        console.log(`Reference layer visibility: ${isVisible}`);
+    }
+    
+    // Force map to re-render
+    if (map) {
+        map.render();
+    }
+}
+
+// Update flood layer opacity from legend
+function updateFloodOpacity(value) {
+    const opacity = value / 100;
+    if (layerFlood) {
+        layerFlood.setOpacity(opacity);
+    }
+    document.getElementById('floodOpacityValue').textContent = value + '%';
+}
+
+// Update SAR layers opacity from legend
+function updateSarOpacity(value) {
+    const opacity = value / 100;
+    if (layerBefore) {
+        layerBefore.setOpacity(opacity);
+    }
+    if (layerAfter) {
+        layerAfter.setOpacity(opacity);
+    }
+    document.getElementById('sarOpacityValueLegend').textContent = value + '%';
+    
+    // Sync with sidebar control if it exists
+    const sidebarOpacity = document.getElementById('sarOpacity');
+    if (sidebarOpacity) {
+        sidebarOpacity.value = value;
+    }
+}
+
+// Update legend statistics when flood is detected
+function updateLegendStats(floodArea, floodPatches, confidence) {
+    const statsDiv = document.getElementById('floodStats');
+    const opacityControl = document.getElementById('floodOpacityControl');
+    const sarOpacityControl = document.getElementById('sarOpacityControlLegend');
+    
+    if (statsDiv && floodArea !== undefined) {
+        document.getElementById('legendFloodArea').textContent = floodArea.toFixed(2) + ' ha';
+        document.getElementById('legendFloodPatches').textContent = floodPatches || 0;
+        document.getElementById('legendFloodConfidence').textContent = (confidence || 0).toFixed(1) + '%';
+        statsDiv.style.display = 'block';
+        opacityControl.style.display = 'block';
+        sarOpacityControl.style.display = 'block';
     }
 }
 
@@ -924,7 +1010,7 @@ document.addEventListener('DOMContentLoaded', function () {
     initializeRangeSliders();
     initializeMapControls();
 
-    // Set up layer toggle event listeners
+    // Set up layer toggle event listeners (sync with legend)
     const toggleBefore = document.getElementById('toggleBefore');
     const toggleAfter = document.getElementById('toggleAfter');
     const toggleFlood = document.getElementById('toggleFlood');
@@ -934,6 +1020,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (layerBefore) {
                 layerBefore.setVisible(this.checked);
             }
+            // Sync with legend checkbox (SAR group controls both before/after)
+            const sarCheckbox = document.getElementById('toggleSarLayers');
+            if (sarCheckbox && toggleAfter) {
+                // Only check if both before and after are checked
+                sarCheckbox.checked = this.checked && toggleAfter.checked;
+                toggleLayerGroup('sar');
+            }
         });
     }
 
@@ -942,6 +1035,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (layerAfter) {
                 layerAfter.setVisible(this.checked);
             }
+            // Sync with legend checkbox (SAR group controls both before/after)
+            const sarCheckbox = document.getElementById('toggleSarLayers');
+            if (sarCheckbox && toggleBefore) {
+                // Only check if both before and after are checked
+                sarCheckbox.checked = this.checked && toggleBefore.checked;
+                toggleLayerGroup('sar');
+            }
         });
     }
 
@@ -949,6 +1049,12 @@ document.addEventListener('DOMContentLoaded', function () {
         toggleFlood.addEventListener('change', function () {
             if (layerFlood) {
                 layerFlood.setVisible(this.checked);
+            }
+            // Sync with legend checkbox
+            const floodCheckbox = document.getElementById('toggleFloodLayers');
+            if (floodCheckbox) {
+                floodCheckbox.checked = this.checked;
+                toggleLayerGroup('flood');
             }
         });
     }
