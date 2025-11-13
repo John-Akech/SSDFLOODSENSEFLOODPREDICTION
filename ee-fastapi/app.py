@@ -170,6 +170,72 @@ async def gee_status():
         "requires_auth": not gee_initialized
     }
 
+@app.get("/sentinel1/availability", tags=["Data Availability"])
+async def check_sentinel1_availability(lat: float, lon: float):
+    """Check latest available Sentinel-1 data for a location.
+    
+    Args:
+        lat: Latitude of point
+        lon: Longitude of point
+        
+    Returns:
+        Latest available Sentinel-1 image date and coverage info
+    """
+    if not gee_initialized:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Google Earth Engine not authenticated"
+        )
+    
+    try:
+        point = ee.Geometry.Point([lon, lat])
+        
+        # Get most recent Sentinel-1 image
+        s1_collection = (ee.ImageCollection("COPERNICUS/S1_GRD")
+            .filterBounds(point)
+            .filter(ee.Filter.eq("instrumentMode", "IW"))
+            .filter(ee.Filter.listContains("transmitterReceiverPolarisation", "VH"))
+            .sort("system:time_start", False)  # Most recent first
+            .limit(1))
+        
+        # Get the date of the most recent image
+        latest_image = s1_collection.first()
+        if latest_image.getInfo():
+            latest_date = ee.Date(latest_image.get("system:time_start")).format("YYYY-MM-dd").getInfo()
+            
+            # Get count of images in last 30 days
+            from datetime import datetime, timedelta
+            today = datetime.now()
+            thirty_days_ago = (today - timedelta(days=30)).strftime("%Y-%m-%d")
+            
+            recent_count = (ee.ImageCollection("COPERNICUS/S1_GRD")
+                .filterBounds(point)
+                .filterDate(thirty_days_ago, today.strftime("%Y-%m-%d"))
+                .filter(ee.Filter.eq("instrumentMode", "IW"))
+                .size()
+                .getInfo())
+            
+            return {
+                "available": True,
+                "latest_date": latest_date,
+                "images_last_30_days": recent_count,
+                "message": f"Latest Sentinel-1 image: {latest_date}. Use dates up to this for real-time detection.",
+                "recommended_flood_period_start": (datetime.strptime(latest_date, "%Y-%m-%d") - timedelta(days=14)).strftime("%Y-%m-%d"),
+                "recommended_flood_period_end": latest_date
+            }
+        else:
+            return {
+                "available": False,
+                "message": "No Sentinel-1 coverage for this location"
+            }
+            
+    except Exception as e:
+        logger.error(f"Error checking Sentinel-1 availability: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to check data availability: {str(e)}"
+        )
+
 @app.post("/gee/authenticate", tags=["Authentication"])
 async def gee_authenticate(project_id: Optional[str] = None):
     """Initialize Google Earth Engine with project ID."""
