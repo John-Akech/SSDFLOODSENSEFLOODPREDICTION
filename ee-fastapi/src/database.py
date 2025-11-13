@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Database URL - connect to main FloodSense database
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://floodsense_user:floodsense_secure_password@floodsense-db:5432/floodsense_db"
+    "postgresql://floodsense_user:floodsense_password@db:5432/floodsense_db"
 )
 
 # Create engine
