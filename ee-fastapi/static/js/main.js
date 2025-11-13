@@ -490,7 +490,7 @@ function simulateProgress() {
     }, 300);
 }
 
-// Enhanced UI Functions
+// UI Functions
 function toggleAdvancedOptions() {
     const panel = document.getElementById('advancedPanel');
     const checkbox = document.getElementById('advancedOptions');
@@ -525,7 +525,7 @@ function initializeRangeSliders() {
     updateRangeValue('confidenceThreshold', 'confidenceValue', '%');
 }
 
-// Enhanced processing with step tracking
+// Processing with step tracking
 function startProcessing() {
     processingStartTime = Date.now();
     currentStep = 0;
@@ -562,11 +562,11 @@ function completeProcessing() {
     const loadingPanel = document.getElementById('loading');
     if (loadingPanel) loadingPanel.classList.remove('active');
 
-    // Show results with enhanced data
+    // Show results
     const resultPanel = document.getElementById('result');
     if (resultPanel) resultPanel.classList.add('active');
 
-    // Simulate enhanced results
+    // Simulate results
     const floodArea = Math.floor(Math.random() * 500) + 50;
     const confidence = Math.floor(Math.random() * 30) + 70;
     const floodCount = Math.floor(Math.random() * 10) + 1;
@@ -592,7 +592,7 @@ function completeProcessing() {
     if (downloadBtn) downloadBtn.disabled = false;
 }
 
-// Enhanced map visualization controls
+// Map visualization controls
 function initializeMapControls() {
     // Base map control
     const baseMapSelect = document.getElementById('baseMap');
@@ -637,7 +637,7 @@ function initializeMapControls() {
     }
 }
 
-// Enhanced flood detection with new parameters
+// Flood detection with parameters
 function getBoundingBox() {
     var features = source.getFeatures();
     if (features.length === 0) {
@@ -647,7 +647,7 @@ function getBoundingBox() {
     return lastFeature.getGeometry().transform('EPSG:3857', 'EPSG:4326').getExtent().toString();
 }
 
-function detectFloodEnhanced() {
+function detectFlood() {
     if (!isAuthenticated) {
         alert('Please authenticate with Google Earth Engine first.');
         return;
@@ -679,7 +679,7 @@ function detectFloodEnhanced() {
         confidence_threshold: document.getElementById('confidenceThreshold') ? parseInt(document.getElementById('confidenceThreshold').value) : 75
     };
 
-    console.log('Enhanced flood detection parameters:', params);
+    console.log('Flood detection parameters:', params);
 
     // Start processing
     document.getElementById('loading').classList.add('active');
@@ -708,7 +708,7 @@ function detectFloodEnhanced() {
         })
         .then(response => {
             clearTimeout(timeoutId);
-            console.log('Flood detection completed with enhanced parameters');
+            console.log('Flood detection completed');
             // Process the response data
             var bflood = new ol.layer.Tile({
                 source: new ol.source.XYZ({ url: response.before_tile }),
@@ -853,7 +853,7 @@ function updateLegendStatus(status) {
     }
 }
 
-// Initialize enhanced features when DOM is loaded
+// Initialize features when DOM is loaded
 document.addEventListener('DOMContentLoaded', function () {
     initializeRangeSliders();
     initializeMapControls();
@@ -887,11 +887,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Update the main detect button to use enhanced function
+    // Update the main detect button
     const detectButton = document.getElementById('display');
     if (detectButton) {
-        // Add event listener for the enhanced detection function
-        detectButton.addEventListener('click', detectFloodEnhanced);
+        // Add event listener for the detection function
+        detectButton.addEventListener('click', detectFlood);
     }
 
     // Initialize legend

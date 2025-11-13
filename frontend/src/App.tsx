@@ -25,16 +25,7 @@ const AppContent: React.FC = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {
-    // Register service worker for PWA
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js')
-        .then((registration) => {
-          console.log('Service Worker registered successfully:', registration);
-        })
-        .catch((error) => {
-          console.log('Service Worker registration failed:', error);
-        });
-    }
+    // Service worker is registered in main.tsx - don't register here to avoid conflicts
 
     // Handle online/offline status
     const handleOnline = () => setIsOnline(true);

@@ -1,18 +1,17 @@
-"""SAR-FLOOD MAPPING USING ADVANCED CHANGE DETECTION APPROACH
+"""SAR flood mapping using change detection.
 
-  This script uses SAR Sentinel-1 images to generate a flood extent map with
-  advanced preprocessing, multi-polarization analysis, and adaptive thresholding.
-  The dataset available in the Earth Engine Data Catalog includes the following
-  preprocessing steps: Thermal-Noise Removal, Radiometric calibration, and 
-  Terrain-correction.
+This script uses SAR Sentinel-1 images to generate a flood extent map with
+multi-polarization analysis and adaptive thresholding. The dataset available 
+in the Earth Engine Data Catalog includes the following preprocessing steps:
+Thermal-Noise Removal, Radiometric calibration, and Terrain-correction.
   
-  Enhanced features:
-  - Multi-polarization analysis (VV + VH)
-  - Advanced speckle filtering (Lee, Frost, Kuan filters)
-  - Adaptive thresholding based on local statistics
-  - Temporal consistency checks
-  - Quality assessment metrics
-  - Morphological filtering and edge detection
+Features:
+- Multi-polarization analysis (VV + VH)
+- Speckle filtering (Lee, Frost, Kuan filters)
+- Adaptive thresholding based on local statistics
+- Temporal consistency checks
+- Quality assessment metrics
+- Morphological filtering and edge detection
 """
 
 import ee
@@ -66,9 +65,9 @@ geoviz_app = {
 }
 
 
-# Display enhanced basemap with confidence and quality information
+# Display basemap with confidence and quality information
 def display(dict_db):
-    """ Display an enhanced Earth Engine map with confidence and quality layers
+    """ Display Earth Engine map with confidence and quality layers
     Returns:
         dict: Dictionary containing tile URLs for all layers
     """
@@ -81,7 +80,7 @@ def display(dict_db):
         s1_af = ee.Image.visualize(dict_db["after_flood"], **geoviz_app["s1_img"])
         s1_af_id = ee.data.getMapId({"image": s1_af})["tile_fetcher"].url_format
 
-        # Flood results with enhanced visualization
+        # Flood results with visualization
         flood_viz = {
             "min": 0,
             "max": 1,
@@ -134,7 +133,7 @@ def display(dict_db):
         
     except Exception as e:
         logger.error(f"Error in display function: {str(e)}")
-        # Return basic display if enhanced fails
+        # Return basic display on error
         try:
             s1_bf = ee.Image.visualize(dict_db["before_flood"], **geoviz_app["s1_img"])
             s1_bf_id = ee.data.getMapId({"image": s1_bf})["tile_fetcher"].url_format
@@ -191,16 +190,22 @@ def db_creator(
         Dictionary containing processed SAR images and metadata
     """
     try:
-        # Load and filter Sentinel-1 GRD data
+        # Limit geometry bounds to prevent 5000+ element error
+        # Reduce geometry complexity and ensure reasonable spatial extent
+        processed_geometry = geometry.simplify(maxError=100)  # Simplify to 100m tolerance
+        bounds = processed_geometry.bounds()
+        
+        # Load and filter Sentinel-1 GRD data with strict limits
         collection = (ee.ImageCollection("COPERNICUS/S1_GRD")
                     .filter(ee.Filter.eq("instrumentMode", "IW"))
                     .filter(ee.Filter.listContains("transmitterReceiverPolarisation", polarization))
                     .filter(ee.Filter.eq("orbitProperties_pass", pass_direction))
                     .filter(ee.Filter.eq("resolution_meters", 10))
-                    .filterBounds(geometry)
-                    .select(polarization))
+                    .filterBounds(bounds)  # Use processed bounds
+                    .select(polarization)
+                    .limit(500))  # Hard limit to prevent accumulation errors
 
-        # Fast image selection  - limit to max_images
+        # Fast image selection - limit to max_images per period
         before_collection = collection.filterDate(base_period[0], base_period[1]).limit(max_images)
         after_collection = collection.filterDate(flood_period[0], flood_period[1]).limit(max_images)
 
@@ -239,10 +244,8 @@ def select_best_images(collection: ee.ImageCollection, period: Tuple[str, str], 
     # Filter by date
     filtered = collection.filterDate(period[0], period[1])
     
-    # Simplified quality scoring - just return the filtered collection
-    # The quality assessment is too complex for Earth Engine's client-server model
-    # Instead, just return the images sorted by date (most recent first)
-    sorted_collection = filtered.sort('system:time_start', False)  # Descending order
+    # Return filtered collection sorted by date (most recent first)
+    sorted_collection = filtered.sort('system:time_start', False)
     
     # Limit to max_images
     limited = sorted_collection.limit(max_images)
@@ -272,8 +275,8 @@ def create_temporal_mosaic(collection: ee.ImageCollection, aoi, period_type: str
         # The weighted approach is too complex for Earth Engine's client-server model
         return collection.mean().clip(geom)
 
-def apply_enhanced_preprocessing(image: ee.Image, aoi) -> ee.Image:
-    """Apply enhanced preprocessing for better flood detection."""
+def apply_preprocessing(image: ee.Image, aoi) -> ee.Image:
+    """Apply preprocessing to SAR images for flood detection."""
     # Get geometry from aoi
     if isinstance(aoi, ee.FeatureCollection):
         geom = aoi.geometry()
@@ -310,7 +313,7 @@ def apply_enhanced_preprocessing(image: ee.Image, aoi) -> ee.Image:
     return db_image.clip(geom)
 
 def calculate_image_quality(image: ee.Image, aoi) -> Dict:
-    """Calculate comprehensive image quality metrics."""
+    """Calculate image quality metrics."""
     try:
         # Get band names
         band_names = image.bandNames().getInfo()
@@ -461,7 +464,7 @@ def flood_estimation(
                         maxSize=256
                     )
                     
-                    # Count distinct patches (simplified approach)
+                    # Count distinct patches
                     patch_stats = connected.select('labels').reduceRegion(
                         reducer=ee.Reducer.countDistinct(),
                         geometry=aoi_geom,
@@ -522,7 +525,7 @@ def flood_estimation(
                     # 3. Spatial extent (more area = higher confidence, but cap it)
                     extent_factor = min(1.0, flood_percentage / 10.0)  # Cap at 10% coverage
                     
-                    # 4. Number of patches - CRITICAL for quality assessment
+                    # 4. Number of patches for quality assessment
                     # Ideal: 1-5 large coherent patches = real flooding
                     # Bad: 50+ patches = likely noise/false detections
                     if flood_patches == 0:
@@ -580,8 +583,8 @@ def flood_estimation(
         logger.error(f"Error in flood_estimation: {str(e)}")
         raise
 
-def apply_enhanced_speckle_filter(image: ee.Image) -> ee.Image:
-    """Apply enhanced speckle filtering for better noise reduction."""
+def apply_speckle_filter(image: ee.Image) -> ee.Image:
+    """Apply speckle filtering for noise reduction."""
     # Apply multiple passes of focal mean with different kernel sizes
     filtered_1 = image.focal_mean(30, 'circle', 'meters')
     filtered_2 = filtered_1.focal_mean(50, 'circle', 'meters')
@@ -670,7 +673,7 @@ def calculate_quality_score(area_ha: float, mean_confidence: float, std_confiden
     return min(1.0, max(0.0, quality_score))
 
 def validate_flood_detection(dict_db: Dict) -> Dict:
-    """Comprehensive validation of flood detection results."""
+    """Validation of flood detection results."""
     try:
         validation_results = {
             "is_valid": True,
@@ -764,7 +767,7 @@ def validate_flood_detection(dict_db: Dict) -> Dict:
             "recommendations": []
         }
 
-def run_comprehensive_flood_detection(
+def run_flood_detection_pipeline(
     base_period: Tuple[str, str],
     flood_period: Tuple[str, str],
     geometry: ee.Geometry,
@@ -777,12 +780,12 @@ def run_comprehensive_flood_detection(
     temporal_consistency: bool = True,
     validate_results: bool = True
 ) -> Dict:
-    """Run comprehensive flood detection with validation and quality control."""
+    """Run flood detection with validation and quality control."""
     try:
-        logger.info("Starting comprehensive flood detection...")
+        logger.info("Starting flood detection pipeline...")
         
-        # Step 1: Create enhanced database
-        logger.info("Creating enhanced SAR database...")
+        # Step 1: Create SAR database
+        logger.info("Creating SAR database...")
         dict_db = db_creator(
             base_period=base_period,
             flood_period=flood_period,
@@ -795,8 +798,8 @@ def run_comprehensive_flood_detection(
             quality_threshold=0.5
         )
         
-        # Step 2: Perform advanced flood estimation
-        logger.info("Performing advanced flood estimation...")
+        # Step 2: Perform flood estimation
+        logger.info("Performing flood estimation...")
         dict_db = flood_estimation(
             dict_db=dict_db,
             difference_threshold=difference_threshold,
@@ -832,11 +835,11 @@ def run_comprehensive_flood_detection(
         display_layers = display(dict_db)
         dict_db["display_layers"] = display_layers
         
-        logger.info("Comprehensive flood detection completed successfully")
+        logger.info("Flood detection completed successfully")
         return dict_db
         
     except Exception as e:
-        logger.error(f"Error in comprehensive flood detection: {str(e)}")
+        logger.error(f"Error in flood detection: {str(e)}")
         raise
 
 # Example usage and testing
@@ -851,8 +854,8 @@ def test_flood_detection():
             [34.74825343859618, -20.61123742951084]
         ]])
         
-        # Run comprehensive detection
-        results = run_comprehensive_flood_detection(
+        # Run detection pipeline
+        results = run_flood_detection_pipeline(
             base_period=('2019-03-01', '2019-03-10'),
             flood_period=('2019-03-10', '2019-03-23'),
             geometry=geometry,

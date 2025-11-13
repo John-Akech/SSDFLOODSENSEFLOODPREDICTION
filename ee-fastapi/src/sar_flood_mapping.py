@@ -1,15 +1,14 @@
 """
-SAR-FLOOD MAPPING USING A CHANGE DETECTION APPROACH
+SAR flood mapping using a change detection approach.
 
 This script uses SAR Sentinel-1 images to generate a flood extent map with
-advanced preprocessing, multi-polarization analysis, and adaptive thresholding.
-The dataset available in the Earth Engine Data Catalog includes the following
-preprocessing steps: Thermal-Noise Removal, Radiometric calibration, and 
-Terrain-correction.
+multi-polarization analysis and adaptive thresholding. The dataset available 
+in the Earth Engine Data Catalog includes the following preprocessing steps:
+Thermal-Noise Removal, Radiometric calibration, and Terrain-correction.
 
-Enhanced features:
+Features:
 - Multi-polarization analysis (VV + VH)
-- Advanced speckle filtering (Lee, Frost, Kuan filters)
+- Speckle filtering (Lee, Frost, Kuan filters)
 - Adaptive thresholding based on local statistics
 - Temporal consistency checks
 - Quality assessment metrics

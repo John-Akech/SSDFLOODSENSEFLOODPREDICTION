@@ -89,7 +89,7 @@ def searching_all_files(path: str = ".", pattern: str = r"\.tiff$|\.csv$") -> Li
         return []
 
 def raster_to_vector(image: ee.Image, geom: ee.Geometry) -> dict:
-    """Convert raster image to vector features.
+    """Convert raster image to vector features with limits to prevent 5000+ element errors.
     
     Args:
         image: Earth Engine image
@@ -99,13 +99,49 @@ def raster_to_vector(image: ee.Image, geom: ee.Geometry) -> dict:
         GeoJSON feature collection
     """
     try:
+        # Simplify geometry and add strict limits
+        processed_geom = geom.simplify(maxError=100)  # 100m tolerance
+        bounds = processed_geom.bounds()
+        
+        # Calculate area to adjust scale dynamically
+        area = bounds.area().divide(1e6).getInfo()  # Area in km²
+        logger.info(f"Converting raster to vector for area: {area:.2f} km²")
+        
+        # Adjust scale based on area to prevent too many features
+        if area > 1000:  # Very large area (>1000 km²)
+            scale = 100  # Use 100m resolution
+            logger.warning(f"Large area detected ({area:.2f} km²), using scale=100m")
+        elif area > 100:  # Large area (>100 km²)
+            scale = 50  # Use 50m resolution
+        else:  # Small/medium area
+            scale = 30  # Use 30m resolution (balance quality/speed)
+        
         vector_img = image.unmask(0).reduceToVectors(
-            geometry=geom,
-            scale=10,
+            geometry=bounds,
+            scale=scale,  # Dynamic scale based on area
+            geometryType='polygon',
+            eightConnected=False,  # 4-connectivity reduces complexity
             bestEffort=True,
-            maxPixels=1e8
+            maxPixels=1e8,
+            tileScale=4  # Increase tile scale to handle larger areas
         )
+        
+        # Limit features to prevent timeout
+        # Get only first 1000 features if there are too many
+        feature_count = vector_img.size().getInfo()
+        logger.info(f"Generated {feature_count} features")
+        
+        if feature_count > 1000:
+            logger.warning(f"Too many features ({feature_count}), limiting to 1000 largest patches")
+            # Sort by area (descending) and take top 1000
+            vector_img = vector_img.sort('count', False).limit(1000)
+        
         return vector_img.getInfo()
     except Exception as e:
         logger.error(f"Error converting raster to vector: {str(e)}")
+        # If error contains "5000 elements", provide helpful message
+        if "5000 elements" in str(e):
+            raise ValueError(
+                "Area too large for detailed analysis. Please select a smaller area or use the display mode instead of download."
+            ) from e
         raise

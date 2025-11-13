@@ -113,6 +113,14 @@ DEPLOY_HEROKU.md
 DEPLOYMENT_CHECKLIST.md
 render.yaml
 .render/
+# DigitalOcean deployment scripts (contain sensitive IPs and credentials)
+deploy.sh
+deploy_to_droplet.sh
+update_services.sh
+deploy_commands.txt
+simple_deploy.sh
+# pgAdmin configuration (contains database credentials)
+pgadmin/
 
 # =============================================================================
 # Backups and Temporary
