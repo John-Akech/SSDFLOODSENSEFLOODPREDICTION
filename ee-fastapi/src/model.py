@@ -86,17 +86,26 @@ def display(dict_db):
         ratio_diff = dict_db.get("ratio_difference", ee.Image.constant(1))
         
         # Calculate confidence score for each pixel (0-100%)
-        # Lower ratio_difference = higher confidence (water shows as dark = low backscatter)
-        confidence_score = ratio_diff.expression(
-            '100 * (1 - (ratio / 2))',  # Convert ratio to confidence percentage
-            {'ratio': ratio_diff}
-        ).clamp(0, 100)
+        # ratio_difference = after/before
+        # Flooding: ratio < 1 (backscatter decreased)
+        # Stronger flood signal = lower ratio = higher confidence
+        # Convert ratio to confidence: ratio of 0.5 (50% decrease) = 100% confidence
+        #                             ratio of 0.8 (20% decrease) = lower confidence
+        #                             ratio of 1.0 (no change) = 0% confidence
+        
+        # Calculate how much below 1.0 the ratio is (the decrease amount)
+        decrease_amount = ee.Image.constant(1).subtract(ratio_diff).multiply(100)  # Convert to percentage
+        
+        # Clamp to 0-100% confidence range
+        # A 50% decrease (ratio=0.5) gives 50% confidence
+        # A 80% decrease (ratio=0.2) gives 80% confidence
+        confidence_score = decrease_amount.clamp(0, 100)
         
         # Classify into 4 categories matching the legend
-        # High Risk (>90%): Red (#d32f2f to #f44336)
-        # Medium (70-90%): Orange (#f57c00 to #ff9800)
-        # Low (50-70%): Yellow (#fbc02d to #ffeb3b)
-        # Uncertain (<50%): Gray (#9e9e9e to #bdbdbd)
+        # High Risk (>90%): Red (#d32f2f) - ratio < 0.1 (>90% backscatter decrease)
+        # Medium (70-90%): Orange (#f57c00) - ratio 0.1-0.3 (70-90% decrease)
+        # Low (50-70%): Yellow (#fbc02d) - ratio 0.3-0.5 (50-70% decrease)
+        # Uncertain (<50%): Gray (#9e9e9e) - ratio 0.5-1.0 (<50% decrease)
         
         high_risk = flood_mask.And(confidence_score.gte(90))
         medium_risk = flood_mask.And(confidence_score.gte(70)).And(confidence_score.lt(90))

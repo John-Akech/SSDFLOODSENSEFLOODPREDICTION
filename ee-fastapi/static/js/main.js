@@ -850,6 +850,16 @@ function toggleLayerGroup(groupType) {
     }
 
     const isVisible = checkbox.checked;
+    
+    console.log(`Toggle ${groupType} - Checked: ${isVisible}`);
+    console.log('Layer status:', {
+        layerFlood: layerFlood ? 'exists' : 'null',
+        layerBefore: layerBefore ? 'exists' : 'null',
+        layerAfter: layerAfter ? 'exists' : 'null',
+        layerWater: layerWater ? 'exists' : 'null',
+        layerSlope: layerSlope ? 'exists' : 'null',
+        map: map ? 'exists' : 'null'
+    });
 
     // Toggle legend items visibility
     const items = document.querySelectorAll(`.legend-item[data-layer="${groupType}"]`);
@@ -861,7 +871,9 @@ function toggleLayerGroup(groupType) {
     if (groupType === 'flood') {
         if (layerFlood) {
             layerFlood.setVisible(isVisible);
-            console.log(`Flood layer visibility: ${isVisible}`);
+            console.log(`✓ Flood layer visibility set to: ${isVisible}`);
+        } else {
+            console.warn('⚠ Flood layer does not exist yet - run detection first');
         }
         // Sync old checkbox
         const oldCheckbox = document.getElementById('toggleFlood');
@@ -870,11 +882,15 @@ function toggleLayerGroup(groupType) {
     } else if (groupType === 'sar') {
         if (layerBefore) {
             layerBefore.setVisible(isVisible);
-            console.log(`Before layer visibility: ${isVisible}`);
+            console.log(`✓ Before layer visibility set to: ${isVisible}`);
+        } else {
+            console.warn('⚠ Before layer does not exist yet');
         }
         if (layerAfter) {
             layerAfter.setVisible(isVisible);
-            console.log(`After layer visibility: ${isVisible}`);
+            console.log(`✓ After layer visibility set to: ${isVisible}`);
+        } else {
+            console.warn('⚠ After layer does not exist yet');
         }
         // Sync old checkboxes
         const beforeCheckbox = document.getElementById('toggleBefore');
@@ -886,17 +902,24 @@ function toggleLayerGroup(groupType) {
         // Toggle reference layers (permanent water and high slope)
         if (layerWater) {
             layerWater.setVisible(isVisible);
-            console.log(`Water layer visibility: ${isVisible}`);
+            console.log(`✓ Water layer visibility set to: ${isVisible}`);
+        } else {
+            console.warn('⚠ Water layer does not exist yet');
         }
         if (layerSlope) {
             layerSlope.setVisible(isVisible);
-            console.log(`Slope layer visibility: ${isVisible}`);
+            console.log(`✓ Slope layer visibility set to: ${isVisible}`);
+        } else {
+            console.warn('⚠ Slope layer does not exist yet');
         }
     }
-    
+
     // Force map to re-render
     if (map) {
         map.render();
+        console.log('✓ Map refreshed');
+    } else {
+        console.error('✗ Map object not found!');
     }
 }
 
@@ -1102,7 +1125,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (floatingLegend) {
         floatingLegend.classList.add('active');
     }
-    
+
     // Initialize legend
     updateLegendStatus('pending');
 });
