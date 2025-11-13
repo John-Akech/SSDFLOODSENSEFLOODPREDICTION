@@ -800,11 +800,11 @@ function toggleFloatingLegend() {
 function toggleLayerGroup(groupType) {
     const checkbox = document.getElementById(`toggle${groupType.charAt(0).toUpperCase() + groupType.slice(1)}Layers`);
     const items = document.querySelectorAll(`.legend-item[data-layer="${groupType}"]`);
-    
+
     items.forEach(item => {
         item.style.display = checkbox.checked ? 'flex' : 'none';
     });
-    
+
     // Toggle actual map layers if they exist
     if (groupType === 'flood' && layerFlood) {
         layerFlood.setVisible(checkbox.checked);
