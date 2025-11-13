@@ -848,19 +848,42 @@
         }
 
         .legend-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            color: #333;
+            color: #1a1a2e;
             margin-bottom: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .legend-title input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .legend-title label {
+            cursor: pointer;
+            flex: 1;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            margin-bottom: 8px;
-            font-size: 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            padding-left: 26px;
+            transition: all 0.2s ease;
+        }
+
+        .legend-item:hover {
+            transform: translateX(4px);
         }
 
         .legend-item:last-child {
@@ -868,20 +891,20 @@
         }
 
         .legend-color {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
-            margin-right: 12px;
-            border: 3px solid #fff;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            margin-right: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2), 0 2px 4px rgba(0, 0, 0, 0.1);
             flex-shrink: 0;
             position: relative;
         }
 
         .legend-label {
-            color: #555;
+            color: #444;
             font-weight: 600;
-            line-height: 1.4;
+            line-height: 1.5;
         }
 
         /* SAR Imagery Colors - High Contrast */
@@ -1172,62 +1195,63 @@
     <!-- Floating Legend Overlay -->
     <div class="floating-legend" id="floatingLegend">
         <div class="legend-header">
-            <h3>Map Legend</h3>
+            <h3>Map Layers</h3>
             <button class="legend-close" onclick="toggleFloatingLegend()">×</button>
         </div>
 
-        <!-- Flood Detection Legend (Most Important) -->
+        <!-- Flood Detection Layers (Toggleable) -->
         <div class="legend-group">
-            <h4 class="legend-title">Flood Detection</h4>
-            <div class="legend-item">
-                <div class="legend-color flood-high"></div>
-                <span class="legend-label">High Confidence (>90%)</span>
+            <h4 class="legend-title">
+                <input type="checkbox" id="toggleFloodLayers" checked onchange="toggleLayerGroup('flood')">
+                <label for="toggleFloodLayers">Flood Detection</label>
+            </h4>
+            <div class="legend-item" data-layer="flood">
+                <div class="legend-color" style="background: linear-gradient(135deg, #d32f2f 0%, #f44336 100%);"></div>
+                <span class="legend-label">High Risk (>90%)</span>
             </div>
-            <div class="legend-item">
-                <div class="legend-color flood-medium"></div>
+            <div class="legend-item" data-layer="flood">
+                <div class="legend-color" style="background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);"></div>
                 <span class="legend-label">Medium (70-90%)</span>
             </div>
-            <div class="legend-item">
-                <div class="legend-color flood-low"></div>
+            <div class="legend-item" data-layer="flood">
+                <div class="legend-color" style="background: linear-gradient(135deg, #fbc02d 0%, #ffeb3b 100%);"></div>
                 <span class="legend-label">Low (50-70%)</span>
             </div>
-            <div class="legend-item">
-                <div class="legend-color flood-uncertain"></div>
-                <span class="legend-label">Uncertain (<50%)< /span>
+            <div class="legend-item" data-layer="flood">
+                <div class="legend-color" style="background: linear-gradient(135deg, #9e9e9e 0%, #bdbdbd 100%);"></div>
+                <span class="legend-label">Uncertain (<50%)</span>
             </div>
         </div>
 
-        <!-- SAR Imagery Legend -->
+        <!-- SAR Imagery Layers (Toggleable) -->
         <div class="legend-group">
-            <h4 class="legend-title">SAR Imagery</h4>
-            <div class="legend-item">
-                <div class="legend-color sar-before"></div>
-                <span class="legend-label">Before Flood</span>
+            <h4 class="legend-title">
+                <input type="checkbox" id="toggleSARLayers" checked onchange="toggleLayerGroup('sar')">
+                <label for="toggleSARLayers">SAR Imagery</label>
+            </h4>
+            <div class="legend-item" data-layer="sar">
+                <div class="legend-color" style="background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);"></div>
+                <span class="legend-label">Before Flood (Baseline)</span>
             </div>
-            <div class="legend-item">
-                <div class="legend-color sar-after"></div>
-                <span class="legend-label">After Flood</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color sar-difference"></div>
-                <span class="legend-label">Change Detection</span>
+            <div class="legend-item" data-layer="sar">
+                <div class="legend-color" style="background: linear-gradient(135deg, #7b1fa2 0%, #9c27b0 100%);"></div>
+                <span class="legend-label">After Flood (Current)</span>
             </div>
         </div>
 
-        <!-- Terrain Features -->
+        <!-- Reference Layers (Toggleable) -->
         <div class="legend-group">
-            <h4 class="legend-title">Terrain</h4>
-            <div class="legend-item">
-                <div class="legend-color water-permanent"></div>
-                <span class="legend-label">Permanent Water</span>
+            <h4 class="legend-title">
+                <input type="checkbox" id="toggleReferenceLayers" onchange="toggleLayerGroup('reference')">
+                <label for="toggleReferenceLayers">Reference Data</label>
+            </h4>
+            <div class="legend-item" data-layer="reference">
+                <div class="legend-color" style="background: linear-gradient(135deg, #0097a7 0%, #00bcd4 100%);"></div>
+                <span class="legend-label">Permanent Water Bodies</span>
             </div>
-            <div class="legend-item">
-                <div class="legend-color slope-high"></div>
-                <span class="legend-label">High Slope</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color urban"></div>
-                <span class="legend-label">Urban Areas</span>
+            <div class="legend-item" data-layer="reference">
+                <div class="legend-color" style="background: linear-gradient(135deg, #5d4037 0%, #795548 100%);"></div>
+                <span class="legend-label">High Slope Areas</span>
             </div>
         </div>
     </div>
