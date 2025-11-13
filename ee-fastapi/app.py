@@ -307,7 +307,22 @@ async def flood_download(request: FloodDetectionRequest):
         # Run flood detection
         logger.info(f"Processing flood detection for bbox: {request.bbox}")
         dict_db = db_creator(base_period, flood_period, ee_rectangle)
+        
+        # Check if image collection failed
+        if dict_db.get("status") in ["no_baseline_images", "no_flood_images"]:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=dict_db.get("message", "No satellite images available for the selected time period")
+            )
+        
         flood_added = flood_estimation(dict_db, difference_threshold=request.flood_threshold)
+        
+        # Check if no flood was detected
+        if flood_added.get("status") == "no_flood_detected":
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No flood areas detected in the selected region and time period"
+            )
         
         # Generate output filename
         timestamp = time.strftime("%Y%m%d%H%M%S", time.gmtime())

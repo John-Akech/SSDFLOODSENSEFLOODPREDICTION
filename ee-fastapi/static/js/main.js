@@ -317,7 +317,16 @@ document.getElementById('download').addEventListener('click', function () {
             if (response.ok) {
                 return response.blob();
             } else {
-                return response.json().then(err => { throw new Error(err.detail); });
+                // Try to parse as JSON, but handle HTML error pages
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(err => { 
+                        throw new Error(err.detail || 'Download failed'); 
+                    });
+                } else {
+                    // Got HTML error page instead of JSON
+                    throw new Error(`Server error (${response.status}): Unable to generate flood data. Please try again or adjust detection parameters.`);
+                }
             }
         })
         .then(blob => {
@@ -333,7 +342,7 @@ document.getElementById('download').addEventListener('click', function () {
             document.getElementById('download').disabled = false;
         })
         .catch(error => {
-            console.error(error);
+            console.error('Download error:', error);
             alert('Download failed: ' + error.message);
             document.getElementById('loading').classList.remove('active');
             document.getElementById('download').disabled = false;
@@ -833,24 +842,24 @@ function detectFlood() {
             // Set initial visibility based on legend checkbox states
             const floodCheckbox = document.getElementById('toggleFloodLayers');
             const sarCheckbox = document.getElementById('toggleSarLayers');
-            
+
             if (floodCheckbox) {
                 layerFlood.setVisible(floodCheckbox.checked);
             }
-            
+
             if (sarCheckbox) {
                 layerBefore.setVisible(sarCheckbox.checked);
                 layerAfter.setVisible(sarCheckbox.checked);
             }
-            
+
             // Set initial opacity based on legend sliders
             const floodOpacitySlider = document.getElementById('floodOpacitySlider');
             const sarOpacitySlider = document.getElementById('sarOpacitySlider');
-            
+
             if (floodOpacitySlider) {
                 layerFlood.setOpacity(floodOpacitySlider.value / 100);
             }
-            
+
             if (sarOpacitySlider) {
                 const sarOpacity = sarOpacitySlider.value / 100;
                 layerBefore.setOpacity(sarOpacity);
