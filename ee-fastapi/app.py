@@ -376,10 +376,8 @@ async def extract_features(request: FeatureExtractionRequest):
                 maxPixels=1e9
             ).getInfo()
         except (socket.timeout, Exception) as e:
-            logger.warning(f"SAR data fetch timeout/error: {e}. Using default values.")
-            # Use reasonable default values for South Sudan
-            sar_vv = {'VV_mean': -12.5, 'VV_stdDev': 2.0, 'VV_min': -20.0, 'VV_max': -8.0}
-            sar_vh = {'VH_mean': -18.5, 'VH_stdDev': 2.5, 'VH_min': -25.0, 'VH_max': -14.0}
+            logger.error(f"SAR data fetch failed: {e}")
+            raise HTTPException(status_code=503, detail=f"Failed to fetch SAR data from Google Earth Engine: {str(e)}")
         
         # Precipitation (CHIRPS) with timeout handling
         try:
@@ -394,8 +392,8 @@ async def extract_features(request: FeatureExtractionRequest):
                     maxPixels=1e9
                 ).getInfo()
         except (socket.timeout, Exception) as e:
-            logger.warning(f"Precipitation fetch timeout/error: {e}. Using default value.")
-            precip = {'precipitation': 150.0}  # Average 30-day precipitation for South Sudan
+            logger.error(f"Precipitation data fetch failed: {e}")
+            raise HTTPException(status_code=503, detail=f"Failed to fetch precipitation data from Google Earth Engine: {str(e)}")
         
         # Elevation (SRTM) with timeout handling
         try:
@@ -407,8 +405,8 @@ async def extract_features(request: FeatureExtractionRequest):
                     maxPixels=1e9
                 ).getInfo()
         except (socket.timeout, Exception) as e:
-            logger.warning(f"Elevation fetch timeout/error: {e}. Using default value.")
-            elevation = {'elevation_mean': 450.0, 'elevation_stdDev': 50.0}  # Typical South Sudan elevation
+            logger.error(f"Elevation data fetch failed: {e}")
+            raise HTTPException(status_code=503, detail=f"Failed to fetch elevation data from Google Earth Engine: {str(e)}")
         
         # Water occurrence (JRC) with timeout handling
         try:
@@ -420,8 +418,8 @@ async def extract_features(request: FeatureExtractionRequest):
                     maxPixels=1e9
                 ).getInfo()
         except (socket.timeout, Exception) as e:
-            logger.warning(f"Water occurrence fetch timeout/error: {e}. Using default value.")
-            water = {'occurrence': 5.0}  # Low water occurrence typical for South Sudan
+            logger.error(f"Water occurrence data fetch failed: {e}")
+            raise HTTPException(status_code=503, detail=f"Failed to fetch water occurrence data from Google Earth Engine: {str(e)}")
         
         # Return features
         features = {

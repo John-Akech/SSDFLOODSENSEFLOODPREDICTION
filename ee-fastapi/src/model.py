@@ -369,8 +369,8 @@ def calculate_image_quality(image: ee.Image, aoi) -> Dict:
             "quality_score": round(quality_score, 3)
         }
     except Exception as e:
-        logger.warning(f"Could not calculate image quality: {e}")
-        return {"quality_score": 0.5}  # Default moderate quality
+        logger.error(f"Could not calculate image quality: {e}")
+        return {"quality_score": 0.0}  # Quality calculation failed
 
 
 def flood_estimation(
@@ -499,21 +499,16 @@ def flood_estimation(
                     raw_count = patch_stats.get('labels', 0) if patch_stats else 0
                     flood_patches = max(1, raw_count - 1) if raw_count > 1 else 1
                     
-                    # If patch count seems unreasonably high (>100), estimate from area
+                    # If patch count seems unreasonably high (>100), it indicates noise
+                    # Don't estimate - return actual count for transparency
                     if flood_patches > 100:
-                        # Likely too many small patches = noise
-                        # Estimate: assume average patch is ~5 hectares
-                        flood_patches = max(1, int(flood_area_ha / 5))
+                        logger.warning(f"High patch count detected ({flood_patches}), may indicate noisy data")
                         
                 else:
                     flood_patches = 0
             except Exception as e:
-                logger.warning(f"Error calculating flood patches: {e}")
-                # Fallback: estimate from area (assume average patch is ~10 hectares)
-                if flood_area_ha > 0:
-                    flood_patches = max(1, int(flood_area_ha / 10))
-                else:
-                    flood_patches = 0
+                logger.error(f"Error calculating flood patches: {e}")
+                flood_patches = 0  # Set to 0 if calculation fails
             
             # Calculate DYNAMIC confidence based on actual flood detection
             try:
@@ -587,15 +582,14 @@ def flood_estimation(
                     confidence = 0.0
                     
             except Exception as e:
-                logger.warning(f"Error calculating dynamic confidence: {e}")
-                # Fallback: if flood area exists but confidence calc failed
-                confidence = 50.0 if flood_area_ha > 0 else 0.0
+                logger.error(f"Error calculating dynamic confidence: {e}")
+                confidence = 0.0  # Set to 0 if calculation fails
             
             dict_db["flood_area_stats"] = {
                 "area_hectares": round(flood_area_ha, 2),
                 "mean_confidence": round(confidence, 1),
                 "flood_patches": int(flood_patches) if flood_patches else 0,
-                "quality_score": 0.75
+                "quality_score": round(confidence / 100.0, 2)  # Derive from actual confidence
             }
         
         logger.info("Flood estimation completed")
