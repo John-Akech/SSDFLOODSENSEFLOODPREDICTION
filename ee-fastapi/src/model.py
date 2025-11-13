@@ -404,27 +404,49 @@ def flood_estimation(
 
         logger.info("Calculating flood detection...")
         
-        # Simple ratio-based change detection (fastest method)
+        # Ratio-based change detection
+        # In SAR: water = low backscatter (dark), land = high backscatter (bright)
+        # When flooding: backscatter decreases, so ratio (after/before) < 1
         ratio_difference = after_filtered.divide(before_filtered)
         
-        # Basic thresholding
-        flood_mask = ratio_difference.gt(difference_threshold)
+        # Detect areas where backscatter DECREASED (ratio < threshold)
+        # For flood detection, threshold should be < 1 (e.g., 0.8 means 20% decrease)
+        # But for compatibility with existing API using > 1 values, we invert the logic
+        if difference_threshold > 1:
+            # User passed threshold > 1 (e.g., 1.25), convert to ratio < 1
+            # 1.25 means we want 25% decrease = ratio of 0.8 (1/1.25)
+            actual_threshold = 1.0 / difference_threshold
+            flood_mask = ratio_difference.lt(actual_threshold)
+        else:
+            # User passed threshold < 1 already (e.g., 0.8)
+            flood_mask = ratio_difference.lt(difference_threshold)
         
-        # Fast post-processing
+        # Post-processing to reduce false positives
         logger.info("Applying post-processing...")
         
-        # Remove permanent water bodies (quick check)
+        # 1. Remove permanent water bodies
         swater = ee.Image('JRC/GSW1_0/GlobalSurfaceWater').select('seasonality')
         swater_mask = swater.gte(10)
         flooded_no_permanent = flood_mask.where(swater_mask, 0)
         
-        # Apply simple slope mask
+        # 2. Apply slope mask (floods don't occur on steep slopes)
         DEM = ee.Image('WWF/HydroSHEDS/03VFDEM')
         slope = ee.Algorithms.Terrain(DEM).select('slope')
         flooded_no_slope = flooded_no_permanent.updateMask(slope.lt(5))
         
-        # Skip expensive morphological operations and area filtering for speed
-        flooded = flooded_no_slope.updateMask(flooded_no_slope)
+        # 3. Apply morphological filtering to remove noise
+        # Opening operation: erosion followed by dilation removes small patches
+        kernel = ee.Kernel.circle(radius=1)  # Small kernel for noise removal
+        flooded_eroded = flooded_no_slope.focal_min(kernel=kernel, iterations=1)
+        flooded_opened = flooded_eroded.focal_max(kernel=kernel, iterations=1)
+        
+        # 4. Remove very small patches (likely noise)
+        # Connected component analysis
+        connections = flooded_opened.connectedPixelCount(maxSize=100, eightConnected=True)
+        # Keep only patches with at least 10 connected pixels (~1 hectare at 10m resolution)
+        flooded_filtered = flooded_opened.updateMask(connections.gte(10))
+        
+        flooded = flooded_filtered.unmask(0).selfMask()
         flooded = flooded.rename('flood')
         
         dict_db["flood_results"] = flooded
