@@ -789,8 +789,8 @@ function detectFlood() {
                 // Try to parse as JSON, but handle HTML error pages
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
-                    return response.json().then(err => { 
-                        throw new Error(err.detail || 'Detection failed'); 
+                    return response.json().then(err => {
+                        throw new Error(err.detail || 'Detection failed');
                     });
                 } else {
                     // Got HTML error page instead of JSON
