@@ -782,7 +782,21 @@ function detectFlood() {
         })
         .then(response => {
             clearTimeout(timeoutId);
-            console.log('Flood detection completed');
+            console.log('✅ Flood detection completed successfully');
+            console.log('📊 Detection Results:', {
+                flood_area_ha: response.flood_area_ha,
+                flood_patches: response.flood_patches,
+                confidence: response.confidence,
+                processing_time: response.processing_time
+            });
+            
+            // Log tile URLs for verification
+            console.log('🗺️ Tile URLs:', {
+                before: response.before_tile ? 'loaded' : 'missing',
+                after: response.after_tile ? 'loaded' : 'missing',
+                flood: response.flood_tile ? 'loaded' : 'missing'
+            });
+            
             // Process the response data
             var bflood = new ol.layer.Tile({
                 source: new ol.source.XYZ({ url: response.before_tile }),
@@ -800,10 +814,18 @@ function detectFlood() {
             map.addLayer(bflood);
             map.addLayer(aflood);
             map.addLayer(final);
+            
+            console.log('✓ Layers added to map');
 
             if (response.flood_area_ha) {
                 document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
                 document.getElementById('result').classList.add('active');
+                
+                if (response.flood_area_ha > 0) {
+                    console.log(`🌊 Flood area detected: ${response.flood_area_ha.toFixed(2)} hectares`);
+                } else {
+                    console.warn('⚠️ No significant flood area detected (0 hectares)');
+                }
             }
 
             document.getElementById('loading').classList.remove('active');
@@ -850,7 +872,7 @@ function toggleLayerGroup(groupType) {
     }
 
     const isVisible = checkbox.checked;
-    
+
     console.log(`Toggle ${groupType} - Checked: ${isVisible}`);
     console.log('Layer status:', {
         layerFlood: layerFlood ? 'exists' : 'null',

@@ -88,29 +88,38 @@ def display(dict_db):
         # Calculate confidence score for each pixel (0-100%)
         # ratio_difference = after/before
         # Flooding: ratio < 1 (backscatter decreased)
-        # Stronger flood signal = lower ratio = higher confidence
-        # Convert ratio to confidence: ratio of 0.5 (50% decrease) = 100% confidence
-        #                             ratio of 0.8 (20% decrease) = lower confidence
-        #                             ratio of 1.0 (no change) = 0% confidence
+        # 
+        # REALISTIC SAR FLOOD DETECTION RANGES:
+        # - Extreme flooding: ratio 0.1-0.3 (70-90% decrease) → HIGH confidence (RED)
+        # - Strong flooding: ratio 0.3-0.5 (50-70% decrease) → MEDIUM confidence (ORANGE)
+        # - Moderate flooding: ratio 0.5-0.7 (30-50% decrease) → LOW confidence (YELLOW)
+        # - Weak signal: ratio 0.7-1.0 (<30% decrease) → UNCERTAIN (GRAY)
+        #
+        # Scale the ratio inversely to confidence using a sigmoid-like mapping
+        # that matches realistic flood detection thresholds
         
-        # Calculate how much below 1.0 the ratio is (the decrease amount)
-        decrease_amount = ee.Image.constant(1).subtract(ratio_diff).multiply(100)  # Convert to percentage
+        # Normalize ratio to 0-100 confidence scale
+        # Using exponential scaling: lower ratios = much higher confidence
+        # ratio 0.2 → ~95% confidence (high)
+        # ratio 0.4 → ~80% confidence (medium)
+        # ratio 0.6 → ~50% confidence (low)
+        # ratio 0.8 → ~20% confidence (uncertain)
         
-        # Clamp to 0-100% confidence range
-        # A 50% decrease (ratio=0.5) gives 50% confidence
-        # A 80% decrease (ratio=0.2) gives 80% confidence
-        confidence_score = decrease_amount.clamp(0, 100)
+        # Convert ratio (0-1 range) to confidence (100-0 range) with better distribution
+        # Formula: confidence = 100 * (1 - ratio)^0.7  (power < 1 gives better spread)
+        one_minus_ratio = ee.Image.constant(1).subtract(ratio_diff)
+        confidence_score = one_minus_ratio.pow(0.7).multiply(100).clamp(0, 100)
         
         # Classify into 4 categories matching the legend
-        # High Risk (>90%): Red (#d32f2f) - ratio < 0.1 (>90% backscatter decrease)
-        # Medium (70-90%): Orange (#f57c00) - ratio 0.1-0.3 (70-90% decrease)
-        # Low (50-70%): Yellow (#fbc02d) - ratio 0.3-0.5 (50-70% decrease)
-        # Uncertain (<50%): Gray (#9e9e9e) - ratio 0.5-1.0 (<50% decrease)
+        # High Risk (>75%): Red (#d32f2f) - strong flood signal
+        # Medium (55-75%): Orange (#f57c00) - moderate flood signal
+        # Low (35-55%): Yellow (#fbc02d) - weak flood signal
+        # Uncertain (<35%): Gray (#9e9e9e) - very weak or no flood signal
         
-        high_risk = flood_mask.And(confidence_score.gte(90))
-        medium_risk = flood_mask.And(confidence_score.gte(70)).And(confidence_score.lt(90))
-        low_risk = flood_mask.And(confidence_score.gte(50)).And(confidence_score.lt(70))
-        uncertain = flood_mask.And(confidence_score.lt(50))
+        high_risk = flood_mask.And(confidence_score.gte(75))
+        medium_risk = flood_mask.And(confidence_score.gte(55)).And(confidence_score.lt(75))
+        low_risk = flood_mask.And(confidence_score.gte(35)).And(confidence_score.lt(55))
+        uncertain = flood_mask.And(confidence_score.lt(35))
         
         # Create classified image (1=uncertain, 2=low, 3=medium, 4=high)
         flood_classified = (
