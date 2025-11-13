@@ -299,9 +299,9 @@ async def gee_authenticate(project_id: Optional[str] = None):
             detail=f"Authentication failed: {str(e)}"
         )
 
-@app.post("/flood_download", tags=["Flood Detection"])
-async def flood_download(request: FloodDetectionRequest, db: Session = Depends(get_db)):
-    """Download flood detection results as GeoPackage and save to database."""
+@app.post("/flood_detect", tags=["Flood Detection"])
+async def flood_detect(request: FloodDetectionRequest, db: Session = Depends(get_db)):
+    """Run flood detection and save results to database (no direct download)."""
     if not gee_initialized:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -350,7 +350,7 @@ async def flood_download(request: FloodDetectionRequest, db: Session = Depends(g
         filename = f'flood_area_{timestamp}.gpkg'
         output_path = output_dir / filename
         
-        # Convert to vector and save
+        # Convert to vector and save temporarily
         logger.info("Converting raster to vector...")
         final_flood_area = raster_to_vector(flood_added["flood_results"], ee_rectangle)
         
@@ -373,47 +373,163 @@ async def flood_download(request: FloodDetectionRequest, db: Session = Depends(g
                 detail="No flood areas detected after filtering"
             )
         
+        # Save temporarily to file for database storage
         flood_only.to_file(str(output_path), driver="GPKG")
-        logger.info(f"Saved flood data to {output_path}")
+        logger.info(f"Temporarily saved flood data to {output_path}")
         
         # Calculate processing time
         processing_time = time.time() - start_time
         
         # Save to database
-        try:
-            saved_detection = save_flood_detection(
-                db=db,
-                bbox=request.bbox,
-                baseline_start=baseline_start,
-                baseline_end=baseline_end,
-                flood_start=flood_start,
-                flood_end=flood_end,
-                polarization="VV",  # Default from frontend
-                threshold=request.flood_threshold,
-                detection_results=flood_added,
-                geopackage_path=str(output_path),
-                geojson_data=final_flood_area,
-                processing_time=processing_time,
-                user_id=None  # TODO: Add user authentication
-            )
-            logger.info(f"Saved to database with ID: {saved_detection.id}")
-        except Exception as db_error:
-            logger.error(f"Database save failed (non-critical): {db_error}")
-            # Continue even if database save fails
+        saved_detection = save_flood_detection(
+            db=db,
+            bbox=request.bbox,
+            baseline_start=baseline_start,
+            baseline_end=baseline_end,
+            flood_start=flood_start,
+            flood_end=flood_end,
+            polarization="VV",  # Default from frontend
+            threshold=request.flood_threshold,
+            detection_results=flood_added,
+            geopackage_path=str(output_path),
+            geojson_data=final_flood_area,
+            processing_time=processing_time,
+            user_id=None  # TODO: Add user authentication
+        )
+        logger.info(f"Saved to database with ID: {saved_detection.id}")
         
+        # Clean up temporary file
+        try:
+            output_path.unlink()
+            logger.info(f"Removed temporary file: {output_path}")
+        except Exception as e:
+            logger.warning(f"Could not remove temporary file: {e}")
+        
+        # Return detection information (not the file)
+        return {
+            "detection_id": saved_detection.id,
+            "status": saved_detection.status,
+            "confidence": saved_detection.confidence,
+            "classification": saved_detection.classification,
+            "flood_area_hectares": saved_detection.flood_area_hectares,
+            "flood_percentage": saved_detection.flood_percentage,
+            "flood_patches": saved_detection.flood_patches,
+            "processing_time_seconds": saved_detection.processing_time_seconds,
+            "created_at": saved_detection.created_at.isoformat(),
+            "message": f"Flood detection saved to database. Use detection_id={saved_detection.id} to download."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in flood_detect: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Flood detection failed: {str(e)}"
+        )
+
+@app.get("/flood_download/{detection_id}", tags=["Flood Detection"])
+async def flood_download(detection_id: int, db: Session = Depends(get_db)):
+    """Download flood detection geopackage from database by ID."""
+    try:
+        # Import the function to get detection
+        from src.database import get_detection_by_id
+        
+        # Retrieve detection from database
+        detection = get_detection_by_id(db, detection_id)
+        
+        if not detection:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Flood detection with ID {detection_id} not found"
+            )
+        
+        if not detection.geopackage_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No geopackage data found for detection ID {detection_id}"
+            )
+        
+        # Create temporary file from database binary data
+        timestamp = detection.created_at.strftime("%Y%m%d%H%M%S")
+        filename = f'flood_area_{timestamp}.gpkg'
+        temp_path = output_dir / filename
+        
+        # Write binary data to file
+        with open(temp_path, 'wb') as f:
+            f.write(detection.geopackage_data)
+        
+        logger.info(f"Downloaded detection ID {detection_id} from database")
+        
+        # Return file and clean up after sending
         return FileResponse(
-            path=str(output_path),
+            path=str(temp_path),
             filename=filename,
-            media_type="application/geopackage+sqlite3"
+            media_type="application/geopackage+sqlite3",
+            background=lambda: temp_path.unlink() if temp_path.exists() else None
         )
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error in flood_download: {str(e)}")
+        logger.error(f"Error downloading from database: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Flood detection failed: {str(e)}"
+            detail=f"Download failed: {str(e)}"
+        )
+
+@app.get("/flood_detections", tags=["Flood Detection"])
+async def list_flood_detections(
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db)
+):
+    """List all flood detections stored in database."""
+    try:
+        from sqlalchemy import desc
+        from src.database import SARFloodDetection
+        
+        # Query detections ordered by most recent
+        detections = db.query(SARFloodDetection)\
+            .order_by(desc(SARFloodDetection.created_at))\
+            .offset(skip)\
+            .limit(limit)\
+            .all()
+        
+        # Return summary without binary data
+        results = []
+        for d in detections:
+            results.append({
+                "detection_id": d.id,
+                "bbox": d.bbox,
+                "baseline_period": f"{d.baseline_start.date()} to {d.baseline_end.date()}",
+                "flood_period": f"{d.flood_start.date()} to {d.flood_end.date()}",
+                "status": d.status,
+                "confidence": d.confidence,
+                "classification": d.classification,
+                "flood_area_hectares": d.flood_area_hectares,
+                "flood_percentage": d.flood_percentage,
+                "flood_patches": d.flood_patches,
+                "threshold": d.threshold,
+                "polarization": d.polarization,
+                "processing_time_seconds": d.processing_time_seconds,
+                "created_at": d.created_at.isoformat(),
+                "has_geopackage": d.geopackage_data is not None,
+                "geopackage_size_kb": len(d.geopackage_data) / 1024 if d.geopackage_data else 0
+            })
+        
+        return {
+            "total": len(results),
+            "skip": skip,
+            "limit": limit,
+            "detections": results
+        }
+        
+    except Exception as e:
+        logger.error(f"Error listing detections: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to list detections: {str(e)}"
         )
 
 @app.post("/flood_display", response_model=FloodDetectionResponse, tags=["Flood Detection"])

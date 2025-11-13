@@ -267,6 +267,7 @@ document.getElementById('undo').addEventListener('click', function () {
 var downloadController = null;
 var downloadProgress = 0;
 var downloadBlob = null;
+var lastDetectionId = null;
 
 document.getElementById('download').addEventListener('click', function () {
     if (!isAuthenticated) {
@@ -300,7 +301,8 @@ document.getElementById('download').addEventListener('click', function () {
 
     downloadController = new AbortController();
 
-    fetch(`${baseUrl}/flood_download`, {
+    // Step 1: Detect and save to database
+    fetch(`${baseUrl}/flood_detect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -315,17 +317,77 @@ document.getElementById('download').addEventListener('click', function () {
     })
         .then(response => {
             if (response.ok) {
+                return response.json();
+            } else {
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(err => {
+                        throw new Error(err.detail || 'Detection failed');
+                    });
+                } else {
+                    throw new Error(`Server error (${response.status}): Unable to generate flood data. Please try again or adjust detection parameters.`);
+                }
+            }
+        })
+        .then(result => {
+            // Detection saved to database
+            lastDetectionId = result.detection_id;
+            console.log('Detection saved with ID:', lastDetectionId);
+            
+            // Show success message with detection info
+            alert(`Flood detection completed!\n\n` +
+                  `Status: ${result.status}\n` +
+                  `Confidence: ${result.confidence}%\n` +
+                  `Classification: ${result.classification}\n` +
+                  `Flood Area: ${result.flood_area_hectares} hectares\n` +
+                  `Flood Percentage: ${result.flood_percentage}%\n` +
+                  `Patches: ${result.flood_patches}\n\n` +
+                  `Data saved to database (ID: ${result.detection_id})\n` +
+                  `Click "Download from Database" to get the file.`);
+            
+            // Enable download from database button
+            const downloadFromDbBtn = document.getElementById('downloadFromDb');
+            if (downloadFromDbBtn) {
+                downloadFromDbBtn.disabled = false;
+                downloadFromDbBtn.style.display = 'inline-block';
+            }
+            
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('download').disabled = false;
+        })
+        .catch(error => {
+            console.error('Detection error:', error);
+            alert('Detection failed: ' + error.message);
+            document.getElementById('loading').classList.remove('active');
+            document.getElementById('download').disabled = false;
+        });
+});
+
+// New button to download from database
+document.getElementById('downloadFromDb')?.addEventListener('click', function () {
+    if (!lastDetectionId) {
+        alert('No detection available. Please run flood detection first.');
+        return;
+    }
+    
+    document.getElementById('loading').classList.add('active');
+    this.disabled = true;
+    
+    // Step 2: Download from database using detection_id
+    fetch(`${baseUrl}/flood_download/${lastDetectionId}`, {
+        method: 'GET',
+    })
+        .then(response => {
+            if (response.ok) {
                 return response.blob();
             } else {
-                // Try to parse as JSON, but handle HTML error pages
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
                     return response.json().then(err => {
                         throw new Error(err.detail || 'Download failed');
                     });
                 } else {
-                    // Got HTML error page instead of JSON
-                    throw new Error(`Server error (${response.status}): Unable to generate flood data. Please try again or adjust detection parameters.`);
+                    throw new Error(`Server error (${response.status}): Unable to download from database.`);
                 }
             }
         })
@@ -334,18 +396,18 @@ document.getElementById('download').addEventListener('click', function () {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `flood_area_${Date.now()}.gpkg`;
+            a.download = `flood_area_${lastDetectionId}.gpkg`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
             document.getElementById('loading').classList.remove('active');
-            document.getElementById('download').disabled = false;
+            this.disabled = false;
         })
         .catch(error => {
             console.error('Download error:', error);
             alert('Download failed: ' + error.message);
             document.getElementById('loading').classList.remove('active');
-            document.getElementById('download').disabled = false;
+            this.disabled = false;
         });
 });
 
