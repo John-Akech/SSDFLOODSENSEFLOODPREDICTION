@@ -103,8 +103,8 @@ def raster_to_vector(image: ee.Image, geom: ee.Geometry) -> dict:
         processed_geom = geom.simplify(maxError=100)  # 100m tolerance
         bounds = processed_geom.bounds()
         
-        # Calculate area to adjust scale dynamically
-        area = bounds.area().divide(1e6).getInfo()  # Area in km²
+        # Calculate area to adjust scale dynamically (with error margin for geometry operations)
+        area = bounds.area(maxError=100).divide(1e6).getInfo()  # Area in km²
         logger.info(f"Converting raster to vector for area: {area:.2f} km²")
         
         # Adjust scale based on area to prevent too many features
