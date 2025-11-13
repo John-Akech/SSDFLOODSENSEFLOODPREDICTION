@@ -282,9 +282,17 @@ async def flood_display(request: FloodDetectionRequest):
         flood_period = (request.flood_start, request.flood_last)
         
         # Run flood detection
-        logger.info(f"Displaying flood detection for bbox: {request.bbox}")
+        logger.info(f"========== FLOOD DETECTION START ==========")
+        logger.info(f"Baseline period: {base_period[0]} to {base_period[1]}")
+        logger.info(f"Flood period: {flood_period[0]} to {flood_period[1]}")
+        logger.info(f"Bbox: {request.bbox}")
+        logger.info(f"Threshold: {request.flood_threshold}")
+        
         dict_db = db_creator(base_period, flood_period, ee_rectangle)
+        logger.info(f"Images collected - Before count: {dict_db.get('before_count')}, After count: {dict_db.get('after_count')}")
+        
         flood_added = flood_estimation(dict_db, difference_threshold=request.flood_threshold)
+        logger.info(f"========== FLOOD DETECTION COMPLETE ==========")
         
         # Generate tile URLs
         tileids = display(flood_added)
