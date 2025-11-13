@@ -320,8 +320,8 @@ document.getElementById('download').addEventListener('click', function () {
                 // Try to parse as JSON, but handle HTML error pages
                 const contentType = response.headers.get('content-type');
                 if (contentType && contentType.includes('application/json')) {
-                    return response.json().then(err => { 
-                        throw new Error(err.detail || 'Download failed'); 
+                    return response.json().then(err => {
+                        throw new Error(err.detail || 'Download failed');
                     });
                 } else {
                     // Got HTML error page instead of JSON
@@ -786,7 +786,16 @@ function detectFlood() {
             if (response.ok) {
                 return response.json();
             } else {
-                return response.json().then(err => { throw new Error(err.detail); });
+                // Try to parse as JSON, but handle HTML error pages
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(err => { 
+                        throw new Error(err.detail || 'Detection failed'); 
+                    });
+                } else {
+                    // Got HTML error page instead of JSON
+                    throw new Error(`Server error (${response.status}): Unable to detect flood. Please try again or adjust detection parameters.`);
+                }
             }
         })
         .then(response => {
