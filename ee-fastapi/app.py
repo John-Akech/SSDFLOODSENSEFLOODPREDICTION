@@ -360,8 +360,12 @@ async def flood_download(request: FloodDetectionRequest, db: Session = Depends(g
                 detail="No flood areas detected"
             )
         
-        final_flood_area_gpd = gpd.GeoDataFrame.from_features(final_flood_area["features"])
-        flood_only = final_flood_area_gpd[final_flood_area_gpd.label == 1]
+        # Create GeoDataFrame with explicit CRS to avoid NumPy 2.0 compatibility issues
+        final_flood_area_gpd = gpd.GeoDataFrame.from_features(
+            final_flood_area["features"],
+            crs="EPSG:4326"
+        )
+        flood_only = final_flood_area_gpd[final_flood_area_gpd.label == 1].copy()
         
         if flood_only.empty:
             raise HTTPException(
