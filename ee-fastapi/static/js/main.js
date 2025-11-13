@@ -302,6 +302,7 @@ document.getElementById('download').addEventListener('click', function () {
     downloadController = new AbortController();
 
     // Step 1: Detect and save to database
+    console.log('Calling flood_detect endpoint:', `${baseUrl}/flood_detect`);
     fetch(`${baseUrl}/flood_detect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -333,25 +334,25 @@ document.getElementById('download').addEventListener('click', function () {
             // Detection saved to database
             lastDetectionId = result.detection_id;
             console.log('Detection saved with ID:', lastDetectionId);
-            
+
             // Show success message with detection info
             alert(`Flood detection completed!\n\n` +
-                  `Status: ${result.status}\n` +
-                  `Confidence: ${result.confidence}%\n` +
-                  `Classification: ${result.classification}\n` +
-                  `Flood Area: ${result.flood_area_hectares} hectares\n` +
-                  `Flood Percentage: ${result.flood_percentage}%\n` +
-                  `Patches: ${result.flood_patches}\n\n` +
-                  `Data saved to database (ID: ${result.detection_id})\n` +
-                  `Click "Download from Database" to get the file.`);
-            
+                `Status: ${result.status}\n` +
+                `Confidence: ${result.confidence}%\n` +
+                `Classification: ${result.classification}\n` +
+                `Flood Area: ${result.flood_area_hectares} hectares\n` +
+                `Flood Percentage: ${result.flood_percentage}%\n` +
+                `Patches: ${result.flood_patches}\n\n` +
+                `Data saved to database (ID: ${result.detection_id})\n` +
+                `Click "Download from Database" to get the file.`);
+
             // Enable download from database button
             const downloadFromDbBtn = document.getElementById('downloadFromDb');
             if (downloadFromDbBtn) {
                 downloadFromDbBtn.disabled = false;
                 downloadFromDbBtn.style.display = 'inline-block';
             }
-            
+
             document.getElementById('loading').classList.remove('active');
             document.getElementById('download').disabled = false;
         })
@@ -369,10 +370,10 @@ document.getElementById('downloadFromDb')?.addEventListener('click', function ()
         alert('No detection available. Please run flood detection first.');
         return;
     }
-    
+
     document.getElementById('loading').classList.add('active');
     this.disabled = true;
-    
+
     // Step 2: Download from database using detection_id
     fetch(`${baseUrl}/flood_download/${lastDetectionId}`, {
         method: 'GET',
