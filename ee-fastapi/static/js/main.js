@@ -113,13 +113,49 @@ window.handleLocationSearch = async function () {
     try {
         const result = await searchLocation(placeName);
         if (result) {
-            const coords = ol.proj.transform([result.lon, result.lat], 'EPSG:4326', 'EPSG:3857');
-            map.getView().animate({
-                center: coords,
-                zoom: 12,
+            // Clear any existing features
+            source.clear();
+            
+            // Create a bounding box around the location (approximately 10km x 10km)
+            const bufferKm = 5; // 5km radius = 10km x 10km box
+            const lon = result.lon;
+            const lat = result.lat;
+            
+            // Convert degrees to approximate km (at equator: 1 degree ≈ 111km)
+            const kmPerDegree = 111;
+            const lonBuffer = bufferKm / (kmPerDegree * Math.cos(lat * Math.PI / 180));
+            const latBuffer = bufferKm / kmPerDegree;
+            
+            // Create bbox coordinates
+            const minLon = lon - lonBuffer;
+            const maxLon = lon + lonBuffer;
+            const minLat = lat - latBuffer;
+            const maxLat = lat + latBuffer;
+            
+            // Create rectangle feature
+            const coords = [
+                [minLon, minLat],
+                [maxLon, minLat],
+                [maxLon, maxLat],
+                [minLon, maxLat],
+                [minLon, minLat]
+            ];
+            
+            const feature = new ol.Feature({
+                geometry: new ol.geom.Polygon([coords]).transform('EPSG:4326', 'EPSG:3857')
+            });
+            
+            source.addFeature(feature);
+            
+            // Zoom to the created bbox
+            const extent = feature.getGeometry().getExtent();
+            map.getView().fit(extent, {
+                padding: [50, 50, 50, 50],
                 duration: 1000
             });
-            alert(`Location found: ${result.displayName}\nCoordinates: ${result.lat.toFixed(4)}, ${result.lon.toFixed(4)}`);
+            
+            // Show success message
+            alert(`✓ Area of Interest created for: ${result.displayName}\nBounding Box: ${minLat.toFixed(4)}, ${minLon.toFixed(4)} to ${maxLat.toFixed(4)}, ${maxLon.toFixed(4)}\n\nYou can now run flood detection!`);
             searchInput.value = '';
         } else {
             alert('Location not found in South Sudan. Please check the spelling and try again.');
