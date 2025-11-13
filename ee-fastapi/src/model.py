@@ -573,8 +573,8 @@ def flood_estimation(
             # Calculate DYNAMIC confidence based on actual flood detection
             try:
                 if flood_area_ha > 0:
-                    # Get total area of interest
-                    total_area = aoi_geom.area().divide(10000).getInfo()  # Convert to hectares
+                    # Get total area of interest (with error margin for geometry operations)
+                    total_area = aoi_geom.area(maxError=1).divide(10000).getInfo()  # Convert to hectares
                     
                     # Calculate flood percentage
                     flood_percentage = (flood_area_ha / total_area) * 100 if total_area > 0 else 0
