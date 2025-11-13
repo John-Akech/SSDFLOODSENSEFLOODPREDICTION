@@ -866,7 +866,7 @@ function toggleLayerGroup(groupType) {
         // Sync old checkbox
         const oldCheckbox = document.getElementById('toggleFlood');
         if (oldCheckbox) oldCheckbox.checked = isVisible;
-        
+
     } else if (groupType === 'sar') {
         if (layerBefore) {
             layerBefore.setVisible(isVisible);
@@ -881,7 +881,7 @@ function toggleLayerGroup(groupType) {
         const afterCheckbox = document.getElementById('toggleAfter');
         if (beforeCheckbox) beforeCheckbox.checked = isVisible;
         if (afterCheckbox) afterCheckbox.checked = isVisible;
-        
+
     } else if (groupType === 'reference') {
         // Toggle reference layers (permanent water and high slope)
         if (layerWater) {
@@ -892,7 +892,9 @@ function toggleLayerGroup(groupType) {
             layerSlope.setVisible(isVisible);
             console.log(`Slope layer visibility: ${isVisible}`);
         }
-    }    // Force map to re-render
+    }
+    
+    // Force map to re-render
     if (map) {
         map.render();
     }
@@ -1095,6 +1097,12 @@ document.addEventListener('DOMContentLoaded', function () {
         detectButton.addEventListener('click', detectFlood);
     }
 
+    // Initialize legend - show it by default
+    const floatingLegend = document.getElementById('floatingLegend');
+    if (floatingLegend) {
+        floatingLegend.classList.add('active');
+    }
+    
     // Initialize legend
     updateLegendStatus('pending');
 });
