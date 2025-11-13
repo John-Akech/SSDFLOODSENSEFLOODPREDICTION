@@ -61,7 +61,7 @@ document.getElementById('authenticateBtn').addEventListener('click', async funct
     const originalText = btn.innerHTML;
 
     btn.disabled = true;
-    btn.innerHTML = '<span>⏳ Initializing...</span>';
+    btn.innerHTML = '<span>Initializing...</span>';
 
     try {
         const url = projectId
@@ -155,7 +155,7 @@ window.handleLocationSearch = async function () {
             });
 
             // Show success message
-            alert(`✓ Area of Interest created for: ${result.displayName}\nBounding Box: ${minLat.toFixed(4)}, ${minLon.toFixed(4)} to ${maxLat.toFixed(4)}, ${maxLon.toFixed(4)}\n\nYou can now run flood detection!`);
+            alert(`Area of Interest created for: ${result.displayName}\nBounding Box: ${minLat.toFixed(4)}, ${minLon.toFixed(4)} to ${maxLat.toFixed(4)}, ${maxLon.toFixed(4)}\n\nYou can now run flood detection!`);
             searchInput.value = '';
         } else {
             alert('Location not found in South Sudan. Please check the spelling and try again.');
@@ -782,8 +782,8 @@ function detectFlood() {
         })
         .then(response => {
             clearTimeout(timeoutId);
-            console.log('✅ Flood detection completed successfully');
-            console.log('📊 Detection Results:', {
+            console.log('Flood detection completed successfully');
+            console.log('Detection Results:', {
                 status: response.status || 'success',
                 flood_area_ha: response.flood_area_ha,
                 flood_patches: response.flood_patches,
@@ -792,7 +792,7 @@ function detectFlood() {
             });
 
             // Log tile URLs for verification
-            console.log('🗺️ Tile URLs:', {
+            console.log('Tile URLs:', {
                 before: response.before_tile ? 'loaded' : 'missing',
                 after: response.after_tile ? 'loaded' : 'missing',
                 flood: response.flood_tile ? 'loaded' : 'missing'
@@ -805,7 +805,7 @@ function detectFlood() {
             // Display status message to user
             if (status === 'no_baseline_images' || status === 'no_flood_images') {
                 // No satellite images available
-                alert('ℹ️ No Satellite Images Available\n\n' + statusMessage);
+                alert('No Satellite Images Available\n\n' + statusMessage);
                 document.getElementById('loading').classList.remove('active');
                 document.getElementById('display').disabled = false;
                 return;
@@ -829,35 +829,35 @@ function detectFlood() {
             map.addLayer(aflood);
             map.addLayer(final);
 
-            console.log('✓ Layers added to map');
+            console.log('Layers added to map');
 
             // Show status-specific messages
             if (status === 'no_flood_detected') {
                 // No flood detected - show informative message
                 document.getElementById('floodArea').textContent = '0.00';
                 document.getElementById('result').classList.add('active');
-                alert('✓ Analysis Complete\n\n' + statusMessage);
-                console.log('✓ No flood detected - analysis complete');
+                alert('Analysis Complete\n\n' + statusMessage);
+                console.log('No flood detected - analysis complete');
             } else if (status === 'uncertain_detection') {
                 // Low confidence detection - warn user
                 document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
                 document.getElementById('result').classList.add('active');
-                alert('⚠️ Low Confidence Detection\n\n' + statusMessage);
-                console.warn('⚠️ Uncertain detection:', statusMessage);
+                alert('Low Confidence Detection\n\n' + statusMessage);
+                console.warn('Uncertain detection:', statusMessage);
             } else if (status === 'flood_detected') {
                 // Successful flood detection
                 document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
                 document.getElementById('result').classList.add('active');
-                console.log(`✓ ${statusMessage}`);
+                console.log(`${statusMessage}`);
             } else if (response.flood_area_ha !== undefined) {
                 // Fallback for backwards compatibility
                 document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
                 document.getElementById('result').classList.add('active');
 
                 if (response.flood_area_ha > 0) {
-                    console.log(`🌊 Flood area detected: ${response.flood_area_ha.toFixed(2)} hectares`);
+                    console.log(`Flood area detected: ${response.flood_area_ha.toFixed(2)} hectares`);
                 } else {
-                    console.warn('⚠️ No significant flood area detected (0 hectares)');
+                    console.warn('No significant flood area detected (0 hectares)');
                 }
             }
 
@@ -926,9 +926,9 @@ function toggleLayerGroup(groupType) {
     if (groupType === 'flood') {
         if (layerFlood) {
             layerFlood.setVisible(isVisible);
-            console.log(`✓ Flood layer visibility set to: ${isVisible}`);
+            console.log(`Flood layer visibility set to: ${isVisible}`);
         } else {
-            console.warn('⚠ Flood layer does not exist yet - run detection first');
+            console.warn('Flood layer does not exist yet - run detection first');
         }
         // Sync old checkbox
         const oldCheckbox = document.getElementById('toggleFlood');
@@ -937,15 +937,15 @@ function toggleLayerGroup(groupType) {
     } else if (groupType === 'sar') {
         if (layerBefore) {
             layerBefore.setVisible(isVisible);
-            console.log(`✓ Before layer visibility set to: ${isVisible}`);
+            console.log(`Before layer visibility set to: ${isVisible}`);
         } else {
-            console.warn('⚠ Before layer does not exist yet');
+            console.warn('Before layer does not exist yet');
         }
         if (layerAfter) {
             layerAfter.setVisible(isVisible);
-            console.log(`✓ After layer visibility set to: ${isVisible}`);
+            console.log(`After layer visibility set to: ${isVisible}`);
         } else {
-            console.warn('⚠ After layer does not exist yet');
+            console.warn('After layer does not exist yet');
         }
         // Sync old checkboxes
         const beforeCheckbox = document.getElementById('toggleBefore');
@@ -957,24 +957,24 @@ function toggleLayerGroup(groupType) {
         // Toggle reference layers (permanent water and high slope)
         if (layerWater) {
             layerWater.setVisible(isVisible);
-            console.log(`✓ Water layer visibility set to: ${isVisible}`);
+            console.log(`Water layer visibility set to: ${isVisible}`);
         } else {
-            console.warn('⚠ Water layer does not exist yet');
+            console.warn('Water layer does not exist yet');
         }
         if (layerSlope) {
             layerSlope.setVisible(isVisible);
-            console.log(`✓ Slope layer visibility set to: ${isVisible}`);
+            console.log(`Slope layer visibility set to: ${isVisible}`);
         } else {
-            console.warn('⚠ Slope layer does not exist yet');
+            console.warn('Slope layer does not exist yet');
         }
     }
 
     // Force map to re-render
     if (map) {
         map.render();
-        console.log('✓ Map refreshed');
+        console.log('Map refreshed');
     } else {
-        console.error('✗ Map object not found!');
+        console.error('Map object not found!');
     }
 }
 
