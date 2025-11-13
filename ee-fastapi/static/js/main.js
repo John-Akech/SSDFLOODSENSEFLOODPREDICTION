@@ -825,6 +825,38 @@ function detectFlood() {
                 title: "Flood Area"
             });
 
+            // Assign to global variables so legend controls can access them
+            layerBefore = bflood;
+            layerAfter = aflood;
+            layerFlood = final;
+
+            // Set initial visibility based on legend checkbox states
+            const floodCheckbox = document.getElementById('toggleFloodLayers');
+            const sarCheckbox = document.getElementById('toggleSarLayers');
+            
+            if (floodCheckbox) {
+                layerFlood.setVisible(floodCheckbox.checked);
+            }
+            
+            if (sarCheckbox) {
+                layerBefore.setVisible(sarCheckbox.checked);
+                layerAfter.setVisible(sarCheckbox.checked);
+            }
+            
+            // Set initial opacity based on legend sliders
+            const floodOpacitySlider = document.getElementById('floodOpacitySlider');
+            const sarOpacitySlider = document.getElementById('sarOpacitySlider');
+            
+            if (floodOpacitySlider) {
+                layerFlood.setOpacity(floodOpacitySlider.value / 100);
+            }
+            
+            if (sarOpacitySlider) {
+                const sarOpacity = sarOpacitySlider.value / 100;
+                layerBefore.setOpacity(sarOpacity);
+                layerAfter.setOpacity(sarOpacity);
+            }
+
             map.addLayer(bflood);
             map.addLayer(aflood);
             map.addLayer(final);
