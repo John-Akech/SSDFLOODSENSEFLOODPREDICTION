@@ -122,6 +122,8 @@ class FloodDetectionResponse(BaseModel):
     before_tile: str
     after_tile: str
     flood_tile: str
+    permanent_water_tile: Optional[str] = None
+    high_slope_tile: Optional[str] = None
     flood_area_ha: Optional[float] = None
     confidence: Optional[float] = None
     flood_patches: Optional[int] = None
@@ -391,6 +393,8 @@ async def flood_display(request: FloodDetectionRequest):
             before_tile=tileids.get("before_flood", ""),
             after_tile=tileids.get("after_flood", ""),
             flood_tile=tileids.get("flood_results", ""),
+            permanent_water_tile=tileids.get("permanent_water", ""),
+            high_slope_tile=tileids.get("high_slope", ""),
             flood_area_ha=area_ha,
             confidence=confidence,
             flood_patches=flood_patches,

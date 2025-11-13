@@ -186,6 +186,8 @@ var vector = new ol.layer.Vector({
 var layerBefore = null;
 var layerAfter = null;
 var layerFlood = null;
+var layerWater = null;  // Permanent water bodies
+var layerSlope = null;  // High slope areas
 
 // Map Creator
 function CreateMap(layers) {
@@ -392,34 +394,56 @@ document.getElementById('display').addEventListener('click', function () {
                 throw new Error('Tiles not returned. Try adjusting dates/threshold or ensure GEE auth.');
             }
 
-            // Remove existing SAR layers
-            [layerBefore, layerAfter, layerFlood].forEach(l => { if (l) map.removeLayer(l); });
+            // Remove existing SAR and reference layers
+            [layerBefore, layerAfter, layerFlood, layerWater, layerSlope].forEach(l => { if (l) map.removeLayer(l); });
 
-            // Create new layers
+            // Create new SAR layers
             layerBefore = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.before_tile }), title: 'Before Flood' });
             layerAfter = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.after_tile }), title: 'After Flood' });
             layerFlood = new ol.layer.Tile({ source: new ol.source.XYZ({ url: response.flood_tile }), title: 'Flood Area' });
+
+            // Create reference layers if available
+            if (response.permanent_water_tile) {
+                layerWater = new ol.layer.Tile({
+                    source: new ol.source.XYZ({ url: response.permanent_water_tile }),
+                    title: 'Permanent Water'
+                });
+            }
+            if (response.high_slope_tile) {
+                layerSlope = new ol.layer.Tile({
+                    source: new ol.source.XYZ({ url: response.high_slope_tile }),
+                    title: 'High Slope'
+                });
+            }
 
             // Apply opacity from UI
             var sarOpacityVal = parseInt(document.getElementById('sarOpacity')?.value || '80', 10) / 100;
             layerBefore.setOpacity(sarOpacityVal);
             layerAfter.setOpacity(sarOpacityVal);
             layerFlood.setOpacity(0.9);
+            if (layerWater) layerWater.setOpacity(0.6);
+            if (layerSlope) layerSlope.setOpacity(0.5);
 
             // Set initial visibility based on legend checkbox state
             const floodCheckbox = document.getElementById('toggleFloodLayers');
             const sarCheckbox = document.getElementById('toggleSarLayers');
-            
+            const refCheckbox = document.getElementById('toggleReferenceLayers');
+
             const floodVisible = floodCheckbox ? floodCheckbox.checked : true;
             const sarVisible = sarCheckbox ? sarCheckbox.checked : true;
-            
+            const refVisible = refCheckbox ? refCheckbox.checked : true;
+
             layerBefore.setVisible(sarVisible);
             layerAfter.setVisible(sarVisible);
             layerFlood.setVisible(floodVisible);
+            if (layerWater) layerWater.setVisible(refVisible);
+            if (layerSlope) layerSlope.setVisible(refVisible);
 
-            console.log(`Layers created - Flood visible: ${floodVisible}, SAR visible: ${sarVisible}`);
+            console.log(`Layers created - Flood: ${floodVisible}, SAR: ${sarVisible}, Reference: ${refVisible}`);
 
-            // Add in sensible order (flood on top)
+            // Add in sensible order (reference layers at bottom, flood on top)
+            if (layerWater) map.addLayer(layerWater);
+            if (layerSlope) map.addLayer(layerSlope);
             map.addLayer(layerBefore);
             map.addLayer(layerAfter);
             map.addLayer(layerFlood);
@@ -439,7 +463,7 @@ document.getElementById('display').addEventListener('click', function () {
                 document.getElementById('confidence').textContent = (response.confidence || 0).toFixed(1) + '%';
                 document.getElementById('floodCount').textContent = response.flood_patches || 0;
                 document.getElementById('result').classList.add('active');
-                
+
                 // Update legend statistics
                 updateLegendStats(response.flood_area_ha, response.flood_patches, response.confidence);
             } else {
@@ -447,7 +471,7 @@ document.getElementById('display').addEventListener('click', function () {
                 document.getElementById('floodArea').textContent = '0.00';
                 document.getElementById('confidence').textContent = '0.0%';
                 document.getElementById('floodCount').textContent = '0';
-                
+
                 // Update legend with zero values
                 updateLegendStats(0, 0, 0);
             }
@@ -818,15 +842,15 @@ function toggleLayerGroup(groupType) {
         'sar': 'toggleSarLayers',
         'reference': 'toggleReferenceLayers'
     };
-    
+
     const checkbox = document.getElementById(checkboxIds[groupType]);
     if (!checkbox) {
         console.error(`Checkbox not found for group: ${groupType}`);
         return;
     }
-    
+
     const isVisible = checkbox.checked;
-    
+
     // Toggle legend items visibility
     const items = document.querySelectorAll(`.legend-item[data-layer="${groupType}"]`);
     items.forEach(item => {
@@ -859,11 +883,16 @@ function toggleLayerGroup(groupType) {
         if (afterCheckbox) afterCheckbox.checked = isVisible;
         
     } else if (groupType === 'reference') {
-        // Reference layers would go here when implemented
-        console.log(`Reference layer visibility: ${isVisible}`);
-    }
-    
-    // Force map to re-render
+        // Toggle reference layers (permanent water and high slope)
+        if (layerWater) {
+            layerWater.setVisible(isVisible);
+            console.log(`Water layer visibility: ${isVisible}`);
+        }
+        if (layerSlope) {
+            layerSlope.setVisible(isVisible);
+            console.log(`Slope layer visibility: ${isVisible}`);
+        }
+    }    // Force map to re-render
     if (map) {
         map.render();
     }
@@ -888,7 +917,7 @@ function updateSarOpacity(value) {
         layerAfter.setOpacity(opacity);
     }
     document.getElementById('sarOpacityValueLegend').textContent = value + '%';
-    
+
     // Sync with sidebar control if it exists
     const sidebarOpacity = document.getElementById('sarOpacity');
     if (sidebarOpacity) {
@@ -901,7 +930,7 @@ function updateLegendStats(floodArea, floodPatches, confidence) {
     const statsDiv = document.getElementById('floodStats');
     const opacityControl = document.getElementById('floodOpacityControl');
     const sarOpacityControl = document.getElementById('sarOpacityControlLegend');
-    
+
     if (statsDiv && floodArea !== undefined) {
         document.getElementById('legendFloodArea').textContent = floodArea.toFixed(2) + ' ha';
         document.getElementById('legendFloodPatches').textContent = floodPatches || 0;

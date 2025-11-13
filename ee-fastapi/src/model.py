@@ -80,13 +80,49 @@ def display(dict_db):
         s1_af = ee.Image.visualize(dict_db["after_flood"], **geoviz_app["s1_img"])
         s1_af_id = ee.data.getMapId({"image": s1_af})["tile_fetcher"].url_format
 
-        # Flood results with visualization
+        # Flood results with CLASSIFICATION based on confidence levels
+        # Create confidence-based classification matching legend colors
+        flood_mask = dict_db["flood_results"]
+        ratio_diff = dict_db.get("ratio_difference", ee.Image.constant(1))
+        
+        # Calculate confidence score for each pixel (0-100%)
+        # Lower ratio_difference = higher confidence (water shows as dark = low backscatter)
+        confidence_score = ratio_diff.expression(
+            '100 * (1 - (ratio / 2))',  # Convert ratio to confidence percentage
+            {'ratio': ratio_diff}
+        ).clamp(0, 100)
+        
+        # Classify into 4 categories matching the legend
+        # High Risk (>90%): Red (#d32f2f to #f44336)
+        # Medium (70-90%): Orange (#f57c00 to #ff9800)
+        # Low (50-70%): Yellow (#fbc02d to #ffeb3b)
+        # Uncertain (<50%): Gray (#9e9e9e to #bdbdbd)
+        
+        high_risk = flood_mask.And(confidence_score.gte(90))
+        medium_risk = flood_mask.And(confidence_score.gte(70)).And(confidence_score.lt(90))
+        low_risk = flood_mask.And(confidence_score.gte(50)).And(confidence_score.lt(70))
+        uncertain = flood_mask.And(confidence_score.lt(50))
+        
+        # Create classified image (1=uncertain, 2=low, 3=medium, 4=high)
+        flood_classified = (
+            uncertain.multiply(1)
+            .add(low_risk.multiply(2))
+            .add(medium_risk.multiply(3))
+            .add(high_risk.multiply(4))
+        ).updateMask(flood_mask)
+        
+        # Visualize with exact legend colors
         flood_viz = {
-            "min": 0,
-            "max": 1,
-            "palette": ["000000", "0066CC", "00CCFF", "00FF00", "FFFF00", "FF6600", "FF0000"]
+            "min": 1,
+            "max": 4,
+            "palette": [
+                "9e9e9e",  # 1 = Uncertain (<50%) - Gray
+                "fbc02d",  # 2 = Low (50-70%) - Yellow
+                "f57c00",  # 3 = Medium (70-90%) - Orange
+                "d32f2f"   # 4 = High Risk (>90%) - Red
+            ]
         }
-        s1_fresults = ee.Image.visualize(dict_db["flood_results"], **flood_viz)
+        s1_fresults = ee.Image.visualize(flood_classified, **flood_viz)
         s1_fresults_id = ee.data.getMapId({"image": s1_fresults})["tile_fetcher"].url_format
         
         # Confidence map
@@ -116,6 +152,27 @@ def display(dict_db):
         combined_map = ee.Image.visualize(dict_db.get("flood_combined", ee.Image.constant(0)), **combined_viz)
         combined_id = ee.data.getMapId({"image": combined_map})["tile_fetcher"].url_format
         
+        # Reference Layers - Permanent Water Bodies (JRC Global Surface Water)
+        water_occurrence = ee.Image("JRC/GSW1_4/GlobalSurfaceWater").select('occurrence')
+        # Pixels with >50% water occurrence = permanent water
+        permanent_water = water_occurrence.gte(50).selfMask()
+        water_viz = {
+            "palette": ["0097a7"]  # Cyan matching legend
+        }
+        water_visualized = ee.Image.visualize(permanent_water, **water_viz)
+        water_id = ee.data.getMapId({"image": water_visualized})["tile_fetcher"].url_format
+        
+        # Reference Layers - High Slope Areas  
+        DEM = ee.Image('WWF/HydroSHEDS/03VFDEM')
+        slope = ee.Algorithms.Terrain(DEM).select('slope')
+        # Slopes > 15 degrees = high slope (floods unlikely)
+        high_slope = slope.gte(15).selfMask()
+        slope_viz = {
+            "palette": ["5d4037"]  # Brown matching legend
+        }
+        slope_visualized = ee.Image.visualize(high_slope, **slope_viz)
+        slope_id = ee.data.getMapId({"image": slope_visualized})["tile_fetcher"].url_format
+        
         layer_to_display = {
             "before_flood": s1_bf_id,
             "after_flood": s1_af_id,
@@ -123,6 +180,8 @@ def display(dict_db):
             "confidence_map": confidence_id,
             "difference_map": diff_id,
             "combined_detection": combined_id,
+            "permanent_water": water_id,
+            "high_slope": slope_id,
             "quality_info": {
                 "before_quality": dict_db.get("before_quality", {}),
                 "after_quality": dict_db.get("after_quality", {}),
