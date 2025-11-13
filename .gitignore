@@ -134,6 +134,8 @@ tmp/
 secrets/
 credentials/
 gee-service-account.json
+gee-service-account-key.json
+**/gee-service-account*.json
 # Environment files with secrets
 .env.local
 .env.production

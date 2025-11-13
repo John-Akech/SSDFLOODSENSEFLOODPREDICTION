@@ -29,7 +29,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Copy application code
+# Copy application code (excluding sensitive files via .dockerignore)
 COPY . .
 
 # Create output directory

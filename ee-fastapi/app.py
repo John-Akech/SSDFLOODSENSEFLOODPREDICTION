@@ -30,32 +30,51 @@ gee_error = None
 
 # Try to initialize Earth Engine on startup
 try:
-    # Initialize with personal credentials (from volume mount)
-    # Try without project first, then with project if environment variable is set
-    project_id = os.getenv('GEE_PROJECT_ID')
+    project_id = os.getenv('GEE_PROJECT_ID', 'ace-connection-474712-p1')
+    service_account_file = os.getenv('GEE_SERVICE_ACCOUNT_KEY', '/app/gee-service-account-key.json')
     
-    if project_id:
-        try:
-            logger.info(f"Attempting Earth Engine initialization with project: {project_id}")
-            ee.Initialize(project=project_id)
-            logger.info(f"[OK] Earth Engine initialized successfully with project: {project_id}")
-            gee_initialized = True
-        except Exception as project_error:
-            logger.warning(f"[WARN] Project-based init failed: {project_error}")
-            # Fallback to initialization without project
-            logger.info("Attempting Earth Engine initialization without project...")
-            ee.Initialize()
-            logger.info("[OK] Earth Engine initialized successfully (no project)")
-            gee_initialized = True
-    else:
-        logger.info("Attempting Earth Engine initialization without project...")
-        ee.Initialize()
-        logger.info("[OK] Earth Engine initialized successfully (no project)")
+    # Check if service account key exists
+    if os.path.exists(service_account_file):
+        logger.info(f"[INFO] Using service account authentication: {service_account_file}")
+        logger.info(f"[INFO] Project ID: {project_id}")
+        
+        # Read service account credentials
+        with open(service_account_file, 'r') as f:
+            import json
+            service_account_info = json.load(f)
+            service_account_email = service_account_info.get('client_email', 'unknown')
+        
+        logger.info(f"[INFO] Service account email: {service_account_email}")
+        
+        # Initialize with service account
+        credentials = ee.ServiceAccountCredentials(service_account_email, service_account_file)
+        ee.Initialize(credentials, project=project_id)
+        
+        logger.info(f"[OK] Earth Engine initialized successfully with service account")
+        logger.info(f"[OK] Project: {project_id}")
         gee_initialized = True
+        
+    else:
+        # Fallback to default credentials (for local development)
+        logger.warning(f"[WARN] Service account key not found at: {service_account_file}")
+        logger.info("[INFO] Attempting Earth Engine initialization with default credentials...")
+        
+        if project_id:
+            ee.Initialize(project=project_id)
+            logger.info(f"[OK] Earth Engine initialized with default credentials and project: {project_id}")
+        else:
+            ee.Initialize()
+            logger.info("[OK] Earth Engine initialized with default credentials (no project)")
+        
+        gee_initialized = True
+        
 except Exception as e:
     gee_error = str(e)
     logger.error(f"[ERROR] Earth Engine initialization failed: {e}")
-    logger.error("Make sure Earth Engine credentials are mounted at /home/appuser/.config/earthengine")
+    logger.error("[ERROR] Please ensure:")
+    logger.error("  1. Service account key file exists at /app/gee-service-account-key.json")
+    logger.error("  2. Service account has Earth Engine access enabled")
+    logger.error("  3. Project ID is correct: ace-connection-474712-p1")
     gee_initialized = False
 
 app = FastAPI(

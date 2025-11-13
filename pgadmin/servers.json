@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "FloodSense Database",
+      "Group": "Servers",
+      "Host": "floodsense-db",
+      "Port": 5432,
+      "MaintenanceDB": "floodsense_db",
+      "Username": "floodsense_user",
+      "SSLMode": "prefer",
+      "Comment": "FloodSense Production Database"
+    }
+  }
+}

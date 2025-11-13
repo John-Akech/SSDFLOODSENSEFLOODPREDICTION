@@ -1,0 +1,75 @@
+# ========================================
+# DEPLOYMENT COMMANDS FOR DROPLET
+# ========================================
+# Copy and paste these commands into your DigitalOcean Droplet Console
+# OR run via SSH: ssh -i ~/.ssh/id_ed25519 root@159.203.162.85
+# ========================================
+
+# Step 1: Navigate to project directory
+cd /root/SSDFLOODSENSEFLOODPREDICTION
+
+# Step 2: Login to DigitalOcean Container Registry
+# If doctl is not installed, authenticate manually:
+docker login registry.digitalocean.com -u $(doctl auth list --format AccessToken --no-header 2>/dev/null || echo "YOUR_DO_TOKEN")
+
+# OR skip login if already authenticated (Docker should have cached credentials)
+
+# Step 3: Pull latest images from registry
+echo "📥 Pulling latest images..."
+docker compose -f docker-compose.prod.yml pull
+
+# Step 4: Stop existing services
+echo "🛑 Stopping existing services..."
+docker compose -f docker-compose.prod.yml down
+
+# Step 5: Start services with new images
+echo "▶️ Starting services..."
+docker compose -f docker-compose.prod.yml up -d
+
+# Step 6: Wait for services to initialize
+echo "⏳ Waiting 15 seconds for services to start..."
+sleep 15
+
+# Step 7: Check container status
+echo "📊 Container Status:"
+docker compose -f docker-compose.prod.yml ps
+
+# Step 8: Check logs for any errors
+echo "📝 Recent Backend Logs:"
+docker compose -f docker-compose.prod.yml logs backend --tail=30
+
+echo ""
+echo "📝 Recent Frontend Logs:"
+docker compose -f docker-compose.prod.yml logs frontend --tail=30
+
+echo ""
+echo "📝 Recent Database Logs:"
+docker compose -f docker-compose.prod.yml logs db --tail=20
+
+# Step 9: Test endpoints from within droplet
+echo ""
+echo "🧪 Testing Endpoints:"
+echo "Testing Frontend..."
+curl -I http://localhost/ 2>&1 | head -5
+
+echo ""
+echo "Testing Backend API..."
+curl http://localhost/api/v1/health 2>&1 | head -10
+
+echo ""
+echo "Testing SAR Service..."
+curl http://localhost/sar/health 2>&1 | head -10
+
+# Step 10: Clean up old images
+echo ""
+echo "🧹 Cleaning up old Docker images..."
+docker system prune -a -f
+
+echo ""
+echo "✅ Deployment Complete!"
+echo ""
+echo "🌐 Access your application at:"
+echo "   http://159.203.162.85"
+echo ""
+echo "📋 To view live logs, run:"
+echo "   docker compose -f docker-compose.prod.yml logs -f"
