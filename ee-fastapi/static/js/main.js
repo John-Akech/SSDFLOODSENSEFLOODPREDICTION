@@ -798,7 +798,19 @@ function toggleFloatingLegend() {
 
 // Toggle layer group visibility
 function toggleLayerGroup(groupType) {
-    const checkbox = document.getElementById(`toggle${groupType.charAt(0).toUpperCase() + groupType.slice(1)}Layers`);
+    // Map group types to their actual checkbox IDs
+    const checkboxIds = {
+        'flood': 'toggleFloodLayers',
+        'sar': 'toggleSarLayers',
+        'reference': 'toggleReferenceLayers'
+    };
+    
+    const checkbox = document.getElementById(checkboxIds[groupType]);
+    if (!checkbox) {
+        console.error(`Checkbox not found for group: ${groupType}`);
+        return;
+    }
+    
     const items = document.querySelectorAll(`.legend-item[data-layer="${groupType}"]`);
 
     items.forEach(item => {
