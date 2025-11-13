@@ -290,11 +290,22 @@ def db_creator(
         before_count = before_collection.size().getInfo()
         after_count = after_collection.size().getInfo()
         
+        # Store image counts for status reporting
+        dict_db = {"aoi": geometry, "polarization": polarization}
+        dict_db["before_count"] = before_count
+        dict_db["after_count"] = after_count
+        
         if before_count == 0:
-            raise ValueError(f"No Sentinel-1 images found for baseline period {base_period[0]} to {base_period[1]}. Try expanding the date range or check if Sentinel-1 covers this area.")
+            logger.warning(f"No Sentinel-1 images found for baseline period {base_period[0]} to {base_period[1]}")
+            dict_db["status"] = "no_baseline_images"
+            dict_db["message"] = f"No satellite images available for baseline period ({base_period[0]} to {base_period[1]}). Try expanding the date range or selecting a different time period."
+            return dict_db
         
         if after_count == 0:
-            raise ValueError(f"No Sentinel-1 images found for flood period {flood_period[0]} to {flood_period[1]}. Try expanding the date range or check if Sentinel-1 covers this area.")
+            logger.warning(f"No Sentinel-1 images found for flood period {flood_period[0]} to {flood_period[1]}")
+            dict_db["status"] = "no_flood_images"
+            dict_db["message"] = f"No satellite images available for flood period ({flood_period[0]} to {flood_period[1]}). Try expanding the date range or selecting a different time period."
+            return dict_db
 
         if not quiet:
             logger.info(f"Found {before_count} baseline images and {after_count} flood images")
@@ -728,6 +739,20 @@ def flood_estimation(
                 "flood_patches": int(flood_patches) if flood_patches else 0,
                 "quality_score": round(confidence / 100.0, 2)  # Derive from actual confidence
             }
+            
+            # Add status and message based on detection results
+            if flood_area_ha == 0:
+                dict_db["status"] = "no_flood_detected"
+                dict_db["message"] = "Analysis complete: No flood areas detected in the selected region and time period. This could indicate: (1) No flooding occurred, (2) Cloud cover obscuring the area, or (3) The detection threshold may need adjustment."
+                logger.info("No flood detected - area is 0 hectares")
+            elif flood_area_ha > 0 and confidence < 35:
+                dict_db["status"] = "uncertain_detection"
+                dict_db["message"] = f"Flood detected ({flood_area_ha:.2f} ha) but with low confidence ({confidence:.1f}%). Results may include false positives. Consider adjusting the detection threshold or selecting clearer imagery dates."
+                logger.warning(f"Low confidence detection: {flood_area_ha:.2f} ha with {confidence:.1f}% confidence")
+            else:
+                dict_db["status"] = "flood_detected"
+                dict_db["message"] = f"Flood successfully detected: {flood_area_ha:.2f} hectares with {confidence:.1f}% confidence across {flood_patches} area(s)."
+                logger.info(f"Flood detected: {flood_area_ha:.2f} ha, {confidence:.1f}% confidence, {flood_patches} patches")
         
         logger.info("Flood estimation completed")
         return dict_db

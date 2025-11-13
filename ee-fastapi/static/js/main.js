@@ -784,19 +784,33 @@ function detectFlood() {
             clearTimeout(timeoutId);
             console.log('✅ Flood detection completed successfully');
             console.log('📊 Detection Results:', {
+                status: response.status || 'success',
                 flood_area_ha: response.flood_area_ha,
                 flood_patches: response.flood_patches,
                 confidence: response.confidence,
-                processing_time: response.processing_time
+                message: response.message || 'Detection completed'
             });
-            
+
             // Log tile URLs for verification
             console.log('🗺️ Tile URLs:', {
                 before: response.before_tile ? 'loaded' : 'missing',
                 after: response.after_tile ? 'loaded' : 'missing',
                 flood: response.flood_tile ? 'loaded' : 'missing'
             });
-            
+
+            // Handle different detection statuses
+            const status = response.status || 'success';
+            const statusMessage = response.message || 'Detection completed';
+
+            // Display status message to user
+            if (status === 'no_baseline_images' || status === 'no_flood_images') {
+                // No satellite images available
+                alert('ℹ️ No Satellite Images Available\n\n' + statusMessage);
+                document.getElementById('loading').classList.remove('active');
+                document.getElementById('display').disabled = false;
+                return;
+            }
+
             // Process the response data
             var bflood = new ol.layer.Tile({
                 source: new ol.source.XYZ({ url: response.before_tile }),
@@ -814,13 +828,32 @@ function detectFlood() {
             map.addLayer(bflood);
             map.addLayer(aflood);
             map.addLayer(final);
-            
+
             console.log('✓ Layers added to map');
 
-            if (response.flood_area_ha) {
+            // Show status-specific messages
+            if (status === 'no_flood_detected') {
+                // No flood detected - show informative message
+                document.getElementById('floodArea').textContent = '0.00';
+                document.getElementById('result').classList.add('active');
+                alert('✓ Analysis Complete\n\n' + statusMessage);
+                console.log('✓ No flood detected - analysis complete');
+            } else if (status === 'uncertain_detection') {
+                // Low confidence detection - warn user
                 document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
                 document.getElementById('result').classList.add('active');
-                
+                alert('⚠️ Low Confidence Detection\n\n' + statusMessage);
+                console.warn('⚠️ Uncertain detection:', statusMessage);
+            } else if (status === 'flood_detected') {
+                // Successful flood detection
+                document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
+                document.getElementById('result').classList.add('active');
+                console.log(`✓ ${statusMessage}`);
+            } else if (response.flood_area_ha !== undefined) {
+                // Fallback for backwards compatibility
+                document.getElementById('floodArea').textContent = response.flood_area_ha.toFixed(2);
+                document.getElementById('result').classList.add('active');
+
                 if (response.flood_area_ha > 0) {
                     console.log(`🌊 Flood area detected: ${response.flood_area_ha.toFixed(2)} hectares`);
                 } else {

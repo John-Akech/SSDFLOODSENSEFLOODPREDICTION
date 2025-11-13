@@ -127,6 +127,8 @@ class FloodDetectionResponse(BaseModel):
     flood_area_ha: Optional[float] = None
     confidence: Optional[float] = None
     flood_patches: Optional[int] = None
+    status: Optional[str] = "success"
+    message: Optional[str] = "Detection completed successfully"
     metadata: dict
 
 class FeatureExtractionRequest(BaseModel):
@@ -377,15 +379,41 @@ async def flood_display(request: FloodDetectionRequest):
         dict_db = db_creator(base_period, flood_period, ee_rectangle)
         logger.info(f"Images collected - Before count: {dict_db.get('before_count')}, After count: {dict_db.get('after_count')}")
         
+        # Check if image collection failed
+        if dict_db.get("status") in ["no_baseline_images", "no_flood_images"]:
+            logger.warning(f"Image collection issue: {dict_db.get('status')}")
+            return FloodDetectionResponse(
+                before_tile="",
+                after_tile="",
+                flood_tile="",
+                permanent_water_tile="",
+                high_slope_tile="",
+                flood_area_ha=0.0,
+                confidence=0.0,
+                flood_patches=0,
+                status=dict_db.get("status"),
+                message=dict_db.get("message"),
+                metadata={
+                    "base_period": f"{request.init_start} to {request.init_last}",
+                    "flood_period": f"{request.flood_start} to {request.flood_last}",
+                    "threshold": request.flood_threshold,
+                    "bbox": request.bbox
+                }
+            )
+        
         flood_added = flood_estimation(dict_db, difference_threshold=request.flood_threshold)
         logger.info(f"========== FLOOD DETECTION COMPLETE ==========")
         
-        # Generate tile URLs
+        # Check detection status
+        detection_status = flood_added.get("status", "unknown")
+        detection_message = flood_added.get("message", "Detection completed")
+        
+        # Generate tile URLs (even for no-flood cases, show before/after imagery)
         tileids = display(flood_added)
         
         # Extract numeric flood area for frontend display
         area_stats = flood_added.get("flood_area_stats") or {}
-        area_ha = area_stats.get("area_hectares") if isinstance(area_stats, dict) else None
+        area_ha = area_stats.get("area_hectares") if isinstance(area_stats, dict) else 0.0
         confidence = area_stats.get("mean_confidence", 0.0) if isinstance(area_stats, dict) else 0.0
         flood_patches = area_stats.get("flood_patches", 0) if isinstance(area_stats, dict) else 0
 
@@ -398,6 +426,8 @@ async def flood_display(request: FloodDetectionRequest):
             flood_area_ha=area_ha,
             confidence=confidence,
             flood_patches=flood_patches,
+            status=detection_status,
+            message=detection_message,
             metadata={
                 "base_period": f"{request.init_start} to {request.init_last}",
                 "flood_period": f"{request.flood_start} to {request.flood_last}",
