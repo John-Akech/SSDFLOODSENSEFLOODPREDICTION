@@ -411,12 +411,26 @@ def flood_estimation(
         polarization = dict_db["polarization"]
         aoi_geom = dict_db["aoi"]
 
-        logger.info("Calculating flood detection...")
+        logger.info(f"Calculating flood detection with threshold: {difference_threshold}")
         
         # Ratio-based change detection
         # In SAR: water = low backscatter (dark), land = high backscatter (bright)
         # When flooding: backscatter decreases, so ratio (after/before) < 1
         ratio_difference = after_filtered.divide(before_filtered)
+        
+        # Log ratio statistics to understand the data
+        ratio_stats = ratio_difference.reduceRegion(
+            reducer=ee.Reducer.mean().combine(ee.Reducer.stdDev(), '', True).combine(ee.Reducer.minMax(), '', True),
+            geometry=aoi_geom,
+            scale=100,
+            bestEffort=True,
+            maxPixels=1e8
+        ).getInfo()
+        
+        logger.info(f"Ratio statistics: mean={ratio_stats.get(polarization + '_mean', 'N/A'):.3f}, "
+                   f"std={ratio_stats.get(polarization + '_stdDev', 'N/A'):.3f}, "
+                   f"min={ratio_stats.get(polarization + '_min', 'N/A'):.3f}, "
+                   f"max={ratio_stats.get(polarization + '_max', 'N/A'):.3f}")
         
         # Detect areas where backscatter DECREASED (ratio < threshold)
         # For flood detection, threshold should be < 1 (e.g., 0.8 means 20% decrease)
@@ -426,34 +440,71 @@ def flood_estimation(
             # 1.25 means we want 25% decrease = ratio of 0.8 (1/1.25)
             actual_threshold = 1.0 / difference_threshold
             flood_mask = ratio_difference.lt(actual_threshold)
+            logger.info(f"Using inverted threshold: {actual_threshold:.3f} (from {difference_threshold})")
         else:
             # User passed threshold < 1 already (e.g., 0.8)
             flood_mask = ratio_difference.lt(difference_threshold)
+            logger.info(f"Using direct threshold: {difference_threshold}")
+        
+        # Check initial flood mask pixel count
+        initial_flood_pixels = flood_mask.reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=aoi_geom,
+            scale=100,
+            bestEffort=True,
+            maxPixels=1e8
+        ).getInfo()
+        logger.info(f"Initial flood pixels detected: {initial_flood_pixels.get(polarization, 0)}")
         
         # Post-processing to reduce false positives
         logger.info("Applying post-processing...")
         
-        # 1. Remove permanent water bodies
-        swater = ee.Image('JRC/GSW1_0/GlobalSurfaceWater').select('seasonality')
-        swater_mask = swater.gte(10)
-        flooded_no_permanent = flood_mask.where(swater_mask, 0)
+        # 1. SKIP removing permanent water - we want to detect ALL water including floods
+        # (Permanent water removal was too aggressive and removed actual flood water)
         
-        # 2. Apply slope mask (floods don't occur on steep slopes)
+        # 2. Apply slope mask only for very steep slopes (floods unlikely on steep slopes)
         DEM = ee.Image('WWF/HydroSHEDS/03VFDEM')
         slope = ee.Algorithms.Terrain(DEM).select('slope')
-        flooded_no_slope = flooded_no_permanent.updateMask(slope.lt(5))
+        flooded_no_steep_slope = flood_mask.updateMask(slope.lt(15))  # Increased from 5° to 15°
         
-        # 3. Apply morphological filtering to remove noise
+        after_slope_pixels = flooded_no_steep_slope.reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=aoi_geom,
+            scale=100,
+            bestEffort=True,
+            maxPixels=1e8
+        ).getInfo()
+        logger.info(f"After slope filter: {after_slope_pixels.get(polarization, 0)} pixels")
+        
+        # 3. Apply LIGHT morphological filtering to remove only obvious noise
         # Opening operation: erosion followed by dilation removes small patches
-        kernel = ee.Kernel.circle(radius=1)  # Small kernel for noise removal
-        flooded_eroded = flooded_no_slope.focal_min(kernel=kernel, iterations=1)
+        kernel = ee.Kernel.circle(radius=1)  # Small kernel for minimal noise removal
+        flooded_eroded = flooded_no_steep_slope.focal_min(kernel=kernel, iterations=1)
         flooded_opened = flooded_eroded.focal_max(kernel=kernel, iterations=1)
         
-        # 4. Remove very small patches (likely noise)
+        after_morphology_pixels = flooded_opened.reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=aoi_geom,
+            scale=100,
+            bestEffort=True,
+            maxPixels=1e8
+        ).getInfo()
+        logger.info(f"After morphological filter: {after_morphology_pixels.get(polarization, 0)} pixels")
+        
+        # 4. Remove VERY small patches (likely noise) - but keep small floods
         # Connected component analysis
         connections = flooded_opened.connectedPixelCount(maxSize=100, eightConnected=True)
-        # Keep only patches with at least 10 connected pixels (~1 hectare at 10m resolution)
-        flooded_filtered = flooded_opened.updateMask(connections.gte(10))
+        # Keep only patches with at least 5 connected pixels (~0.5 hectare at 10m resolution)
+        flooded_filtered = flooded_opened.updateMask(connections.gte(5))  # Reduced from 10 to 5
+        
+        final_flood_pixels = flooded_filtered.reduceRegion(
+            reducer=ee.Reducer.sum(),
+            geometry=aoi_geom,
+            scale=100,
+            bestEffort=True,
+            maxPixels=1e8
+        ).getInfo()
+        logger.info(f"Final flood pixels after all filters: {final_flood_pixels.get(polarization, 0)} pixels")
         
         flooded = flooded_filtered.unmask(0).selfMask()
         flooded = flooded.rename('flood')
