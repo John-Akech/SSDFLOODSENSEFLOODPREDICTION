@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Request, HTTPException, status
+from fastapi import FastAPI, Request, HTTPException, status, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel, Field, field_validator
+from sqlalchemy.orm import Session
 import uvicorn
 import ee
 import os
@@ -11,11 +12,13 @@ import time
 import logging
 from pathlib import Path
 from typing import Optional
+from datetime import datetime
 import geopandas as gpd
 
 from src.utils import raster_to_vector
 from src.model import db_creator, flood_estimation, display
 from src.config import settings
+from src.database import get_db, init_db, save_flood_detection
 
 # Configure logging
 logging.basicConfig(
@@ -84,6 +87,16 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Initialize database on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize database tables on startup."""
+    try:
+        init_db()
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -287,13 +300,15 @@ async def gee_authenticate(project_id: Optional[str] = None):
         )
 
 @app.post("/flood_download", tags=["Flood Detection"])
-async def flood_download(request: FloodDetectionRequest):
-    """Download flood detection results as GeoPackage."""
+async def flood_download(request: FloodDetectionRequest, db: Session = Depends(get_db)):
+    """Download flood detection results as GeoPackage and save to database."""
     if not gee_initialized:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Google Earth Engine not authenticated. Please authenticate first."
         )
+    
+    start_time = time.time()
     
     try:
         # Parse bbox
@@ -303,6 +318,12 @@ async def flood_download(request: FloodDetectionRequest):
         # Create date ranges
         base_period = (request.init_start, request.init_last)
         flood_period = (request.flood_start, request.flood_last)
+        
+        # Parse dates for database
+        baseline_start = datetime.strptime(request.init_start, "%Y-%m-%d")
+        baseline_end = datetime.strptime(request.init_last, "%Y-%m-%d")
+        flood_start = datetime.strptime(request.flood_start, "%Y-%m-%d")
+        flood_end = datetime.strptime(request.flood_last, "%Y-%m-%d")
         
         # Run flood detection
         logger.info(f"Processing flood detection for bbox: {request.bbox}")
@@ -350,6 +371,31 @@ async def flood_download(request: FloodDetectionRequest):
         
         flood_only.to_file(str(output_path), driver="GPKG")
         logger.info(f"Saved flood data to {output_path}")
+        
+        # Calculate processing time
+        processing_time = time.time() - start_time
+        
+        # Save to database
+        try:
+            saved_detection = save_flood_detection(
+                db=db,
+                bbox=request.bbox,
+                baseline_start=baseline_start,
+                baseline_end=baseline_end,
+                flood_start=flood_start,
+                flood_end=flood_end,
+                polarization="VV",  # Default from frontend
+                threshold=request.flood_threshold,
+                detection_results=flood_added,
+                geopackage_path=str(output_path),
+                geojson_data=final_flood_area,
+                processing_time=processing_time,
+                user_id=None  # TODO: Add user authentication
+            )
+            logger.info(f"Saved to database with ID: {saved_detection.id}")
+        except Exception as db_error:
+            logger.error(f"Database save failed (non-critical): {db_error}")
+            # Continue even if database save fails
         
         return FileResponse(
             path=str(output_path),

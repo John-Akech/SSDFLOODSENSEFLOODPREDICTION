@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, LargeBinary, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import sys
@@ -241,3 +241,64 @@ class GEEExtractedFeature(Base):
     # Metadata
     gee_project_id = Column(String, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class SARFloodDetection(Base):
+    """
+    Stores SAR-based flood detection results with geopackage files.
+    Each record represents a flood detection analysis for a specific AOI and time period.
+    """
+    __tablename__ = "sar_flood_detections"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # User information (optional - for tracking who requested the detection)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    
+    # Detection parameters
+    bbox = Column(String, nullable=False)  # "xmin,ymin,xmax,ymax"
+    center_latitude = Column(Float, nullable=False, index=True)
+    center_longitude = Column(Float, nullable=False, index=True)
+    
+    # Time periods
+    baseline_start = Column(DateTime, nullable=False)  # Before flood period
+    baseline_end = Column(DateTime, nullable=False)
+    flood_start = Column(DateTime, nullable=False)  # After flood period
+    flood_end = Column(DateTime, nullable=False)
+    
+    # Detection settings
+    polarization = Column(String, default="VV")  # VV or VH
+    threshold = Column(Float, default=1.25)
+    
+    # Results
+    status = Column(String, nullable=False, index=True)  # flood_detected, uncertain_detection, no_flood_detected, no_baseline_images, no_flood_images
+    confidence = Column(Float, nullable=True)  # 0-100
+    classification = Column(String, nullable=True)  # High, Medium, Low, Uncertain
+    flood_area_hectares = Column(Float, nullable=True)
+    flood_percentage = Column(Float, nullable=True)
+    flood_patches = Column(Integer, nullable=True)
+    message = Column(Text, nullable=True)
+    
+    # Image availability
+    baseline_image_count = Column(Integer, default=0)
+    flood_image_count = Column(Integer, default=0)
+    
+    # Geopackage file storage
+    geopackage_filename = Column(String, nullable=True)  # flood_area_YYYYMMDDHHMMSS.gpkg
+    geopackage_data = Column(LargeBinary, nullable=True)  # Binary storage of .gpkg file
+    geopackage_size_bytes = Column(Integer, nullable=True)
+    
+    # GeoJSON preview (for quick access without unpacking binary)
+    geojson_preview = Column(JSON, nullable=True)  # Stores a simplified GeoJSON
+    
+    # Processing metadata
+    processing_time_seconds = Column(Float, nullable=True)
+    error_message = Column(Text, nullable=True)
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])
+
