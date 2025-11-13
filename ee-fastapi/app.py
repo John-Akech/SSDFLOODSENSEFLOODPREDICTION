@@ -171,12 +171,14 @@ async def gee_status():
     }
 
 @app.get("/sentinel1/availability", tags=["Data Availability"])
-async def check_sentinel1_availability(lat: float, lon: float):
+async def check_sentinel1_availability(lat: float, lon: float, start_date: str = None, end_date: str = None):
     """Check latest available Sentinel-1 data for a location.
     
     Args:
         lat: Latitude of point
         lon: Longitude of point
+        start_date: Optional start date to check (YYYY-MM-DD)
+        end_date: Optional end date to check (YYYY-MM-DD)
         
     Returns:
         Latest available Sentinel-1 image date and coverage info
@@ -188,7 +190,24 @@ async def check_sentinel1_availability(lat: float, lon: float):
         )
     
     try:
+        from datetime import datetime, timedelta
         point = ee.Geometry.Point([lon, lat])
+        
+        # If specific date range provided, check that range
+        if start_date and end_date:
+            count = (ee.ImageCollection("COPERNICUS/S1_GRD")
+                .filterBounds(point)
+                .filterDate(start_date, end_date)
+                .filter(ee.Filter.eq("instrumentMode", "IW"))
+                .size()
+                .getInfo())
+            
+            return {
+                "date_range": f"{start_date} to {end_date}",
+                "image_count": count,
+                "has_coverage": count > 0,
+                "message": f"Found {count} Sentinel-1 images for this period" if count > 0 else "No Sentinel-1 images found for this period"
+            }
         
         # Get most recent Sentinel-1 image
         s1_collection = (ee.ImageCollection("COPERNICUS/S1_GRD")
@@ -204,7 +223,6 @@ async def check_sentinel1_availability(lat: float, lon: float):
             latest_date = ee.Date(latest_image.get("system:time_start")).format("YYYY-MM-dd").getInfo()
             
             # Get count of images in last 30 days
-            from datetime import datetime, timedelta
             today = datetime.now()
             thirty_days_ago = (today - timedelta(days=30)).strftime("%Y-%m-%d")
             
