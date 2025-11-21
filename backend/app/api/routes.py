@@ -1012,11 +1012,11 @@ async def analyze_location(
 
     # Convert SQLAlchemy objects to dicts for the service
     nearby_alerts_dicts = [
-        {"latitude": a.latitude, "longitude": a.longitude} 
+        {"latitude": a.latitude, "longitude": a.longitude}
         for a in nearby_alerts
     ]
     nearby_predictions_dicts = [
-        {"flood_probability": p.flood_probability} 
+        {"flood_probability": p.flood_probability}
         for p in nearby_predictions
     ]
 
