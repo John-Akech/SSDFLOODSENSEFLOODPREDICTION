@@ -115,7 +115,7 @@ app.add_middleware(
 app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=settings.ALLOWED_HOSTS or [
-        "localhost", "127.0.0.1", "*.floodsense.org", "testserver"
+        "localhost", "127.0.0.1", "159.203.162.85", "backend", "*.floodsense.org", "testserver"
     ]
 )
 

@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     FORCE_HTTPS: bool = False
 
     # Security Headers
-    ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]
+    ALLOWED_HOSTS: list[str] = ["localhost",
+                                "127.0.0.1", "159.203.162.85", "backend"]
 
     @field_validator("ALLOWED_HOSTS", mode="before")
     @classmethod
