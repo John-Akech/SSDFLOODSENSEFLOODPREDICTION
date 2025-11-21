@@ -19,8 +19,8 @@ services:
 
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
     image: registry.digitalocean.com/floodsense-registry/floodsense-backend:${TAG:-latest}
     container_name: floodsense-backend
     ports:

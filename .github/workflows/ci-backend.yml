@@ -1,0 +1,97 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "backend/**"
+      - ".github/workflows/ci-backend.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/ci-backend.yml"
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, Test, Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('backend/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+          pip install ruff pip-audit bandit
+
+      - name: Ruff lint
+        run: ruff check backend
+
+      - name: Bandit security scan
+        run: bandit -r backend/app -lll
+
+      - name: Run pytest
+        run: |
+          pytest backend/tests --maxfail=1 --disable-warnings --junitxml=backend-test-results.xml
+
+      - name: Upload pytest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-pytest-report
+          path: backend-test-results.xml
+          if-no-files-found: warn
+
+      - name: pip-audit
+        run: pip-audit -r backend/requirements.txt
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --report-format sarif --report-path gitleaks-report.sarif
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-gitleaks-report
+          path: gitleaks-report.sarif
+          if-no-files-found: warn
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: backend
+          format: sarif
+          output: trivy-backend.sarif
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+
+      - name: Upload trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-trivy-report
+          path: trivy-backend.sarif
+          if-no-files-found: warn

@@ -1,8 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { BellIcon } from './Icons';
 import { apiService } from '../services/api';
 import { reverseGeocode } from '../services/geocoding';
 import '../styles/flood-colors.css';
+
+type AppEnv = Record<string, string | undefined>;
+
+declare global {
+  interface Window {
+    __APP_ENV__?: AppEnv;
+  }
+}
+
+const getEnvVar = (key: string) => {
+  const envSource = (typeof window !== 'undefined' ? window.__APP_ENV__ : undefined)
+    ?? (globalThis as { __APP_ENV__?: AppEnv }).__APP_ENV__;
+  return envSource?.[key];
+};
 
 const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -108,7 +121,7 @@ const NotificationBell: React.FC = () => {
       const reg = await navigator.serviceWorker.ready;
 
       // Get VAPID public key from environment
-      const vapid = (import.meta as any).env?.VITE_VAPID_PUBLIC_KEY;
+      const vapid = getEnvVar('VITE_VAPID_PUBLIC_KEY');
       if (!vapid) {
         console.warn('VAPID public key not found in environment');
         alert('Push notification configuration is missing. Please contact support.');
@@ -149,7 +162,7 @@ const NotificationBell: React.FC = () => {
         className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
         aria-label="Notifications"
       >
-        <BellIcon className="w-6 h-6 group-hover:scale-110 transition-transform" />
+        <span className="font-bold text-sm">ALERTS</span>
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse shadow-lg">
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -160,9 +173,9 @@ const NotificationBell: React.FC = () => {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-          <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-96 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[80vh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-cyan-50">
+            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-cyan-50 flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-flood-title">Flood Alerts</h3>
@@ -191,7 +204,7 @@ const NotificationBell: React.FC = () => {
             </div>
 
             {/* Notifications List */}
-            <div className="max-h-80 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto min-h-0">
               {loading ? (
                 <div className="p-8 text-center">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -200,9 +213,6 @@ const NotificationBell: React.FC = () => {
               ) : notifications.length === 0 ? (
                 <div className="p-8 text-center text-gray-500">
                   <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
                   </div>
                   <p className="font-medium">No active alerts</p>
                   <p className="text-sm">All monitored areas are safe</p>
@@ -218,9 +228,7 @@ const NotificationBell: React.FC = () => {
                       className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-200 rounded-full"
                       title="Dismiss notification"
                     >
-                      <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
+                      <span className="text-xs font-bold text-gray-600">X</span>
                     </button>
 
                     <div className="flex items-start gap-3 pr-8">
@@ -246,10 +254,6 @@ const NotificationBell: React.FC = () => {
                         </p>
 
                         <p className="text-xs text-gray-600 font-medium flex items-center gap-1">
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                          </svg>
                           {locationNames[notif.id] || `${notif.latitude.toFixed(4)}, ${notif.longitude.toFixed(4)}`}
                         </p>
 
@@ -267,7 +271,7 @@ const NotificationBell: React.FC = () => {
 
             {/* Footer */}
             {notifications.length > 0 && (
-              <div className="p-3 border-t border-gray-200 bg-gray-50">
+              <div className="p-3 border-t border-gray-200 bg-gray-50 flex-shrink-0">
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <span>Last updated: {new Date().toLocaleTimeString()}</span>
                   <span className="flex items-center gap-1">

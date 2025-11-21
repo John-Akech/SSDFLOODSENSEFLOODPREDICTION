@@ -6,23 +6,46 @@ import os
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=os.path.abspath(os.path.join(os.path.dirname(__file__), "../../.env")),
+        env_file=os.path.abspath(os.path.join(
+            os.path.dirname(__file__), "../../.env")),
         env_file_encoding="utf-8",
         extra="ignore",
         protected_namespaces=(),
     )
-    
+
     # API Settings
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "South Sudan Flood Prediction API"
+    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
+    FORCE_HTTPS: bool = False
+
     # Security Headers
     ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1"]
+
+    @field_validator("ALLOWED_HOSTS", mode="before")
+    @classmethod
+    def parse_allowed_hosts(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            if not v.strip():
+                return []
+            return [host.strip() for host in v.split(",") if host.strip()]
+        return v
+
+    @field_validator("ALLOWED_HOSTS", mode="after")
+    @classmethod
+    def ensure_required_hosts(cls, v: Any) -> list[str]:
+        hosts: list[str] = v or []
+        # Guarantee internal tools like the TestClient still function
+        required_hosts = {"localhost", "127.0.0.1", "testserver"}
+        for host in required_hosts:
+            if host not in hosts:
+                hosts.append(host)
+        return hosts
     # Use Union to accept either string or list from environment
     CORS_ORIGINS: Union[str, list[str]] = [
         "http://localhost:3000",
@@ -38,7 +61,7 @@ class Settings(BaseSettings):
         "https://floodsense.org",
         "https://www.floodsense.org"
     ]
-    
+
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
     def parse_cors_origins(cls, v: Any) -> list[str]:
@@ -51,7 +74,7 @@ class Settings(BaseSettings):
         elif isinstance(v, list):
             return v
         return []
-    
+
     @field_validator("CORS_ORIGINS", mode="after")
     @classmethod
     def ensure_cors_list(cls, v: Any) -> list[str]:
@@ -59,10 +82,10 @@ class Settings(BaseSettings):
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
-    
+
     MAX_LOGIN_ATTEMPTS: int = 5
     LOGIN_ATTEMPT_WINDOW: int = 900  # 15 minutes
-    
+
     # Rate Limiting
     RATE_LIMIT_REQUESTS: int = 100
     RATE_LIMIT_WINDOW: int = 3600  # 1 hour
@@ -82,9 +105,12 @@ class Settings(BaseSettings):
     VAPID_SUBJECT: str = "mailto:admin@floodsense.org"
 
     # Model paths
-    RF_MODEL_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../models/random_forest.pkl'))
-    TCN_MODEL_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../models/tcn_model.pt'))
-    PROTOTYPICAL_MODEL_PATH: str = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../models/prototypical_model.pt'))
+    RF_MODEL_PATH: str = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '../../../models/random_forest.pkl'))
+    TCN_MODEL_PATH: str = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '../../../models/tcn_model.pt'))
+    PROTOTYPICAL_MODEL_PATH: str = os.path.abspath(os.path.join(
+        os.path.dirname(__file__), '../../../models/prototypical_model.pt'))
 
     # Data paths
     DATA_PATH: str = "data/south_sudan_flood_combined_data.csv"

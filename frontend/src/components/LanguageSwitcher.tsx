@@ -22,9 +22,6 @@ const LanguageSwitcher: React.FC = () => {
       >
         <span className="text-xl">{currentLang.flag}</span>
         <span className="font-bold text-gray-900">{currentLang.name}</span>
-        <svg className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
       </button>
 
       {isOpen && (
@@ -33,17 +30,11 @@ const LanguageSwitcher: React.FC = () => {
             <button
               key={lang.code}
               onClick={() => { setLanguage(lang.code); setIsOpen(false); }}
-              className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-ocean-50 hover:to-cyan-50 transition-all ${
-                language === lang.code ? 'bg-gradient-to-r from-ocean-100 to-cyan-100' : ''
-              }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 hover:bg-gradient-to-r hover:from-ocean-50 hover:to-cyan-50 transition-all ${language === lang.code ? 'bg-gradient-to-r from-ocean-100 to-cyan-100' : ''
+                }`}
             >
               <span className="text-2xl">{lang.flag}</span>
               <span className="font-bold text-gray-900">{lang.name}</span>
-              {language === lang.code && (
-                <svg className="w-5 h-5 text-ocean-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
             </button>
           ))}
         </div>

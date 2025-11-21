@@ -19,8 +19,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Upgrade pip first
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# Copy requirements
-COPY requirements.txt .
+# Copy backend requirements from repo root context
+COPY backend/requirements.txt ./requirements.txt
 
 # Install PyTorch first (largest dependency) - CPU version for smaller size
 RUN pip install --no-cache-dir --timeout=300 torch==2.5.1 --index-url https://download.pytorch.org/whl/cpu || \
@@ -55,9 +55,13 @@ RUN pip install --no-cache-dir --timeout=300 \
     httpx==0.25.2 \
     earthengine-api==0.1.384 \
     cryptography==41.0.7 \
-    psycopg2-binary==2.9.9
+    psycopg2-binary==2.9.9 \
+    pywebpush==2.1.2
 
-COPY . .
+# Copy backend source code
+COPY backend/ /app/
+# Ship trained model artifacts so containers can predict immediately
+COPY models/ /app/models/
 
 RUN mkdir -p database logs && \
     useradd -m -u 1000 appuser && \

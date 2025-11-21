@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -56,9 +56,8 @@ class User(UserBase):
     id: int
     is_active: bool
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 
 # Authentication schemas
@@ -75,12 +74,16 @@ class TokenData(BaseModel):
 class PredictionRequest(BaseModel):
     latitude: float = Field(..., ge=-90, le=90, examples=[7.012])
     longitude: float = Field(..., ge=-180, le=180, examples=[31.3063])
-    model_type: ModelType = ModelType.ENSEMBLE  # Changed to ENSEMBLE for better confidence and accuracy
-    lead_time_hours: int = Field(default=48, ge=1, le=168, examples=[48])  # Changed default to 48 hours for better preparation
+    # Changed to ENSEMBLE for better confidence and accuracy
+    model_type: ModelType = ModelType.ENSEMBLE
+    # Changed default to 48 hours for better preparation
+    lead_time_hours: int = Field(default=48, ge=1, le=168, examples=[48])
     features: Optional[Dict[str, float]] = None
-    district: Optional[str] = Field(default=None, examples=["Twic East"])  # District/location name
-    
-    model_config = {"protected_namespaces": (), "json_schema_extra": {"examples": [{"latitude": 7.012, "longitude": 31.3063, "model_type": "ensemble", "lead_time_hours": 48, "district": "Twic East"}]}}
+    district: Optional[str] = Field(
+        default=None, examples=["Twic East"])  # District/location name
+
+    model_config = {"protected_namespaces": (), "json_schema_extra": {"examples": [
+        {"latitude": 7.012, "longitude": 31.3063, "model_type": "ensemble", "lead_time_hours": 48, "district": "Twic East"}]}}
 
 
 class PredictionResponse(BaseModel):
@@ -93,10 +96,12 @@ class PredictionResponse(BaseModel):
     confidence_score: Optional[float]
     risk_level: str  # low, medium, high, critical
     created_at: datetime
-    model_predictions: Optional[Dict[str, float]] = None  # Individual model predictions for ensemble
+    # Individual model predictions for ensemble
+    model_predictions: Optional[Dict[str, float]] = None
     is_reliable: Optional[bool] = True  # False if confidence < 60%
-    warning: Optional[str] = None  # Warning message for low confidence predictions
-    
+    # Warning message for low confidence predictions
+    warning: Optional[str] = None
+
     model_config = {"from_attributes": True, "protected_namespaces": ()}
 
 
@@ -114,9 +119,18 @@ class FloodEvent(FloodEventCreate):
     id: int
     verified: bool
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FloodEventUpdate(BaseModel):
+    date_time: Optional[datetime] = None
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    severity: Optional[float] = Field(None, ge=0, le=1)
+    state: Optional[str] = None
+    location_name: Optional[str] = None
+    verified: Optional[bool] = None
 
 
 # Recommendation schemas
@@ -133,9 +147,18 @@ class RecommendationCreate(BaseModel):
 class Recommendation(RecommendationCreate):
     id: int
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RecommendationUpdate(BaseModel):
+    prediction_id: Optional[int] = None
+    recommendation_type: Optional[str] = None
+    latitude: Optional[float] = Field(None, ge=-90, le=90)
+    longitude: Optional[float] = Field(None, ge=-180, le=180)
+    description: Optional[str] = None
+    priority: Optional[Priority] = None
+    estimated_cost: Optional[float] = None
 
 
 # Feedback schemas
@@ -152,9 +175,17 @@ class Feedback(FeedbackCreate):
     id: int
     user_id: int
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class FeedbackUpdate(BaseModel):
+    prediction_id: Optional[int] = None
+    feedback_type: Optional[str] = None
+    rating: Optional[int] = Field(None, ge=1, le=5)
+    comments: Optional[str] = None
+    flood_occurred: Optional[bool] = None
+    actual_severity: Optional[float] = Field(None, ge=0, le=1)
 
 
 # Alert schemas
@@ -184,8 +215,9 @@ class DykePlacementRequest(BaseModel):
     flood_probability: float = Field(..., ge=0, le=1, examples=[0.65])
     elevation: Optional[float] = Field(None, examples=[450])
     river_distance: Optional[float] = Field(None, examples=[500])
-    
-    model_config = {"json_schema_extra": {"examples": [{"latitude": 7.012, "longitude": 31.3063, "flood_probability": 0.65, "elevation": 450, "river_distance": 500}]}}
+
+    model_config = {"json_schema_extra": {"examples": [
+        {"latitude": 7.012, "longitude": 31.3063, "flood_probability": 0.65, "elevation": 450, "river_distance": 500}]}}
 
 
 class DykePlacementResponse(BaseModel):
@@ -200,16 +232,18 @@ class SystemStats(BaseModel):
     total_flood_events: int
     accuracy_metrics: Dict[str, float]
     model_performance: Dict[str, Dict[str, float]]
-    
+
     model_config = {"protected_namespaces": ()}
 
 
 # Batch prediction schemas
 class BatchPredictionRequest(BaseModel):
     locations: List[Dict[str, float]]  # [{"lat": x, "lon": y}, ...]
-    model_type: ModelType = ModelType.ENSEMBLE  # Changed to ENSEMBLE for better confidence
-    lead_time_hours: int = Field(default=48, ge=1, le=168)  # Increased to 48 hours for better lead time
-    
+    # Changed to ENSEMBLE for better confidence
+    model_type: ModelType = ModelType.ENSEMBLE
+    # Increased to 48 hours for better lead time
+    lead_time_hours: int = Field(default=48, ge=1, le=168)
+
     model_config = {"protected_namespaces": ()}
 
 

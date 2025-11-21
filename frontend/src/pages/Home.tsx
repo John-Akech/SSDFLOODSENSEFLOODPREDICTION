@@ -7,25 +7,30 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useLanguage } from '../i18n/LanguageContext';
 import { reverseGeocode } from '../services/geocoding';
 import '../styles/flood-colors.css';
+import { useSystemAccuracy } from '../hooks/useSystemAccuracy';
+import { useDisasterMode } from '../context/DisasterModeContext';
 
 const Home: React.FC = () => {
+  const { isDisasterMode } = useDisasterMode();
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     high: 0,
     zones: 0,
     predictions: 0,
-    population: 0,
-    accuracy: 0
+    population: 0
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [locationNames, setLocationNames] = useState<Record<string, string>>({});
   const [populationByState, setPopulationByState] = useState<Record<string, number>>({});
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const { t: _ } = useLanguage();
+  const { t } = useLanguage();
+  const { accuracyLabel } = useSystemAccuracy({ refreshIntervalMs: 30_000 });
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const [alertData, predData, systemStats] = await Promise.all([
         apiService.getActiveAlerts(),
         apiService.getPredictions(),
@@ -48,10 +53,6 @@ const Home: React.FC = () => {
         (sum, pop) => sum + ((pop as number) || 0), 0
       );
 
-      // Get accuracy from system stats or calculate from predictions
-      const accuracyFromStats = systemStats?.accuracy_metrics?.overall_accuracy || 0;
-      const accuracy = accuracyFromStats > 0 ? Math.round(accuracyFromStats * 100) : 0;
-
       // Calculate zones from unique coordinate pairs (rounded to 1 decimal place)
       const uniqueZones = new Set(alertList.map((a: Alert) =>
         `${Math.floor(a.latitude * 10) / 10},${Math.floor(a.longitude * 10) / 10}`
@@ -62,8 +63,7 @@ const Home: React.FC = () => {
         high: highRiskCount,
         zones: uniqueZones.size,
         predictions: predList.length,
-        population: totalPopulation,
-        accuracy: accuracy
+        population: totalPopulation
       });
 
       // Get location names for all alerts and predictions
@@ -88,8 +88,7 @@ const Home: React.FC = () => {
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      // Set fallback data
-      setStats(prev => ({ ...prev, lastUpdate: new Date() }));
+      setError('Failed to load flood monitoring data. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -111,7 +110,6 @@ const Home: React.FC = () => {
     }
   };
 
-  // Prepare chart data
   const severityData = alerts.reduce((acc, alert) => {
     acc[alert.severity] = (acc[alert.severity] || 0) + 1;
     return acc;
@@ -146,14 +144,102 @@ const Home: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading flood monitoring data...</p>
+          <p className="text-slate-600">{t('loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg border border-red-100">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 hidden">
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">System Error</h3>
+          <p className="text-slate-600 mb-6">{error}</p>
+          <button
+            onClick={fetchData}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            Retry Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isDisasterMode) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white w-full overflow-x-hidden font-mono">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Emergency Header */}
+          <div className="border-b-4 border-red-600 pb-6 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center animate-pulse gap-4">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-black text-red-500 tracking-tighter uppercase">Disaster Mode</h1>
+              <p className="text-lg md:text-xl text-red-400 mt-2 font-bold tracking-widest">EMERGENCY RESPONSE PROTOCOL ACTIVE</p>
+            </div>
+            <div className="text-left md:text-right">
+              <div className="text-2xl md:text-3xl font-bold text-white">{lastUpdate.toLocaleTimeString()}</div>
+              <div className="text-red-500 font-bold tracking-wider">LIVE DATA FEED</div>
+            </div>
+          </div>
+
+          {/* Critical Status Banner */}
+          <div className="bg-red-900/20 border-l-8 border-red-600 p-6 md:p-8 mb-12 shadow-[0_0_50px_rgba(220,38,38,0.2)]">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 uppercase">
+              {stats.high > 0 ? "Critical Flood Warning" : "System Monitoring - Elevated Alert"}
+            </h2>
+            <p className="text-xl md:text-2xl text-red-200 font-medium">
+              {stats.high} High Risk Zones Detected • Immediate Action Required
+            </p>
+          </div>
+
+          {/* Big Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 mb-12">
+            <div className="bg-slate-900 border-2 border-red-500/50 p-6 md:p-8 shadow-lg shadow-red-900/20">
+              <div className="text-red-400 text-lg md:text-xl mb-2 font-bold tracking-wider">{t('activeAlerts').toUpperCase()}</div>
+              <div className="text-6xl md:text-7xl font-black text-white">{stats.total}</div>
+            </div>
+            <div className="bg-slate-900 border-2 border-orange-500/50 p-6 md:p-8 shadow-lg shadow-orange-900/20">
+              <div className="text-orange-400 text-lg md:text-xl mb-2 font-bold tracking-wider">{t('highRiskAreas').toUpperCase()}</div>
+              <div className="text-6xl md:text-7xl font-black text-white">{stats.high}</div>
+            </div>
+            <div className="bg-slate-900 border-2 border-blue-500/50 p-6 md:p-8 shadow-lg shadow-blue-900/20">
+              <div className="text-blue-400 text-lg md:text-xl mb-2 font-bold tracking-wider">{t('modelAccuracy').toUpperCase()}</div>
+              <div className="text-6xl md:text-7xl font-black text-white">{accuracyLabel}</div>
+            </div>
+          </div>
+
+          {/* Critical Alerts Feed */}
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold text-white border-b-2 border-slate-700 pb-4 mb-6 tracking-wider">PRIORITY INCIDENT FEED</h3>
+            {alerts.filter(a => a.severity === 'high' || a.severity === 'critical').length > 0 ? (
+              alerts.filter(a => a.severity === 'high' || a.severity === 'critical').map((alert, idx) => (
+                <div key={idx} className="bg-red-950/40 border-2 border-red-500/30 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-red-900/30 transition-colors">
+                  <div>
+                    <div className="text-2xl md:text-3xl font-bold text-white mb-2">
+                      {locationNames[`${alert.latitude},${alert.longitude}`] || `Alert Zone ${idx + 1}`}
+                    </div>
+                    <div className="text-lg md:text-xl text-red-300 font-medium">{alert.message}</div>
+                  </div>
+                  <div className="text-left md:text-right min-w-[120px]">
+                    <div className="text-3xl font-bold text-white uppercase">{alert.severity}</div>
+                    <div className="text-sm text-slate-400 font-bold tracking-wider">{t('severity').toUpperCase()}</div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-slate-500 text-xl italic p-8 border border-slate-800 bg-slate-900/50">No critical high-severity alerts at this moment. System monitoring active.</div>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 w-full overflow-x-hidden">
+    <div className="min-h-screen w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 w-full">
         {/* Header */}
         <motion.div
@@ -165,20 +251,20 @@ const Home: React.FC = () => {
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-3 text-slate-900">
                 <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
-                  Flood Monitoring Dashboard
+                  {t('floodsenseDashboard')}
                 </span>
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl">
-                Real-time flood detection and risk assessment across South Sudan
+                {t('realTimeMonitoringDesc')}
               </p>
             </div>
             <div className="flex-shrink-0">
               <div className="flex items-center justify-center sm:justify-end space-x-2 text-sm text-slate-600 mb-2">
                 <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="font-medium">Live Updates</span>
+                <span className="font-medium">{t('realTimeMonitoring')}</span>
               </div>
               <p className="text-xs text-slate-500 text-center sm:text-right">
-                Last updated: {lastUpdate.toLocaleTimeString()}
+                {t('lastUpdated')}: {lastUpdate.toLocaleTimeString()}
               </p>
             </div>
           </div>
@@ -188,35 +274,31 @@ const Home: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-10 lg:gap-12 mb-10 sm:mb-12 lg:mb-16">
           {[
             {
-              label: 'Priority Zones',
+              label: t('priorityZones'),
               value: stats.zones,
               gradient: 'from-blue-600 to-cyan-600',
-              icon: 'Location',
-              desc: 'Monitored areas',
+              desc: t('monitoredZones'),
               delay: 0
             },
             {
-              label: 'Active Alerts',
+              label: t('activeAlerts'),
               value: stats.total,
               gradient: 'from-blue-700 to-blue-800',
-              icon: 'Alert',
-              desc: 'Current alerts',
+              desc: t('activeAlerts'),
               delay: 0.1
             },
             {
-              label: 'High Risk Areas',
+              label: t('highRiskAreas'),
               value: stats.high,
               gradient: 'from-amber-500 to-orange-600',
-              icon: 'Warning',
-              desc: 'High risk zones',
+              desc: t('highRiskAreas'),
               delay: 0.2
             },
             {
-              label: 'Model Accuracy',
-              value: `${stats.accuracy.toFixed(1)}%`,
+              label: t('modelAccuracy'),
+              value: accuracyLabel,
               gradient: 'from-teal-500 to-cyan-600',
-              icon: 'Target',
-              desc: 'Prediction accuracy',
+              desc: t('modelAccuracy'),
               delay: 0.3
             }
           ].map((stat, idx) => (
@@ -225,12 +307,12 @@ const Home: React.FC = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: stat.delay }}
-              className="flood-card p-7 sm:p-9 lg:p-10"
+              className="flood-card p-7 sm:p-9 lg:p-10 h-full flex flex-col justify-between"
             >
               <div className="flex flex-col gap-6 sm:gap-7">
                 <div className="flex items-start justify-between gap-5 sm:gap-6">
                   <div className="flex-1 min-w-0 pr-3 sm:pr-4">
-                    <p className="text-slate-600 text-xs sm:text-sm font-medium mb-4 sm:mb-5">{stat.label}</p>
+                    <p className="text-slate-600 text-xs sm:text-sm font-medium mb-4 sm:mb-5 uppercase tracking-wider">{stat.label}</p>
                     <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 leading-tight">{stat.value}</p>
                   </div>
                 </div>
@@ -248,25 +330,22 @@ const Home: React.FC = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="flood-card p-7 sm:p-9 lg:p-10"
+              className="flood-card p-7 sm:p-9 lg:p-10 h-full"
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 sm:gap-8 mb-8 sm:mb-10">
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Active Flood Alerts</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900">{t('activeAlerts')}</h2>
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-sm text-slate-600">Live Updates</span>
+                  <span className="text-sm text-slate-600">{t('realTimeMonitoring')}</span>
                 </div>
               </div>
 
               {alerts.length === 0 ? (
                 <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
+                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 hidden">
                   </div>
-                  <h3 className="text-lg font-semibold text-slate-700 mb-2">No Active Alerts</h3>
-                  <p className="text-slate-500">All monitored areas are currently safe from flooding.</p>
+                  <h3 className="text-lg font-semibold text-slate-700 mb-2">{t('noActiveAlerts')}</h3>
+                  <p className="text-slate-500">{t('allZonesSafe')}</p>
                 </div>
               ) : (
                 <div className="space-y-5 sm:space-y-6 max-h-[32rem] sm:max-h-96 overflow-y-auto overflow-x-hidden pr-4">
@@ -292,13 +371,13 @@ const Home: React.FC = () => {
                             </span>
                           </div>
                           <p className="text-slate-700 font-medium mb-1">
-                            {alert.severity === 'critical' ? 'Critical Flood Risk' :
-                              alert.severity === 'high' ? 'High Flood Risk' :
-                                alert.severity === 'medium' ? 'Medium Flood Risk' :
-                                  'Low Flood Risk'}
+                            {alert.severity === 'critical' ? `${t('critical')} ${t('riskLevel')}` :
+                              alert.severity === 'high' ? `${t('high')} ${t('riskLevel')}` :
+                                alert.severity === 'medium' ? `${t('medium')} ${t('riskLevel')}` :
+                                  `${t('low')} ${t('riskLevel')}`}
                           </p>
                           <p className="text-sm text-slate-600">
-                            Created: {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', {
+                            {t('lastUpdated')}: {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', {
                               year: 'numeric',
                               month: 'short',
                               day: 'numeric',
@@ -331,7 +410,7 @@ const Home: React.FC = () => {
               transition={{ delay: 0.4 }}
               className="flood-card p-7 sm:p-9"
             >
-              <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Risk Distribution</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">{t('floodRiskTrend')}</h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -364,28 +443,28 @@ const Home: React.FC = () => {
               transition={{ delay: 0.5 }}
               className="flood-card p-8 sm:p-10"
             >
-              <h3 className="text-xl sm:text-2xl font-bold mb-8 text-slate-900">Quick Stats</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-8 text-slate-900">{t('keyPerformanceMetrics')}</h3>
               <div className="space-y-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Total Population at Risk</span>
+                  <span className="text-slate-600">{t('populationAtRisk')}</span>
                   <span className="font-semibold text-slate-900">
                     {stats.population.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">States Monitored</span>
+                  <span className="text-slate-600">{t('monitoredZones')}</span>
                   <span className="font-semibold text-slate-900">
                     {Object.keys(populationByState).length}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Total Predictions</span>
+                  <span className="text-slate-600">{t('totalPredictions')}</span>
                   <span className="font-semibold text-slate-900">
                     {stats.predictions}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-600">Last Update</span>
+                  <span className="text-slate-600">{t('lastUpdated')}</span>
                   <span className="font-semibold text-slate-900">
                     {lastUpdate.toLocaleTimeString()}
                   </span>
@@ -400,14 +479,14 @@ const Home: React.FC = () => {
               transition={{ delay: 0.6 }}
               className="flood-card p-8 sm:p-10"
             >
-              <h3 className="text-xl sm:text-2xl font-bold mb-8 text-slate-900">Risk Levels</h3>
+              <h3 className="text-xl sm:text-2xl font-bold mb-8 text-slate-900">{t('riskLevel')}</h3>
               <div className="space-y-5">
                 {[
-                  { level: 'Critical', color: 'var(--risk-critical)', desc: 'Immediate evacuation required' },
-                  { level: 'High', color: 'var(--risk-high)', desc: 'Prepare for evacuation' },
-                  { level: 'Medium', color: 'var(--risk-medium)', desc: 'Monitor closely' },
-                  { level: 'Low', color: 'var(--risk-low)', desc: 'Stay alert' },
-                  { level: 'Minimal', color: 'var(--risk-minimal)', desc: 'Normal conditions' }
+                  { level: t('critical'), color: 'var(--risk-critical)', desc: t('requiresAttention') },
+                  { level: t('high'), color: 'var(--risk-high)', desc: t('elevatedProbability') },
+                  { level: t('medium'), color: 'var(--risk-medium)', desc: t('earlyWarning') },
+                  { level: t('low'), color: 'var(--risk-low)', desc: t('allZonesSafe') },
+                  { level: 'Minimal', color: 'var(--risk-minimal)', desc: t('allZonesSafe') }
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start space-x-5">
                     <div
@@ -433,8 +512,8 @@ const Home: React.FC = () => {
           className="mt-10 sm:mt-12 lg:mt-16 grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 lg:gap-12 w-full overflow-x-hidden"
         >
           {/* Severity Chart */}
-          <div className="flood-card p-7 sm:p-9 lg:p-10 overflow-x-auto">
-            <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Alert Severity Distribution</h3>
+          <div className="flood-card p-7 sm:p-9 lg:p-10 overflow-x-auto h-full">
+            <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">{t('activeWarningsByState')}</h3>
             <div className="h-64 sm:h-80 min-w-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
@@ -443,6 +522,10 @@ const Home: React.FC = () => {
                     dataKey="severity"
                     stroke="#64748b"
                     fontSize={12}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                    interval={0}
                   />
                   <YAxis
                     stroke="#64748b"
@@ -468,8 +551,8 @@ const Home: React.FC = () => {
           </div>
 
           {/* State Population Chart */}
-          <div className="flood-card p-7 sm:p-9 lg:p-10 overflow-x-auto">
-            <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">Population at Risk by State</h3>
+          <div className="flood-card p-7 sm:p-9 lg:p-10 overflow-x-auto h-full">
+            <h3 className="text-lg sm:text-xl font-bold mb-8 sm:mb-9 text-slate-900">{t('populationAtRisk')}</h3>
             <div className="h-64 sm:h-80 min-w-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stateChartData}>

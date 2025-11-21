@@ -51,10 +51,12 @@ export const apiService = {
   getCurrentUser: async () => (await api.get('/auth/me')).data,
 
   // Predictions - Enhanced with real-time data
-  createPrediction: async (lat: number, lng: number) => {
+  createPrediction: async (lat: number, lng: number, modelType: string = 'ensemble', leadTime: number = 48) => {
     const response = await api.post('/predictions', {
       latitude: lat,
       longitude: lng,
+      model_type: modelType,
+      lead_time_hours: leadTime,
       timestamp: new Date().toISOString()
     });
     return response.data;
@@ -78,10 +80,14 @@ export const apiService = {
   getFloodPredictions: async (bounds?: any) => (await api.get('/flood/predictions', { params: bounds })).data,
 
   // GIS and Mapping
+  analyzeLocation: async (lat: number, lng: number) => (await api.post('/gis/analyze', { latitude: lat, longitude: lng })).data,
   getDykeRecommendations: async (data: any) => (await api.post('/recommendations/dyke-placement', data)).data,
   getFloodZones: async (bounds?: any) => (await api.get('/gis/flood-zones', { params: bounds })).data,
   getElevationData: async (lat: number, lng: number) => (await api.get(`/gis/elevation?lat=${lat}&lng=${lng}`)).data,
   getWaterBodies: async (bounds?: any) => (await api.get('/gis/water-bodies', { params: bounds })).data,
+
+  // Verification
+  verifyPrediction: async (id: number, verification: any) => (await api.post(`/predictions/${id}/verify`, verification)).data,
 
   // Feedback and Reports
   submitFeedback: async (data: any) => (await api.post('/feedback', { ...data, comments: data.comments ? sanitize(data.comments) : undefined })).data,
@@ -130,6 +136,8 @@ export const apiService = {
   // Settings and Configuration
   getSettings: async () => (await api.get('/settings')).data,
   updateSettings: async (data: any) => (await api.put('/settings', data)).data,
+  getSystemSettings: async () => (await api.get('/system/settings')).data,
+  updateSystemSettings: async (data: any) => (await api.post('/system/settings', data)).data,
   getAppConfig: async () => (await api.get('/config')).data,
 
   // Health and Status

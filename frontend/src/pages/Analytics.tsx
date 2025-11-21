@@ -7,6 +7,7 @@ import {
 } from 'recharts';
 import { useLanguage } from '../i18n/LanguageContext';
 import { apiService } from '../services/api';
+import { useSystemAccuracy } from '../hooks/useSystemAccuracy';
 import '../styles/flood-colors.css';
 
 const Analytics: React.FC = () => {
@@ -21,6 +22,7 @@ const Analytics: React.FC = () => {
   const [predictions, setPredictions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [allStates, setAllStates] = useState<string[]>([]);
+  const { accuracyLabel, isLoading: accuracyLoading } = useSystemAccuracy({ refreshIntervalMs: 60000 });
 
   // Fetch all data with auto-refresh
   useEffect(() => {
@@ -171,7 +173,8 @@ const Analytics: React.FC = () => {
         });
       }
     } else { // yearly
-      for (let year = 2020; year <= 2024; year++) {
+      const currentYear = new Date().getFullYear();
+      for (let year = 2020; year <= currentYear; year++) {
         const yearPredictions = predictions.filter(p => {
           const predDate = new Date(p.created_at);
           return predDate.getFullYear() === year;
@@ -270,7 +273,7 @@ const Analytics: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 w-full overflow-x-hidden">
+    <div className="min-h-screen w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 w-full">
         {/* Header */}
         <motion.div
@@ -279,9 +282,6 @@ const Analytics: React.FC = () => {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-            <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
             <div>
               <div className="flex items-center gap-3">
                 Flood Analytics Dashboard
@@ -339,11 +339,9 @@ const Analytics: React.FC = () => {
                 <span className="text-xl font-bold text-blue-600">{predictions.length}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-medium">Accuracy:</span>
+                <span className="text-gray-700 font-medium">System Accuracy:</span>
                 <span className="text-xl font-bold text-green-600">
-                  {stats.accuracy_metrics?.overall_accuracy
-                    ? Math.round(stats.accuracy_metrics.overall_accuracy * 100) + '%'
-                    : '-'}
+                  {accuracyLoading ? 'Updating...' : (accuracyLabel || '-')}
                 </span>
               </div>
             </div>
@@ -357,10 +355,10 @@ const Analytics: React.FC = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="flood-card p-6 sm:p-8"
+            className="flood-card p-6 sm:p-8 h-full flex flex-col"
           >
             <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Risk Trends</h3>
-            <div className="h-80">
+            <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={timeSeriesData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
@@ -415,10 +413,10 @@ const Analytics: React.FC = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
-            className="flood-card p-6 sm:p-8"
+            className="flood-card p-6 sm:p-8 h-full flex flex-col"
           >
             <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Alert Severity Distribution</h3>
-            <div className="h-80 mb-4">
+            <div className="h-[400px] w-full mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -510,8 +508,11 @@ const Analytics: React.FC = () => {
             transition={{ delay: 0.6 }}
             className="flood-card p-6 mt-8"
           >
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-              <h3 className="text-flood-title text-xl font-bold">Prediction Model Performance</h3>
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-3">
+              <div>
+                <h3 className="text-flood-title text-xl font-bold">Prediction Model Performance</h3>
+                <p className="text-sm text-gray-500">Live per-model metrics from the last {modelWindow} predictions.</p>
+              </div>
               <div className="flex items-center gap-3">
                 <span className="text-sm text-gray-600">Window:</span>
                 <div className="flex items-center gap-2">
@@ -533,11 +534,11 @@ const Analytics: React.FC = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {Object.entries((liveModels || {})).map(([model, metrics]: [string, any]) => (
-                <div key={model} className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-100">
+                <div key={model} className="bg-gradient-to-br from-blue-50 to-cyan-50 p-4 rounded-lg border border-blue-100 h-full flex flex-col justify-between">
                   <h4 className="font-semibold text-blue-900 mb-2 capitalize">{model.replace('_', ' ')}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-blue-700">Accuracy:</span>
+                      <span className="text-blue-700">Live accuracy (last {modelWindow}):</span>
                       <span className="font-bold text-blue-900">
                         {Math.round(((metrics.avg_probability || 0)) * 100)}%
                       </span>

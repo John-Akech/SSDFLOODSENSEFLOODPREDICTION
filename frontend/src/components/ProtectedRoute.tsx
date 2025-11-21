@@ -1,5 +1,4 @@
 import React from 'react';
-import { ShieldIcon } from './Icons';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -15,7 +14,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole,
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <ShieldIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Authentication Required</h2>
           <p className="text-gray-600 mb-6">Please log in to access this page</p>
           <button
@@ -33,7 +31,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole,
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <ShieldIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
           <p className="text-gray-600 mb-6">You don't have permission to access this page</p>
           <button
@@ -51,7 +48,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole,
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <ShieldIcon className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Admin Access Required</h2>
           <p className="text-gray-600 mb-6">You don't have permission to access this page</p>
           <button

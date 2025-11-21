@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/api';
 
-import { WaveIcon } from '../components/Icons';
 import { useLanguage } from '../i18n/LanguageContext';
 
 const Login: React.FC = () => {
@@ -47,16 +46,9 @@ const Login: React.FC = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-ocean-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{ animationDelay: '4s' }}></div>
-      </div>
-
       <div className="glass-card max-w-md w-full relative z-10 animate-slide-in">
         <div className="text-center mb-8">
           <div className="inline-flex p-4 bg-gradient-to-br from-ocean-500 to-cyan-600 rounded-3xl shadow-2xl mb-4">
-            <WaveIcon className="w-12 h-12 text-white" />
           </div>
           <h1 className="text-4xl font-black mb-2">
             <span className="gradient-text">{t('adminLogin')}</span>

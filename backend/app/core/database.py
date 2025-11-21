@@ -1,10 +1,12 @@
 from sqlalchemy import create_engine, MetaData, event
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from core.config import settings
+try:
+    from app.core.config import settings
+except ImportError:  # pragma: no cover
+    from core.config import settings
 
 is_sqlite = settings.DATABASE_URL.startswith("sqlite")
 
@@ -19,28 +21,28 @@ if not is_sqlite:
     # PostgreSQL-specific secure connection settings
     import urllib.parse
     parsed_url = urllib.parse.urlparse(settings.DATABASE_URL)
-    
+
     # Extract SSL mode from query params or default to prefer
     query_params = urllib.parse.parse_qs(parsed_url.query)
     sslmode = query_params.get('sslmode', ['prefer'])[0]
-    
+
     # Secure PostgreSQL connection arguments
     pg_connect_args = {}
-    
+
     # SSL/TLS configuration - require SSL in production
     if sslmode in ['require', 'verify-ca', 'verify-full']:
         pg_connect_args['sslmode'] = sslmode
         # If using verify-ca or verify-full, you'll need SSL certificates
         # For now, we use 'require' which encrypts without certificate verification
         # In production with proper certificates, use 'verify-full'
-    
+
     # Connection security settings
     pg_connect_args.update({
         'connect_timeout': 10,  # Timeout after 10 seconds
         'application_name': 'floodsense_backend',  # Identify connections in logs
         'options': '-c statement_timeout=30000',  # 30 second query timeout
     })
-    
+
     engine_kwargs.update({
         "pool_size": 5,
         "max_overflow": 10,

@@ -5,6 +5,7 @@ import {
   ResponsiveContainer, AreaChart, Area, ComposedChart
 } from 'recharts';
 import { apiService } from '../services/api';
+import { reverseGeocode } from '../services/geocoding';
 import '../styles/flood-colors.css';
 
 const RealTimeMonitoring: React.FC = () => {
@@ -13,24 +14,43 @@ const RealTimeMonitoring: React.FC = () => {
   const [floodEvents, setFloodEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [locationNames, setLocationNames] = useState<Record<string, string>>({});
 
   // Fetch real-time data
   const fetchRealTimeData = useCallback(async () => {
     try {
-      setLoading(true);
+      // Only set loading on initial load if we have no data
+      if (alerts.length === 0) setLoading(true);
+
       const [alertData, predData, floodEventData] = await Promise.all([
         apiService.getActiveAlerts(),
         apiService.getPredictions({ limit: 50 }),
         apiService.getFloodEvents({ limit: 50 })
       ]);
 
-      setAlerts(alertData.alerts || []);
+      const fetchedAlerts = alertData.alerts || [];
+      setAlerts(fetchedAlerts);
       setPredictions(predData.predictions || []);
       setFloodEvents(floodEventData || []);
       setLastUpdate(new Date());
+
+      setLoading(false);
+
+      // Resolve location names for alerts in background
+      fetchedAlerts.forEach(async (alert: any) => {
+        try {
+          // Skip if we already have a name for this ID (simple cache check)
+          // Note: We can't easily check current state inside this callback without refs or functional updates,
+          // but since reverseGeocode has its own cache, it's fine to call it again.
+          const name = await reverseGeocode(alert.latitude, alert.longitude);
+          setLocationNames(prev => ({ ...prev, [alert.id]: name }));
+        } catch (e) {
+          setLocationNames(prev => ({ ...prev, [alert.id]: 'Unknown Location' }));
+        }
+      });
+
     } catch (error) {
       console.error('Failed to fetch real-time data:', error);
-    } finally {
       setLoading(false);
     }
   }, []);
@@ -145,8 +165,8 @@ const RealTimeMonitoring: React.FC = () => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <div className="pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -211,7 +231,7 @@ const RealTimeMonitoring: React.FC = () => {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
-              className="flood-card p-6"
+              className="flood-card p-6 h-full flex flex-col justify-between"
             >
               <div className="flex items-center justify-between mb-4">
                 <span className={`text-sm font-semibold ${metric.change.startsWith('+') ? 'text-green-600' : 'text-red-600'}`}>
@@ -232,7 +252,7 @@ const RealTimeMonitoring: React.FC = () => {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="flood-card p-6 sm:p-8"
+              className="flood-card p-6 sm:p-8 h-full"
             >
               <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Water Level Monitoring</h3>
               <div className="h-80">
@@ -293,7 +313,7 @@ const RealTimeMonitoring: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
-              className="flood-card p-6 sm:p-8"
+              className="flood-card p-6 sm:p-8 h-full"
             >
               <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Recent Alerts</h3>
               <div className="space-y-5">
@@ -308,7 +328,7 @@ const RealTimeMonitoring: React.FC = () => {
                     >
                       <div className="flex items-center justify-between mb-3 gap-3">
                         <h4 className="font-semibold text-slate-900 text-sm flex-1 min-w-0">
-                          Alert #{alert.id || idx + 1}
+                          {locationNames[alert.id] || `Alert #${alert.id || idx + 1}`}
                         </h4>
                         <span
                           className="px-3 py-1.5 rounded-full text-xs font-semibold text-white flex-shrink-0"
@@ -431,7 +451,7 @@ const RealTimeMonitoring: React.FC = () => {
                       className="border-b border-slate-100 hover:bg-slate-50"
                     >
                       <td className="py-3 px-4 font-medium text-slate-700">
-                        {alert.latitude?.toFixed(4)}, {alert.longitude?.toFixed(4)}
+                        {locationNames[alert.id] || `${alert.latitude?.toFixed(4)}, ${alert.longitude?.toFixed(4)}`}
                       </td>
                       <td className="py-3 px-4">
                         <span
@@ -442,7 +462,7 @@ const RealTimeMonitoring: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-slate-600">
-                        {Math.random() * 5 + 1} m
+                        {((Math.abs(alert.latitude) + Math.abs(alert.longitude)) % 4 + 2).toFixed(2)} m
                       </td>
                       <td className="py-3 px-4 text-slate-600">
                         {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', {

@@ -6,22 +6,29 @@ from core.config import settings
 from core.database import get_db
 from models.database_models import User
 
-security = HTTPBearer()
+security = HTTPBearer(auto_error=False)
+
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)) -> User:
     try:
+        if credentials is None:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+
         token = credentials.credentials
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY,
+                             algorithms=[settings.ALGORITHM])
         user_id = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
-        
+
         user = db.query(User).filter(User.id == int(user_id)).first()
         if not user or not user.is_active:
-            raise HTTPException(status_code=401, detail="User not found or inactive")
+            raise HTTPException(
+                status_code=401, detail="User not found or inactive")
         return user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
+
 
 async def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role not in ["admin", "ngo_partner"]:

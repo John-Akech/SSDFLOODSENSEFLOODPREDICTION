@@ -20,10 +20,10 @@ logger = logging.getLogger(__name__)
 
 class RequestLoggerMiddleware(BaseHTTPMiddleware):
     """Log all requests for security monitoring"""
-    
+
     async def dispatch(self, request: Request, call_next):
         start_time = time.time()
-        
+
         # Log request
         ip = request.client.host if request.client else "testclient"
         logger.info(
@@ -31,10 +31,10 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
             f"IP: {ip} | "
             f"User-Agent: {request.headers.get('user-agent', 'Unknown')}"
         )
-        
+
         # Process request
         response = await call_next(request)
-        
+
         # Log response
         process_time = time.time() - start_time
         logger.info(
@@ -42,16 +42,16 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
             f"Time: {process_time:.3f}s | "
             f"Path: {request.url.path}"
         )
-        
+
         # Log suspicious activity
         if response.status_code == 401:
             logger.warning(
                 f"Unauthorized access attempt: {request.url.path} | "
-                f"IP: {request.client.host}"
+                f"IP: {ip}"
             )
         elif response.status_code == 429:
             logger.warning(
-                f"Rate limit exceeded: IP {request.client.host}"
+                f"Rate limit exceeded: IP {ip}"
             )
-        
+
         return response

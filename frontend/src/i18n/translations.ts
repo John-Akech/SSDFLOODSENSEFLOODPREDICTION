@@ -27,7 +27,24 @@ export const translations = {
     contactSupport: 'Contact our support team for assistance', getSupport: 'Get Support', loading: 'Loading...', southSudanEarlyWarning: 'South Sudan Early Warning',
     nationwideCoverage: 'Nationwide Coverage', priorityZones: 'Priority Zones', highRiskMonitored: 'High-risk areas monitored',
     aiTrainedNationwide: 'AI models trained on entire South Sudan', predictionsAvailableNationwide: 'Predictions available nationwide',
-    reportFromAnywhere: 'Report from anywhere in South Sudan', yourDataImproves: 'Your data improves AI accuracy'
+    reportFromAnywhere: 'Report from anywhere in South Sudan', yourDataImproves: 'Your data improves AI accuracy',
+    // Admin Panel
+    adminDashboard: 'Admin Dashboard', systemOverview: 'System overview and management controls', systemAccuracy: 'System Accuracy',
+    matchesPublicDashboards: 'Matches public dashboards', totalUsers: 'Total Users', allActive: 'All active',
+    systemOperational: 'System operational', systemAccuracyGlobal: 'System Accuracy (global)', sameValueShown: 'Same value shown on user dashboards',
+    liveModelAccuracy: 'Live Model Accuracy', rollingWindowRefreshes: 'Rolling window refreshes automatically',
+    alertDistribution: 'Alert Distribution', predictionRiskLevels: 'Prediction Risk Levels', aiModelPerformance: 'AI Model Performance',
+    liveMetrics: 'Live metrics from the most recent', quickActions: 'Quick Actions', addNewUser: 'Add New User',
+    createAlert: 'Create Alert', makePrediction: 'Make Prediction', refreshData: 'Refresh Data',
+    userManagement: 'User Management', manageSystemUsers: 'Manage system users and permissions', searchUsers: 'Search users by email or name...',
+    alertsManagement: 'Alerts Management', monitorManageAlerts: 'Monitor and manage flood alerts',
+    predictionDataManagement: 'Prediction Data Management', viewManagePredictions: 'View, manage, and create AI-generated flood predictions',
+    systemHealthStatus: 'System Health & Status', monitorSystemPerformance: 'Monitor system performance and service status',
+    apiServerStatus: 'API / Server Status', databaseStatus: 'Database Status', operational: 'Operational', connected: 'Connected',
+    systemUptime: 'System Uptime', responseTime: 'Response Time', lastCheck: 'Last Check',
+    settings: 'Settings', systemSettings: 'System Settings', configureSystem: 'Configure system behavior and data sources',
+    simulationMode: 'Simulation Mode', simulationModeDesc: 'Use simulated data for demonstration purposes',
+    saveSettings: 'Save Settings', settingsSaved: 'Settings saved successfully'
   },
   ar: {
     dashboard: 'لوحة التحكم', riskMap: 'خريطة المخاطر', reportFlood: 'الإبلاغ عن فيضان', analytics: 'التحليلات', adminPanel: 'لوحة الإدارة', login: 'تسجيل الدخول', logout: 'تسجيل الخروج',
@@ -57,7 +74,24 @@ export const translations = {
     contactSupport: 'اتصل بفريق الدعم للحصول على المساعدة', getSupport: 'احصل على الدعم', loading: 'جاري التحميل...', southSudanEarlyWarning: 'الإنذار المبكر لجنوب السودان',
     nationwideCoverage: 'تغطية وطنية', priorityZones: 'المناطق ذات الأولوية', highRiskMonitored: 'مراقبة المناطق عالية الخطورة',
     aiTrainedNationwide: 'نماذج الذكاء الاصطناعي مدربة على جنوب السودان بأكمله', predictionsAvailableNationwide: 'التوقعات متاحة على الصعيد الوطني',
-    reportFromAnywhere: 'الإبلاغ من أي مكان في جنوب السودان', yourDataImproves: 'بياناتك تحسن دقة الذكاء الاصطناعي'
+    reportFromAnywhere: 'الإبلاغ من أي مكان في جنوب السودان', yourDataImproves: 'بياناتك تحسن دقة الذكاء الاصطناعي',
+    // Admin Panel
+    adminDashboard: 'لوحة تحكم الإدارة', systemOverview: 'نظرة عامة على النظام وعناصر التحكم في الإدارة', systemAccuracy: 'دقة النظام',
+    matchesPublicDashboards: 'يطابق لوحات المعلومات العامة', totalUsers: 'إجمالي المستخدمين', allActive: 'الكل نشط',
+    systemOperational: 'النظام يعمل', systemAccuracyGlobal: 'دقة النظام (العالمية)', sameValueShown: 'نفس القيمة المعروضة على لوحات معلومات المستخدم',
+    liveModelAccuracy: 'دقة النموذج المباشر', rollingWindowRefreshes: 'يتم تحديث النافذة المتداولة تلقائيًا',
+    alertDistribution: 'توزيع التنبيهات', predictionRiskLevels: 'مستويات مخاطر التنبؤ', aiModelPerformance: 'أداء نموذج الذكاء الاصطناعي',
+    liveMetrics: 'المقاييس المباشرة من الأحدث', quickActions: 'إجراءات سريعة', addNewUser: 'إضافة مستخدم جديد',
+    createAlert: 'إنشاء تنبيه', makePrediction: 'إجراء تنبؤ', refreshData: 'تحديث البيانات',
+    userManagement: 'إدارة المستخدمين', manageSystemUsers: 'إدارة مستخدمي النظام والأذونات', searchUsers: 'البحث عن المستخدمين بالبريد الإلكتروني أو الاسم...',
+    alertsManagement: 'إدارة التنبيهات', monitorManageAlerts: 'مراقبة وإدارة تنبيهات الفيضانات',
+    predictionDataManagement: 'إدارة بيانات التنبؤ', viewManagePredictions: 'عرض وإدارة وإنشاء تنبؤات الفيضانات التي تم إنشاؤها بواسطة الذكاء الاصطناعي',
+    systemHealthStatus: 'صحة النظام وحالته', monitorSystemPerformance: 'مراقبة أداء النظام وحالة الخدمة',
+    apiServerStatus: 'حالة واجهة برمجة التطبيقات / الخادم', databaseStatus: 'حالة قاعدة البيانات', operational: 'يعمل', connected: 'متصل',
+    systemUptime: 'وقت تشغيل النظام', responseTime: 'وقت الاستجابة', lastCheck: 'آخر فحص',
+    settings: 'الإعدادات', systemSettings: 'إعدادات النظام', configureSystem: 'تكوين سلوك النظام ومصادر البيانات',
+    simulationMode: 'وضع المحاكاة', simulationModeDesc: 'استخدام بيانات محاكاة لأغراض العرض التوضيحي',
+    saveSettings: 'حفظ الإعدادات', settingsSaved: 'تم حفظ الإعدادات بنجاح'
   },
   sw: {
     dashboard: 'Dashibodi', riskMap: 'Ramani ya Hatari', reportFlood: 'Ripoti Mafuriko', analytics: 'Uchambuzi', adminPanel: 'Paneli ya Msimamizi', login: 'Ingia', logout: 'Toka',
@@ -87,7 +121,24 @@ export const translations = {
     contactSupport: 'Wasiliana na timu yetu ya msaada', getSupport: 'Pata Msaada', loading: 'Inapakia...', southSudanEarlyWarning: 'Onyo la Mapema la Sudan Kusini',
     nationwideCoverage: 'Uwezo wa Kitaifa', priorityZones: 'Maeneo ya Kipaumbele', highRiskMonitored: 'Maeneo ya hatari kubwa yanafuatiliwa',
     aiTrainedNationwide: 'Mifano ya AI imefunzwa kwa Sudan Kusini nzima', predictionsAvailableNationwide: 'Utabiri unapatikana nchi nzima',
-    reportFromAnywhere: 'Ripoti kutoka mahali popote Sudan Kusini', yourDataImproves: 'Data yako inaboresha usahihi wa AI'
+    reportFromAnywhere: 'Ripoti kutoka mahali popote Sudan Kusini', yourDataImproves: 'Data yako inaboresha usahihi wa AI',
+    // Admin Panel
+    adminDashboard: 'Dashibodi ya Msimamizi', systemOverview: 'Muhtasari wa mfumo na vidhibiti vya usimamizi', systemAccuracy: 'Usahihi wa Mfumo',
+    matchesPublicDashboards: 'Inalingana na dashibodi za umma', totalUsers: 'Jumla ya Watumiaji', allActive: 'Wote wanafanya kazi',
+    systemOperational: 'Mfumo unafanya kazi', systemAccuracyGlobal: 'Usahihi wa Mfumo (kimataifa)', sameValueShown: 'Thamani sawa inaonyeshwa kwenye dashibodi za watumiaji',
+    liveModelAccuracy: 'Usahihi wa Mfumo wa Moja kwa Moja', rollingWindowRefreshes: 'Dirisha la kusonga linasasishwa kiotomatiki',
+    alertDistribution: 'Usambazaji wa Tahadhari', predictionRiskLevels: 'Viwango vya Hatari ya Utabiri', aiModelPerformance: 'Utendaji wa Mfumo wa AI',
+    liveMetrics: 'Vipimo vya moja kwa moja kutoka kwa hivi karibuni', quickActions: 'Hatua za Haraka', addNewUser: 'Ongeza Mtumiaji Mpya',
+    createAlert: 'Unda Tahadhari', makePrediction: 'Fanya Utabiri', refreshData: 'Sasisha Data',
+    userManagement: 'Usimamizi wa Watumiaji', manageSystemUsers: 'Dhibiti watumiaji wa mfumo na ruhusa', searchUsers: 'Tafuta watumiaji kwa barua pepe au jina...',
+    alertsManagement: 'Usimamizi wa Tahadhari', monitorManageAlerts: 'Fuatilia na dhibiti tahadhari za mafuriko',
+    predictionDataManagement: 'Usimamizi wa Data ya Utabiri', viewManagePredictions: 'Angalia, dhibiti, na unda utabiri wa mafuriko uliotengenezwa na AI',
+    systemHealthStatus: 'Afya ya Mfumo na Hali', monitorSystemPerformance: 'Fuatilia utendaji wa mfumo na hali ya huduma',
+    apiServerStatus: 'Hali ya API / Seva', databaseStatus: 'Hali ya Hifadhidata', operational: 'Inafanya kazi', connected: 'Imeunganishwa',
+    systemUptime: 'Muda wa Mfumo', responseTime: 'Muda wa Kujibu', lastCheck: 'Angalizo la Mwisho',
+    settings: 'Mipangilio', systemSettings: 'Mipangilio ya Mfumo', configureSystem: 'Sanidi tabia ya mfumo na vyanzo vya data',
+    simulationMode: 'Hali ya Kuiga', simulationModeDesc: 'Tumia data ya kuiga kwa madhumuni ya onyesho',
+    saveSettings: 'Hifadhi Mipangilio', settingsSaved: 'Mipangilio imehifadhiwa kikamilifu'
   }
 };
 

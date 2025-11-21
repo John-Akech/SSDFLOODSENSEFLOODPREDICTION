@@ -17,20 +17,18 @@ const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
           {/* Mobile Menu Button */}
           <button
             onClick={onToggleSidebar}
-            className="lg:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="lg:hidden p-2 text-white hover:bg-white/10 rounded-lg transition-colors font-bold"
             aria-label="Toggle menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            Menu
           </button>
           {/* Logo */}
           <Link to="/" className="flex items-center gap-4 group">
             <div className="relative">
-              <img 
-                src="/images/FloodSenseLogo.png" 
-                alt="FloodSense" 
-                className="h-12 w-auto group-hover:scale-105 transition-transform duration-300" 
+              <img
+                src="/images/FloodSenseLogo.png"
+                alt="FloodSense"
+                className="h-12 w-auto group-hover:scale-105 transition-transform duration-300"
               />
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
             </div>

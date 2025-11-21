@@ -1,4 +1,11 @@
 """Simple database creation script"""
+from sqlalchemy import inspect
+from models.audit_log import AuditLog
+from models.database_models import (
+    User, FloodEvent, Prediction, Recommendation,
+    Feedback, SARImage, RainfallRecord, Location, Shelter
+)
+from core.database import Base, engine
 import sys
 import os
 
@@ -6,18 +13,11 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
 # Import models to register them with Base
-from core.database import Base, engine
-from models.database_models import (
-    User, FloodEvent, Prediction, Recommendation,
-    Feedback, SARImage, RainfallRecord
-)
-from models.audit_log import AuditLog
 
 print("Creating all tables...")
 Base.metadata.create_all(bind=engine)
 
 # Verify
-from sqlalchemy import inspect
 inspector = inspect(engine)
 tables = inspector.get_table_names()
 

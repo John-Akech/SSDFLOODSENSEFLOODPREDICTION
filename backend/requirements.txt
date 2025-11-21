@@ -23,3 +23,4 @@ httpx==0.25.2
 earthengine-api==0.1.384
 cryptography==41.0.7
 psycopg2-binary==2.9.9  # PostgreSQL driver for production
+pywebpush==2.1.2

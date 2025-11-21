@@ -7,6 +7,10 @@ import {
 } from 'recharts';
 import { apiService } from '../services/api';
 import '../styles/flood-colors.css';
+import { useSystemAccuracy } from '../hooks/useSystemAccuracy';
+
+const UNAVAILABLE_LABEL = '\u2014';
+const MODEL_STATS_WINDOW = 300;
 
 const PredictionCenter: React.FC = () => {
   const [predictions, setPredictions] = useState<any[]>([]);
@@ -17,6 +21,10 @@ const PredictionCenter: React.FC = () => {
   const [predictionHistory, setPredictionHistory] = useState<any[]>([]);
   const [modelLatency, setModelLatency] = useState<any>({});
   const [validated, setValidated] = useState<any>(null);
+  const { accuracyLabel, isLoading: accuracyLoading } = useSystemAccuracy({ refreshIntervalMs: 60000 });
+  const systemAccuracyDisplay = accuracyLabel === UNAVAILABLE_LABEL
+    ? (accuracyLoading ? 'Loading...' : 'Unavailable')
+    : (accuracyLabel || 'Unavailable');
 
   // Fetch prediction data
   const fetchPredictionData = useCallback(async () => {
@@ -24,7 +32,7 @@ const PredictionCenter: React.FC = () => {
       setLoading(true);
       const [predData, modelStats, validatedStats] = await Promise.all([
         apiService.getPredictions({ time_range: timeRange }),
-        apiService.getModelStats(300),
+        apiService.getModelStats(MODEL_STATS_WINDOW),
         apiService.getValidatedModelStats()
       ]);
 
@@ -179,7 +187,7 @@ const PredictionCenter: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-slate-600">Loading prediction models...</p>
@@ -189,7 +197,7 @@ const PredictionCenter: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 w-full overflow-x-hidden">
+    <div className="min-h-screen w-full overflow-x-hidden">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-10 xl:px-12 py-6 sm:py-8 lg:py-10 xl:py-12 w-full">
         {/* Header Section */}
         <motion.div
@@ -205,6 +213,15 @@ const PredictionCenter: React.FC = () => {
                 </span>
               </h1>
               <p className="text-base sm:text-lg text-slate-600 leading-relaxed">Advanced AI models for flood prediction and forecasting</p>
+              <div className="mt-6 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+                <div className="flex items-center gap-2 bg-white border border-slate-200 px-4 py-2 rounded-full shadow-sm">
+                  <span className="font-semibold text-slate-900">System Accuracy: {systemAccuracyDisplay}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span>Matches user dashboards; cards below show live windows</span>
+                </div>
+              </div>
             </div>
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6">
               <select
@@ -237,6 +254,7 @@ const PredictionCenter: React.FC = () => {
               Model Status
             </span>
           </h2>
+          <p className="text-sm text-slate-500 mb-8">Live accuracy below reflects the most recent {MODEL_STATS_WINDOW} predictions per model. The global system accuracy is shown on the public dashboards.</p>
           {models.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-14">
               {models.map((model, idx) => (
@@ -245,7 +263,7 @@ const PredictionCenter: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + idx * 0.1 }}
-                  className={`flood-card p-12 sm:p-14 lg:p-16 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${selectedModel === model.key || selectedModel === model.name.toLowerCase().replace(' ', '-')
+                  className={`flood-card p-12 sm:p-14 lg:p-16 cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 h-full flex flex-col justify-between ${selectedModel === model.key || selectedModel === model.name.toLowerCase().replace(' ', '-')
                     ? 'ring-2 ring-blue-500 bg-blue-50/50 shadow-lg'
                     : 'hover:ring-2 hover:ring-blue-300'
                     }`}
@@ -264,7 +282,7 @@ const PredictionCenter: React.FC = () => {
                       {model.accuracy}%
                     </div>
                     <div className="text-lg font-semibold text-slate-600 uppercase tracking-wide mt-4">
-                      Accuracy
+                      Live accuracy (last {MODEL_STATS_WINDOW})
                     </div>
                     {model.baselineAccuracy && model.baselineAccuracy !== model.accuracy && (
                       <div className="text-xs text-slate-500 mt-2">
@@ -332,7 +350,10 @@ const PredictionCenter: React.FC = () => {
             {/* Model Performance Chart - Takes 2 columns on LG screens */}
             <div className="lg:col-span-2">
               <div className="flood-card p-9 sm:p-11 lg:p-14 xl:p-16 h-full min-h-[400px] overflow-x-auto">
-                <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900 mb-11 sm:mb-12 lg:mb-14">Model Performance Comparison</h3>
+                <div className="mb-11 sm:mb-12 lg:mb-14">
+                  <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-slate-900">Model Performance Comparison</h3>
+                  <p className="text-sm text-slate-500 mt-2">Metrics refresh every minute using a rolling window of {MODEL_STATS_WINDOW} predictions.</p>
+                </div>
                 <div className="h-[350px] sm:h-[400px] lg:h-[450px] w-full min-w-[500px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={modelPerformance} margin={{ top: 50, right: 80, bottom: 80, left: 60 }}>
@@ -650,6 +671,72 @@ const PredictionCenter: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Scientific Validation - Hindcasting & CSI */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="mb-16 sm:mb-20 lg:mb-24"
+        >
+          <h2 className="text-2xl sm:text-3xl font-bold mb-10 sm:mb-12 lg:mb-14 text-slate-900">
+            <span className="bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600 bg-clip-text text-transparent">
+              Scientific Validation (Hindcasting)
+            </span>
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="flood-card p-8 h-full flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 mb-4">Critical Success Index (CSI)</h3>
+                <p className="text-slate-600 mb-6">
+                  The Critical Success Index (CSI), also known as the Threat Score, measures the fraction of observed and/or forecast events that were correctly predicted.
+                  <br /><br />
+                  <span className="font-mono bg-slate-100 p-1 rounded">CSI = Hits / (Hits + False Alarms + Misses)</span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <span className="font-semibold text-slate-700">Current System CSI</span>
+                <span className="text-2xl font-bold text-purple-600">
+                  {(() => {
+                    // Calculate CSI from validated metrics (prefer ensemble)
+                    const ensembleMetrics = validated?.metrics?.['ensemble'] || validated?.metrics?.['bp-ensemble'] || Object.values(validated?.metrics || {})[0] || {};
+                    const precision = ensembleMetrics.precision || 0;
+                    const recall = ensembleMetrics.recall || 0;
+
+                    // CSI = 1 / (1/P + 1/R - 1)
+                    let csi = 0;
+                    if (precision > 0 && recall > 0) {
+                      csi = 1 / ((1 / precision) + (1 / recall) - 1);
+                    }
+                    return csi > 0 ? csi.toFixed(2) : 'N/A';
+                  })()}
+                </span>
+              </div>
+            </div>
+            <div className="flood-card p-8 h-full flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 mb-4">False Alarm Ratio (FAR)</h3>
+                <p className="text-slate-600 mb-6">
+                  The False Alarm Ratio (FAR) gives the fraction of forecast events that were observed to be non-events.
+                  <br /><br />
+                  <span className="font-mono bg-slate-100 p-1 rounded">FAR = False Alarms / (Hits + False Alarms)</span>
+                </p>
+              </div>
+              <div className="flex items-center justify-between bg-slate-50 p-4 rounded-lg border border-slate-200">
+                <span className="font-semibold text-slate-700">Current System FAR</span>
+                <span className="text-2xl font-bold text-blue-600">
+                  {(() => {
+                    const ensembleMetrics = validated?.metrics?.['ensemble'] || validated?.metrics?.['bp-ensemble'] || Object.values(validated?.metrics || {})[0] || {};
+                    const precision = ensembleMetrics.precision || 0;
+                    // FAR = 1 - Precision
+                    const far = precision > 0 ? 1 - precision : 0;
+                    return precision > 0 ? far.toFixed(2) : 'N/A';
+                  })()}
+                </span>
+              </div>
             </div>
           </div>
         </motion.div>

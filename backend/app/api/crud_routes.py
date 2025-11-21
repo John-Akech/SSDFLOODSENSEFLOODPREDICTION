@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from core.database import get_db
 from schemas.schemas import *
 from models.database_models import (
-    User as DBUser, FloodEvent as DBFloodEvent, 
+    User as DBUser, FloodEvent as DBFloodEvent,
     Prediction as DBPrediction, Feedback as DBFeedback,
     Alert as DBAlert, Recommendation as DBRecommendation, PushSubscription as DBPush
 )
@@ -20,9 +20,18 @@ router = APIRouter(tags=["crud"])
 logger = logging.getLogger(__name__)
 
 # User CRUD
+
+
 @router.get("/users", response_model=List[User])
 async def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     return db.query(DBUser).offset(skip).limit(limit).all()
+
+
+@router.get("/users/me", response_model=User)
+async def get_current_user_profile(current_user: DBUser = Depends(get_current_user)):
+    # Dependency already validates and fetches the user, so just return it
+    return current_user
+
 
 @router.get("/users/{user_id}", response_model=User)
 async def get_user(user_id: int, db: Session = Depends(get_db)):
@@ -31,58 +40,100 @@ async def get_user(user_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="User not found")
     return user
 
+
 @router.put("/users/{user_id}", response_model=User)
 async def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
     # Only allow if admin or updating own profile
     if current_user.role != 'admin' and current_user.id != user_id:
-        raise HTTPException(status_code=403, detail="Not authorized to update this user")
-    
+        raise HTTPException(
+            status_code=403, detail="Not authorized to update this user")
+
     user = db.query(DBUser).filter(DBUser.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     for key, value in user_data.dict(exclude_unset=True).items():
         setattr(user, key, value)
-    
+
     db.commit()
     db.refresh(user)
     return user
+
 
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: int, db: Session = Depends(get_db), current_user: DBUser = Depends(require_admin)):
     user = db.query(DBUser).filter(DBUser.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     # Prevent self-deletion
     if current_user.id == user_id:
-        raise HTTPException(status_code=400, detail="Cannot delete your own account")
-    
+        raise HTTPException(
+            status_code=400, detail="Cannot delete your own account")
+
     db.delete(user)
     db.commit()
     return {"message": "User deleted"}
 
 # Flood Event CRUD
+
+
 @router.post("/flood-events", response_model=FloodEvent, status_code=status.HTTP_201_CREATED)
-async def create_flood_event(event: FloodEventCreate, db: Session = Depends(get_db)):
-    db_event = DBFloodEvent(**event.dict())
+async def create_flood_event(
+    event: FloodEventCreate,
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
+):
+    db_event = DBFloodEvent(**event.model_dump())
     db.add(db_event)
     db.commit()
     db.refresh(db_event)
     return db_event
 
+
+@router.put("/flood-events/{event_id}", response_model=FloodEvent)
+async def update_flood_event(
+    event_id: int,
+    updates: FloodEventUpdate,
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
+):
+    event = db.query(DBFloodEvent).filter(DBFloodEvent.id == event_id).first()
+    if not event:
+        raise HTTPException(status_code=404, detail="Flood event not found")
+
+    for key, value in updates.model_dump(exclude_unset=True).items():
+        setattr(event, key, value)
+
+    db.commit()
+    db.refresh(event)
+    return event
+
+
 @router.get("/flood-events", response_model=List[FloodEvent])
-async def get_flood_events(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+async def get_flood_events(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
+):
     return db.query(DBFloodEvent).offset(skip).limit(limit).all()
 
+
 @router.get("/flood-events/{event_id}", response_model=FloodEvent)
-async def get_flood_event(event_id: int, db: Session = Depends(get_db)):
+async def get_flood_event(
+    event_id: int,
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
+):
     event = db.query(DBFloodEvent).filter(DBFloodEvent.id == event_id).first()
     if not event:
         raise HTTPException(status_code=404, detail="Flood event not found")
     return event
 
 # Prediction CRUD
+
+
 @router.get("/predictions")
 async def get_predictions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     """Get predictions - returns in format expected by frontend"""
@@ -104,12 +155,14 @@ async def get_predictions(skip: int = 0, limit: int = 100, db: Session = Depends
         "count": len(predictions)
     }
 
+
 @router.get("/predictions/{prediction_id}", response_model=PredictionResponse)
 async def get_prediction(prediction_id: int, db: Session = Depends(get_db)):
-    pred = db.query(DBPrediction).filter(DBPrediction.id == prediction_id).first()
+    pred = db.query(DBPrediction).filter(
+        DBPrediction.id == prediction_id).first()
     if not pred:
         raise HTTPException(status_code=404, detail="Prediction not found")
-    
+
     return PredictionResponse(
         id=pred.id,
         latitude=pred.latitude,
@@ -123,6 +176,8 @@ async def get_prediction(prediction_id: int, db: Session = Depends(get_db)):
     )
 
 # Recommendation CRUD and generation
+
+
 @router.post("/recommendations", response_model=Recommendation, status_code=status.HTTP_201_CREATED)
 async def create_recommendation(rec: RecommendationCreate, db: Session = Depends(get_db)):
     db_rec = DBRecommendation(
@@ -131,7 +186,8 @@ async def create_recommendation(rec: RecommendationCreate, db: Session = Depends
         latitude=rec.latitude,
         longitude=rec.longitude,
         description=rec.description,
-        priority=rec.priority.value if hasattr(rec.priority, 'value') else str(rec.priority),
+        priority=rec.priority.value if hasattr(
+            rec.priority, 'value') else str(rec.priority),
         estimated_cost=rec.estimated_cost
     )
     db.add(db_rec)
@@ -139,14 +195,61 @@ async def create_recommendation(rec: RecommendationCreate, db: Session = Depends
     db.refresh(db_rec)
     return db_rec
 
+
+@router.get("/recommendations", response_model=List[Recommendation])
+async def list_recommendations(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    return db.query(DBRecommendation).offset(skip).limit(limit).all()
+
+
+@router.get("/recommendations/{rec_id}", response_model=Recommendation)
+async def get_recommendation(rec_id: int, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    rec = db.query(DBRecommendation).filter(
+        DBRecommendation.id == rec_id).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+    return rec
+
+
+@router.put("/recommendations/{rec_id}", response_model=Recommendation)
+async def update_recommendation(rec_id: int, updates: RecommendationUpdate, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    rec = db.query(DBRecommendation).filter(
+        DBRecommendation.id == rec_id).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+
+    for key, value in updates.model_dump(exclude_unset=True).items():
+        if key == "priority" and hasattr(value, "value"):
+            value = value.value
+        setattr(rec, key, value)
+
+    db.commit()
+    db.refresh(rec)
+    return rec
+
+
+@router.delete("/recommendations/{rec_id}")
+async def delete_recommendation(rec_id: int, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    rec = db.query(DBRecommendation).filter(
+        DBRecommendation.id == rec_id).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Recommendation not found")
+
+    db.delete(rec)
+    db.commit()
+    return {"message": "Recommendation deleted"}
+
+
 @router.get("/predictions/{prediction_id}/recommendations", response_model=List[Recommendation])
 async def get_recommendations_for_prediction(prediction_id: int, db: Session = Depends(get_db)):
-    recs = db.query(DBRecommendation).filter(DBRecommendation.prediction_id == prediction_id).all()
+    recs = db.query(DBRecommendation).filter(
+        DBRecommendation.prediction_id == prediction_id).all()
     return recs
+
 
 @router.post("/predictions/{prediction_id}/recommendations/generate", response_model=List[Recommendation])
 async def generate_recommendations_for_prediction(prediction_id: int, db: Session = Depends(get_db)):
-    pred = db.query(DBPrediction).filter(DBPrediction.id == prediction_id).first()
+    pred = db.query(DBPrediction).filter(
+        DBPrediction.id == prediction_id).first()
     if not pred:
         raise HTTPException(status_code=404, detail="Prediction not found")
     recs_payload = RecommendationService.generate_for_prediction(pred)
@@ -154,6 +257,8 @@ async def generate_recommendations_for_prediction(prediction_id: int, db: Sessio
     return saved
 
 # Alert CRUD
+
+
 @router.post("/alerts", response_model=Alert, status_code=status.HTTP_201_CREATED)
 async def create_alert(alert: AlertCreate, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
     db_alert = DBAlert(
@@ -167,45 +272,35 @@ async def create_alert(alert: AlertCreate, db: Session = Depends(get_db), curren
     db.add(db_alert)
     db.commit()
     db.refresh(db_alert)
-    
-    # Send push notifications to all subscribers
+
+    # Send push notifications to all subscribers using the new push service
     try:
-        from models.database_models import PushSubscription
-        subscriptions = db.query(PushSubscription).all()
-        
-        if subscriptions:
-            # Convert DB subscriptions to the format expected by alert_service
-            subscription_list = []
-            for sub in subscriptions:
-                subscription_list.append({
-                    "endpoint": sub.endpoint,
-                    "keys": {
-                        "p256dh": sub.p256dh,
-                        "auth": sub.auth
-                    }
-                })
-            
-            # Create an alert object for the service
-            from services.alert_service import Alert as ServiceAlert
-            from datetime import datetime
-            service_alert = ServiceAlert(
-                id=str(db_alert.id),
-                latitude=db_alert.latitude,
-                longitude=db_alert.longitude,
-                message=db_alert.message,
-                severity=db_alert.severity,
-                created_at=db_alert.created_at or datetime.utcnow(),
-                expires_at=db_alert.expires_at
-            )
-            
-            # Send push notifications asynchronously
-            from services.alert_service import alert_service
-            await alert_service.send_web_push_alert(service_alert, subscription_list)
-            logger.info(f"Push notifications sent for alert {db_alert.id}")
+        from app.services.push_notification_service import get_push_service
+        push_svc = get_push_service()
+
+        # Determine location description
+        location = f"Location ({alert.latitude:.2f}, {alert.longitude:.2f})"
+
+        # Send push notification to all subscribers
+        result = push_svc.send_flood_alert(
+            db=db,
+            severity=alert.severity,
+            location=location,
+            latitude=alert.latitude,
+            longitude=alert.longitude,
+            message=alert.message
+        )
+
+        logger.info(
+            f"Push notifications sent for alert {db_alert.id}: "
+            f"{result['success']} succeeded, {result['failed']} failed, "
+            f"{result['expired']} expired subscriptions removed"
+        )
     except Exception as e:
-        logger.error(f"Failed to send push notifications for alert {db_alert.id}: {e}")
+        logger.error(
+            f"Failed to send push notifications for alert {db_alert.id}: {e}")
         # Don't fail the alert creation if push notifications fail
-    
+
     # Convert to Alert response model
     return Alert(
         id=str(db_alert.id),
@@ -216,6 +311,7 @@ async def create_alert(alert: AlertCreate, db: Session = Depends(get_db), curren
         created_at=db_alert.created_at,
         expires_at=db_alert.expires_at
     )
+
 
 @router.get("/alerts")
 async def get_alerts(skip: int = 0, limit: int = 100, active_only: bool = False, db: Session = Depends(get_db)):
@@ -240,42 +336,92 @@ async def get_alerts(skip: int = 0, limit: int = 100, active_only: bool = False,
         "count": len(alerts)
     }
 
+
 @router.delete("/alerts/{alert_id}")
 async def delete_alert(alert_id: int, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
     alert = db.query(DBAlert).filter(DBAlert.id == alert_id).first()
     if not alert:
         raise HTTPException(status_code=404, detail="Alert not found")
-    
+
     db.delete(alert)
     db.commit()
     return {"message": "Alert deleted"}
 
 # Prediction DELETE endpoint
+
+
 @router.delete("/predictions/{prediction_id}")
 async def delete_prediction(prediction_id: int, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
-    prediction = db.query(DBPrediction).filter(DBPrediction.id == prediction_id).first()
+    prediction = db.query(DBPrediction).filter(
+        DBPrediction.id == prediction_id).first()
     if not prediction:
         raise HTTPException(status_code=404, detail="Prediction not found")
-    
+
     db.delete(prediction)
     db.commit()
     return {"message": "Prediction deleted"}
 
 # Feedback CRUD
+
+
 @router.post("/feedback", response_model=Feedback, status_code=status.HTTP_201_CREATED)
 async def create_feedback(feedback: FeedbackCreate, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
     """Create feedback with authenticated user"""
-    db_feedback = DBFeedback(user_id=current_user.id, **feedback.dict())
+    db_feedback = DBFeedback(user_id=current_user.id, **feedback.model_dump())
     db.add(db_feedback)
     db.commit()
     db.refresh(db_feedback)
     return db_feedback
 
+
 @router.get("/feedback", response_model=List[Feedback])
-async def get_feedback(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+async def get_feedback(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
     return db.query(DBFeedback).offset(skip).limit(limit).all()
 
+
+@router.get("/feedback/{feedback_id}", response_model=Feedback)
+async def get_feedback_by_id(feedback_id: int, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    feedback = db.query(DBFeedback).filter(
+        DBFeedback.id == feedback_id).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    return feedback
+
+
+@router.put("/feedback/{feedback_id}", response_model=Feedback)
+async def update_feedback(
+    feedback_id: int,
+    updates: FeedbackUpdate,
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
+):
+    feedback = db.query(DBFeedback).filter(
+        DBFeedback.id == feedback_id).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+
+    for key, value in updates.model_dump(exclude_unset=True).items():
+        setattr(feedback, key, value)
+
+    db.commit()
+    db.refresh(feedback)
+    return feedback
+
+
+@router.delete("/feedback/{feedback_id}")
+async def delete_feedback(feedback_id: int, db: Session = Depends(get_db), current_user: DBUser = Depends(get_current_user)):
+    feedback = db.query(DBFeedback).filter(
+        DBFeedback.id == feedback_id).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+
+    db.delete(feedback)
+    db.commit()
+    return {"message": "Feedback deleted"}
+
 # Statistics
+
+
 @router.get("/stats/flood")
 async def get_flood_stats(db: Session = Depends(get_db)):
     """Get flood statistics for maps and dashboards"""
@@ -283,7 +429,7 @@ async def get_flood_stats(db: Session = Depends(get_db)):
     high_risk_predictions = db.query(DBPrediction).filter(
         DBPrediction.risk_level.in_(["high", "critical"])
     ).all()
-    
+
     # Calculate active flood zones
     flood_zones = []
     for alert in active_alerts:
@@ -293,13 +439,13 @@ async def get_flood_stats(db: Session = Depends(get_db)):
             "severity": alert.severity,
             "message": alert.message
         })
-    
+
     # Calculate risk levels
     risk_distribution = {}
     for pred in high_risk_predictions:
         level = pred.risk_level
         risk_distribution[level] = risk_distribution.get(level, 0) + 1
-    
+
     return {
         "active_flood_zones": flood_zones,
         "risk_distribution": risk_distribution,
@@ -308,21 +454,24 @@ async def get_flood_stats(db: Session = Depends(get_db)):
         "last_updated": datetime.now().isoformat()
     }
 
+
 @router.get("/stats/system")
 async def get_system_stats(db: Session = Depends(get_db)):
     total_predictions = db.query(DBPrediction).count()
     total_users = db.query(DBUser).count()
     total_flood_events = db.query(DBFloodEvent).count()
-    
+
     # Get all predictions with high risk
     high_risk_predictions = db.query(DBPrediction).filter(
         DBPrediction.risk_level.in_(["high", "critical"])
     ).all()
-    
+
     # Get all alerts
     alerts = db.query(DBAlert).all()
-    
+
     # Map coordinates to states with population data
+    # Source: South Sudan National Bureau of Statistics (2008 Census Projections)
+    # Note: These are static baseline figures used for risk estimation.
     state_coords = {
         "Jonglei": {"lat_range": (5.5, 8.5), "lon_range": (30.5, 34.0), "population": 1358602},
         "Unity": {"lat_range": (8.0, 10.5), "lon_range": (28.5, 31.0), "population": 799343},
@@ -333,38 +482,42 @@ async def get_system_stats(db: Session = Depends(get_db)):
         "Lakes": {"lat_range": (6.0, 8.0), "lon_range": (28.5, 31.0), "population": 833000},
         "Warrap": {"lat_range": (7.5, 9.5), "lon_range": (27.5, 30.0), "population": 1044000},
     }
-    
+
     # Group predictions and alerts by state
     population_by_state = {}
-    
+
     for state, coords in state_coords.items():
-        state_predictions = [p for p in high_risk_predictions if 
-            coords["lat_range"][0] <= p.latitude <= coords["lat_range"][1] and
-            coords["lon_range"][0] <= p.longitude <= coords["lon_range"][1]]
-        
+        state_predictions = [p for p in high_risk_predictions if
+                             coords["lat_range"][0] <= p.latitude <= coords["lat_range"][1] and
+                             coords["lon_range"][0] <= p.longitude <= coords["lon_range"][1]]
+
         state_alerts = [a for a in alerts if a.is_active and
-            coords["lat_range"][0] <= a.latitude <= coords["lat_range"][1] and
-            coords["lon_range"][0] <= a.longitude <= coords["lon_range"][1]]
-        
+                        coords["lat_range"][0] <= a.latitude <= coords["lat_range"][1] and
+                        coords["lon_range"][0] <= a.longitude <= coords["lon_range"][1]]
+
         if state_predictions or state_alerts:
             # Calculate population at risk: 10% of state population per high-risk prediction
-            risk_factor = len(state_predictions) * 0.10 + len([a for a in state_alerts if a.severity in ["high", "critical"]]) * 0.15
-            population_by_state[state] = int(min(coords["population"] * risk_factor, coords["population"]))
-    
+            risk_factor = len(state_predictions) * 0.10 + len(
+                [a for a in state_alerts if a.severity in ["high", "critical"]]) * 0.15
+            population_by_state[state] = int(
+                min(coords["population"] * risk_factor, coords["population"]))
+
     # Calculate lead time and false alarm rate
-    avg_lead_time = db.query(DBPrediction).filter(DBPrediction.lead_time_hours != None).all()
-    avg_lead_time_hours = sum(p.lead_time_hours for p in avg_lead_time) / len(avg_lead_time) if avg_lead_time else 24
-    
+    avg_lead_time = db.query(DBPrediction).filter(
+        DBPrediction.lead_time_hours != None).all()
+    avg_lead_time_hours = sum(p.lead_time_hours for p in avg_lead_time) / \
+        len(avg_lead_time) if avg_lead_time else 24
+
     # Calculate accuracy from actual predictions
     import json
     from pathlib import Path
-    
+
     # Load baseline accuracy from model metadata
     baseline_accuracy = 0.70  # Default baseline
     try:
         models_dir = Path(__file__).parent.parent.parent / "models"
         metadata_file = models_dir / "model_metadata_pipeline_20251109_181046.json"
-        
+
         if metadata_file.exists():
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
@@ -372,31 +525,35 @@ async def get_system_stats(db: Session = Depends(get_db)):
                 baseline_accuracy = perf.get("test_accuracy", 0.70)
     except Exception as e:
         print(f"Warning: Could not load baseline accuracy: {e}")
-    
+
     # Calculate current accuracy from recent predictions
     all_predictions = db.query(DBPrediction).all()
-    
+
     if len(all_predictions) >= 10:
         # Calculate average confidence from actual predictions
-        confidences = [p.confidence_score for p in all_predictions if p.confidence_score is not None]
-        avg_confidence = sum(confidences) / len(confidences) if confidences else baseline_accuracy
-        
+        confidences = [
+            p.confidence_score for p in all_predictions if p.confidence_score is not None]
+        avg_confidence = sum(
+            confidences) / len(confidences) if confidences else baseline_accuracy
+
         # Blend baseline with current performance (70% baseline, 30% current)
         overall_accuracy = (baseline_accuracy * 0.7) + (avg_confidence * 0.3)
-        
+
         # Estimate other metrics based on confidence patterns
         precision = avg_confidence * 0.95  # High confidence suggests good precision
         recall = avg_confidence * 0.90  # Slightly lower recall
-        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        f1_score = 2 * (precision * recall) / (precision +
+                                               recall) if (precision + recall) > 0 else 0
         false_alarm_rate = 1.0 - precision
     else:
         # Use baseline if not enough predictions
         overall_accuracy = baseline_accuracy
         precision = baseline_accuracy * 0.95
         recall = baseline_accuracy * 0.90
-        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        f1_score = 2 * (precision * recall) / (precision +
+                                               recall) if (precision + recall) > 0 else 0
         false_alarm_rate = 1.0 - precision
-    
+
     accuracy_metrics = {
         "overall_accuracy": round(overall_accuracy, 4),
         "precision": round(precision, 4),
@@ -404,7 +561,7 @@ async def get_system_stats(db: Session = Depends(get_db)):
         "f1_score": round(f1_score, 4),
         "false_alarm_rate": round(false_alarm_rate, 4)
     }
-    
+
     return {
         "total_predictions": total_predictions,
         "total_users": total_users,
@@ -414,38 +571,45 @@ async def get_system_stats(db: Session = Depends(get_db)):
         "population_by_state": population_by_state
     }
 
+
 @router.get("/stats/predictions")
 async def get_prediction_stats(db: Session = Depends(get_db)):
     """Get real-time prediction statistics for prediction center.
     Accuracy, confidence, and metrics update based on actual prediction performance.
     """
     total_predictions = db.query(DBPrediction).count()
-    
+
     # Group by risk level
     risk_levels = ["low", "medium", "high", "critical"]
     risk_distribution = {}
     for level in risk_levels:
-        count = db.query(DBPrediction).filter(DBPrediction.risk_level == level).count()
+        count = db.query(DBPrediction).filter(
+            DBPrediction.risk_level == level).count()
         if count > 0:
             risk_distribution[level] = count
-    
+
     # Calculate DYNAMIC metrics from actual predictions
     all_predictions = db.query(DBPrediction).all()
-    
+
     # Dynamic confidence varies by location and data quality
-    confidences = [p.confidence_score for p in all_predictions if p.confidence_score]
-    avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
+    confidences = [
+        p.confidence_score for p in all_predictions if p.confidence_score]
+    avg_confidence = sum(confidences) / \
+        len(confidences) if confidences else 0.0
     min_confidence = min(confidences) if confidences else 0.0
     max_confidence = max(confidences) if confidences else 0.0
-    
+
     # Calculate per-model dynamic metrics
     model_metrics = {}
     for model_type in ["ensemble", "rf", "tcn", "lstm"]:
-        model_preds = [p for p in all_predictions if (p.model_type or "").lower() == model_type]
+        model_preds = [p for p in all_predictions if (
+            p.model_type or "").lower() == model_type]
         if model_preds:
-            model_confs = [p.confidence_score for p in model_preds if p.confidence_score]
-            model_probs = [p.flood_probability for p in model_preds if p.flood_probability is not None]
-            
+            model_confs = [
+                p.confidence_score for p in model_preds if p.confidence_score]
+            model_probs = [
+                p.flood_probability for p in model_preds if p.flood_probability is not None]
+
             model_metrics[model_type] = {
                 "count": len(model_preds),
                 "avg_confidence": round(sum(model_confs) / len(model_confs), 4) if model_confs else 0.0,
@@ -453,7 +617,7 @@ async def get_prediction_stats(db: Session = Depends(get_db)):
                 "min_confidence": round(min(model_confs), 4) if model_confs else 0.0,
                 "max_confidence": round(max(model_confs), 4) if model_confs else 0.0,
             }
-    
+
     # Load baseline model accuracy from metadata file (for reference)
     import json
     from pathlib import Path
@@ -461,11 +625,11 @@ async def get_prediction_stats(db: Session = Depends(get_db)):
     baseline_precision = 0.0
     baseline_recall = 0.0
     baseline_f1_score = 0.0
-    
+
     try:
         models_dir = Path(__file__).parent.parent.parent.parent / "models"
         metadata_file = models_dir / "model_metadata_pipeline_20251109_181046.json"
-        
+
         if metadata_file.exists():
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
@@ -476,7 +640,7 @@ async def get_prediction_stats(db: Session = Depends(get_db)):
                 baseline_f1_score = round(perf.get("f1_score", 0.0), 4)
     except Exception as e:
         print(f"Warning: Could not load model metadata: {e}")
-    
+
     # Calculate DYNAMIC accuracy (blend baseline with current confidence)
     if total_predictions >= 10:
         # Enough predictions to estimate dynamic performance
@@ -490,7 +654,7 @@ async def get_prediction_stats(db: Session = Depends(get_db)):
         dynamic_precision = baseline_precision
         dynamic_recall = baseline_recall
         dynamic_f1 = baseline_f1_score
-    
+
     return {
         "total_predictions": total_predictions,
         "risk_distribution": risk_distribution,
@@ -552,16 +716,20 @@ async def get_state_stats(state: str | None = None, db: Session = Depends(get_db
             DBPrediction.risk_level.in_(["high", "critical"])
         ).all()
         # Population at risk: fraction of population based on signal strength
-        risk_factor = len(preds) * 0.10 + len([a for a in alerts if a.is_active and a.severity in ["high", "critical"]]) * 0.15
-        population_at_risk = int(min(box["population"] * risk_factor, box["population"]))
+        risk_factor = len(preds) * 0.10 + len(
+            [a for a in alerts if a.is_active and a.severity in ["high", "critical"]]) * 0.15
+        population_at_risk = int(
+            min(box["population"] * risk_factor, box["population"]))
         # Flood events = number of alerts in the box (can be adjusted to use FloodEvent if populated)
         flood_events = len(alerts)
         # Risk level
-        risk_level = "High" if flood_events >= 5 else ("Medium" if flood_events >= 3 else "Low")
+        risk_level = "High" if flood_events >= 5 else (
+            "Medium" if flood_events >= 3 else "Low")
         # Last event date
         last_event = None
         if alerts:
-            latest = max((a.created_at for a in alerts if a.created_at), default=None)
+            latest = max(
+                (a.created_at for a in alerts if a.created_at), default=None)
             last_event = latest.date().isoformat() if latest else None
         return {
             "state": name,
@@ -585,7 +753,8 @@ async def push_subscribe(payload: dict = Body(...), db: Session = Depends(get_db
         raise HTTPException(status_code=400, detail="Missing endpoint")
     sub = db.query(DBPush).filter(DBPush.endpoint == endpoint).first()
     if not sub:
-        sub = DBPush(endpoint=endpoint, p256dh=keys.get('p256dh'), auth=keys.get('auth'))
+        sub = DBPush(endpoint=endpoint, p256dh=keys.get(
+            'p256dh'), auth=keys.get('auth'))
         db.add(sub)
     else:
         sub.p256dh = keys.get('p256dh')
@@ -623,12 +792,12 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
         # Load baseline trained model accuracy from metadata file
         import json
         from pathlib import Path
-        
+
         baseline_accuracy = {}
         try:
             models_dir = Path(__file__).parent.parent.parent / "models"
             metadata_file = models_dir / "model_metadata_pipeline_20251109_181046.json"
-            
+
             if metadata_file.exists():
                 with open(metadata_file, 'r') as f:
                     metadata = json.load(f)
@@ -650,9 +819,10 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
                 "tcn": 0.9062,
                 "lstm": 0.8750,
             }
-        
+
         # Fetch last N predictions
-        recent = db.query(DBPrediction).order_by(DBPrediction.created_at.desc()).limit(n).all()
+        recent = db.query(DBPrediction).order_by(
+            DBPrediction.created_at.desc()).limit(n).all()
         by_model = {}
         for p in recent:
             key = (p.model_type or "unknown").lower()
@@ -664,7 +834,8 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
                 return {f"p{p}": None for p in ps}
             res = {}
             for p in ps:
-                k = max(0, min(len(arr) - 1, int(round((p / 100.0) * (len(arr) - 1)))))
+                k = max(
+                    0, min(len(arr) - 1, int(round((p / 100.0) * (len(arr) - 1)))))
                 res[f"p{p}"] = float(arr[k])
             return res
 
@@ -674,41 +845,48 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
         total_conf = 0.0
         best_model = None
         best_accuracy = 0.0
-        
+
         for model_type, preds in by_model.items():
             cnt = len(preds)
             total_preds += cnt
-            
+
             # Calculate DYNAMIC metrics from actual predictions
-            avg_prob = sum((p.flood_probability or 0.0) for p in preds) / cnt if cnt else 0.0
-            avg_conf = sum((p.confidence_score or 0.0) for p in preds) / cnt if cnt else 0.0
-            
+            avg_prob = sum((p.flood_probability or 0.0)
+                           for p in preds) / cnt if cnt else 0.0
+            avg_conf = sum((p.confidence_score or 0.0)
+                           for p in preds) / cnt if cnt else 0.0
+
             # Calculate confidence distribution (variation across locations)
-            confidences = [p.confidence_score for p in preds if p.confidence_score is not None]
+            confidences = [
+                p.confidence_score for p in preds if p.confidence_score is not None]
             min_conf = min(confidences) if confidences else 0.0
             max_conf = max(confidences) if confidences else 0.0
-            
+
             # Get LATEST confidence (most recent prediction)
             latest_conf = preds[0].confidence_score if preds and preds[0].confidence_score else 0.0
-            
+
             total_prob += avg_prob * cnt
             total_conf += avg_conf * cnt
-            
-            latencies = [float(p.inference_time_ms) for p in preds if p.inference_time_ms is not None]
+
+            latencies = [float(p.inference_time_ms)
+                         for p in preds if p.inference_time_ms is not None]
             pct = percentiles(latencies)
-            
+
             # DYNAMIC ACCURACY: Blend baseline with actual confidence
             # If predictions are consistent and confident, accuracy approaches baseline
             # If predictions vary widely or have low confidence, accuracy is adjusted down
             confidence_factor = avg_conf  # 0.0 to 1.0
-            consistency_factor = 1.0 - (max_conf - min_conf) if confidences else 0.5  # Lower variance = more consistent
-            
+            # Lower variance = more consistent
+            consistency_factor = 1.0 - \
+                (max_conf - min_conf) if confidences else 0.5
+
             # Dynamic accuracy calculation
             if cnt >= 10:  # Enough data for reliable estimate
-                dynamic_accuracy = (baseline_accuracy.get(model_type, 0.85) * 0.6) + (avg_conf * 0.4)
+                dynamic_accuracy = (baseline_accuracy.get(
+                    model_type, 0.85) * 0.6) + (avg_conf * 0.4)
             else:  # Not enough data, use confidence as proxy
                 dynamic_accuracy = avg_conf
-            
+
             aggregates[model_type] = {
                 "count": cnt,
                 "avg_probability": round(avg_prob, 4),
@@ -717,19 +895,23 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
                 "min_confidence": round(min_conf, 4),
                 "max_confidence": round(max_conf, 4),
                 "accuracy": round(dynamic_accuracy, 4),  # DYNAMIC
-                "confidence": round(avg_conf, 4),  # Average confidence across all predictions
+                # Average confidence across all predictions
+                "confidence": round(avg_conf, 4),
                 "prediction_count": cnt,
                 "latency_ms": pct,
-                "baseline_accuracy": round(baseline_accuracy.get(model_type, 0.0), 4),  # Training reference
+                # Training reference
+                "baseline_accuracy": round(baseline_accuracy.get(model_type, 0.0), 4),
             }
-            
+
             if dynamic_accuracy > best_accuracy:
                 best_accuracy = dynamic_accuracy
                 best_model = model_type
 
         # Overall metrics
-        overall_accuracy = (total_conf / total_preds) if total_preds > 0 else 0.0
-        average_confidence = (total_conf / total_preds) if total_preds > 0 else 0.0
+        overall_accuracy = (
+            total_conf / total_preds) if total_preds > 0 else 0.0
+        average_confidence = (
+            total_conf / total_preds) if total_preds > 0 else 0.0
 
         # ALWAYS include all loaded models (RF, TCN, LSTM, Ensemble) even if no predictions
         all_models = ["ensemble", "rf", "tcn", "lstm"]
@@ -743,7 +925,8 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
                     "latest_confidence": 0.0,
                     "min_confidence": 0.0,
                     "max_confidence": 0.0,
-                    "accuracy": round(baseline_accuracy.get(model_name, 0.0), 4),  # Use baseline initially
+                    # Use baseline initially
+                    "accuracy": round(baseline_accuracy.get(model_name, 0.0), 4),
                     "confidence": 0.0,
                     "prediction_count": 0,
                     "latency_ms": {"p50": None, "p90": None, "p95": None, "p99": None},
@@ -782,33 +965,35 @@ async def get_time_series_stats(days: int = 7, db: Session = Depends(get_db)):
     """Get time-series data for users and alerts growth over the past N days"""
     try:
         from datetime import timedelta
-        
+
         # Get daily counts for the last N days
         user_growth = []
         alert_trends = []
-        
+
         now = datetime.now()
         for i in range(days):
             date = now - timedelta(days=(days - 1 - i))
-            date_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
-            date_end = date.replace(hour=23, minute=59, second=59, microsecond=999999)
-            
+            date_start = date.replace(
+                hour=0, minute=0, second=0, microsecond=0)
+            date_end = date.replace(
+                hour=23, minute=59, second=59, microsecond=999999)
+
             # Count new users for this day
             users_count = db.query(DBUser).filter(
                 DBUser.created_at >= date_start,
                 DBUser.created_at <= date_end
             ).count()
-            
+
             # Count new alerts for this day
             alerts_count = db.query(DBAlert).filter(
                 DBAlert.created_at >= date_start,
                 DBAlert.created_at <= date_end
             ).count()
-            
+
             day_label = date.strftime('%a')  # Mon, Tue, etc.
             user_growth.append({"day": day_label, "users": users_count})
             alert_trends.append({"day": day_label, "alerts": alerts_count})
-        
+
         return {
             "user_growth": user_growth,
             "alert_trend": alert_trends,
@@ -817,4 +1002,3 @@ async def get_time_series_stats(days: int = 7, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error(f"Error getting time-series stats: {e}")
         return {"user_growth": [], "alert_trend": [], "days": days, "error": str(e)}
-

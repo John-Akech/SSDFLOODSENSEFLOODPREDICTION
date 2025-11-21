@@ -4,6 +4,14 @@ import App from './App';
 import { LanguageProvider } from './i18n/LanguageContext';
 import './styles/index.css';
 
+type AppEnv = Record<string, string | undefined>;
+
+declare global {
+  interface Window {
+    __APP_ENV__?: AppEnv;
+  }
+}
+
 // Import Leaflet CSS
 import 'leaflet/dist/leaflet.css';
 
@@ -22,6 +30,10 @@ let DefaultIcon = L.icon({
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
+
+if (typeof window !== 'undefined') {
+  window.__APP_ENV__ = window.__APP_ENV__ ?? import.meta.env;
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

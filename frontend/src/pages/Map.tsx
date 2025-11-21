@@ -79,7 +79,11 @@ const MapSizeInvalidator: React.FC = () => {
   const map = useMap();
   React.useEffect(() => {
     const invalidate = () => {
-      try { map.invalidateSize(false); } catch { }
+      try {
+        map.invalidateSize(false);
+      } catch (error) {
+        console.warn("Failed to invalidate map size", error);
+      }
     };
     const t = setTimeout(invalidate, 300);
     window.addEventListener('resize', invalidate);
@@ -92,7 +96,7 @@ const MapSizeInvalidator: React.FC = () => {
 };
 
 const Map: React.FC = () => {
-  const { } = useLanguage();
+  useLanguage();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [existingPredictions, setExistingPredictions] = useState<Prediction[]>([]);
@@ -271,7 +275,7 @@ const Map: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50">
+      <div className="min-h-screen flex flex-col items-center justify-center">
         <div className="flood-card max-w-md text-center p-8">
           <p className="text-red-600 font-bold mb-4">{error}</p>
           <button
@@ -286,7 +290,7 @@ const Map: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-slate-600">Loading flood risk map...</p>

@@ -1,0 +1,91 @@
+name: Frontend CI
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/ci-frontend.yml"
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run lint
+        working-directory: frontend
+        run: npm run lint --if-present
+
+      - name: Run tests
+        working-directory: frontend
+        run: npm run test -- --runInBand --watch=false --passWithNoTests
+
+      - name: npm audit (high severity)
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --source . --report-format sarif --report-path frontend-gitleaks.sarif
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-gitleaks-report
+          path: frontend-gitleaks.sarif
+          if-no-files-found: warn
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: fs
+          scan-ref: frontend
+          format: sarif
+          output: trivy-frontend.sarif
+          exit-code: "1"
+          severity: HIGH,CRITICAL
+
+      - name: Upload trivy report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-trivy-report
+          path: trivy-frontend.sarif
+          if-no-files-found: warn
+
+      - name: Upload dist artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist
+          if-no-files-found: warn

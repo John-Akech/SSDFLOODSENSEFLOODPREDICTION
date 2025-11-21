@@ -65,6 +65,14 @@ htmlcov/
 .nox/
 coverage.xml
 *.cover
+# Test files and databases
+test.db
+test_*.db
+test_*.ps1
+backend/test_*.py
+backend/quick_push_test.py
+backend/__init__.py
+!tests/test_*.py
 
 # =============================================================================
 # Databases
@@ -82,6 +90,7 @@ flood_prediction.db
 # =============================================================================
 *.log
 logs/
+backend/logs/
 *.log.*
 
 # =============================================================================
@@ -119,6 +128,10 @@ deploy_to_droplet.sh
 update_services.sh
 deploy_commands.txt
 simple_deploy.sh
+# Documentation (consolidated into README.md)
+DEPLOYMENT_GUIDE.md
+PUSH_NOTIFICATION_GUIDE.md
+PUSH_NOTIFICATIONS_QUICKSTART.md
 # pgAdmin configuration (contains database credentials)
 pgadmin/
 
@@ -149,6 +162,9 @@ gee-service-account-key.json
 .env.production
 .env.*.local
 *.env
+*.env.*
+.env.prod
+backend/.env
 # Database credentials and configs
 **/pg_hba.conf.local
 **/postgresql.conf.local
@@ -162,6 +178,8 @@ gee-service-account-key.json
 .codacy/
 .github/instructions/
 run.py
+pyproject.toml
+.venv/
 
 # =============================================================================
 # Large Files (uncomment if needed)

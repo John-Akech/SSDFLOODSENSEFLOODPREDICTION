@@ -1,22 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  HomeIcon,
-  MapIcon,
-  DocumentIcon,
-  ChartIcon,
-  CogIcon,
-  ChevronDownIcon,
-  ChevronRightIcon
-} from './Icons';
 import { useLanguage } from '../i18n/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
 
 interface SubMenuItem {
   path: string;
   label: string;
-  icon: React.ComponentType<any>;
   description: string;
   gradient: string;
   external?: boolean;
@@ -25,7 +15,6 @@ interface SubMenuItem {
 interface MenuItem {
   path?: string;
   label: string;
-  icon: React.ComponentType<any>;
   gradient: string;
   description?: string;
   external?: boolean;
@@ -45,41 +34,41 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
   const menuItems: MenuItem[] = [
     {
       label: 'Dashboards',
-      icon: ChartIcon,
       gradient: 'from-purple-500 to-pink-500',
       submenu: [
         {
           path: '/home',
           label: 'Dashboard',
-          icon: HomeIcon,
           description: 'Main overview and statistics',
           gradient: 'from-blue-500 to-cyan-500'
         },
         {
           path: '/analytics',
           label: 'Flood Analytics',
-          icon: ChartIcon,
           description: 'Advanced flood data analysis and insights',
           gradient: 'from-purple-500 to-pink-500'
         },
         {
           path: '/predictions',
           label: 'Prediction Center',
-          icon: ChartIcon,
           description: 'Flood prediction models and forecasts',
           gradient: 'from-indigo-500 to-purple-500'
         },
         {
+          path: '/simulation',
+          label: 'Flood Simulator',
+          description: 'Interactive flood scenario analysis',
+          gradient: 'from-pink-500 to-rose-500'
+        },
+        {
           path: '/monitoring',
           label: 'Real-time Monitoring',
-          icon: ChartIcon,
           description: 'Live flood monitoring and alerts',
           gradient: 'from-green-500 to-teal-500'
         },
         {
           path: '/reports',
           label: 'Reports & Insights',
-          icon: DocumentIcon,
           description: 'Comprehensive flood reports and analysis',
           gradient: 'from-orange-500 to-amber-500'
         },
@@ -87,13 +76,11 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
     },
     {
       label: 'Maps & GIS',
-      icon: MapIcon,
       gradient: 'from-emerald-500 to-teal-500',
       submenu: [
         {
           path: import.meta.env.VITE_SAR_URL || 'http://localhost:8080',
           label: 'SAR Detection',
-          icon: MapIcon,
           description: 'Satellite-based flood detection',
           gradient: 'from-purple-500 to-indigo-500',
           external: true
@@ -101,7 +88,6 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
         {
           path: '/gis-analysis',
           label: 'GIS Analysis',
-          icon: MapIcon,
           description: 'Advanced geospatial analysis tools',
           gradient: 'from-cyan-500 to-blue-500'
         }
@@ -109,20 +95,17 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
     },
     {
       label: 'Data & Sharing',
-      icon: DocumentIcon,
       gradient: 'from-indigo-500 to-purple-500',
       submenu: [
         {
           path: '/data-sharing',
           label: 'Data Sharing',
-          icon: DocumentIcon,
           description: 'Contribute and share flood data',
           gradient: 'from-indigo-500 to-purple-500'
         },
         {
           path: '/data-sources',
           label: 'Data Sources',
-          icon: DocumentIcon,
           description: 'Available data sources and APIs',
           gradient: 'from-blue-500 to-indigo-500'
         }
@@ -131,7 +114,6 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
     {
       path: '/report',
       label: 'Report Flood',
-      icon: DocumentIcon,
       gradient: 'from-orange-500 to-amber-500',
       description: 'Report new flood events'
     }
@@ -141,27 +123,23 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
   if (isAdmin) {
     menuItems.push({
       label: 'Administration',
-      icon: CogIcon,
       gradient: 'from-red-500 to-pink-500',
       submenu: [
         {
           path: '/admin',
           label: 'Admin Panel',
-          icon: CogIcon,
           description: 'System administration and management',
           gradient: 'from-red-500 to-pink-500'
         },
         {
           path: '/admin/users',
           label: 'User Management',
-          icon: CogIcon,
           description: 'Manage users and permissions',
           gradient: 'from-pink-500 to-rose-500'
         },
         {
           path: '/admin/system',
           label: 'System Settings',
-          icon: CogIcon,
           description: 'System configuration and settings',
           gradient: 'from-rose-500 to-red-500'
         }
@@ -172,7 +150,6 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
     menuItems.push({
       path: '/login',
       label: 'Admin Login',
-      icon: CogIcon,
       gradient: 'from-gray-500 to-gray-600',
       description: 'Access admin dashboard'
     });
@@ -194,7 +171,6 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
   };
 
   const renderMenuItem = (item: MenuItem) => {
-    const Icon = item.icon;
     const hasSubmenu = item.submenu && item.submenu.length > 0;
     const isExpanded = isMenuExpanded(item.label);
 
@@ -205,17 +181,11 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
             onClick={() => toggleMenu(item.label)}
             className="w-full flex items-center gap-5 px-6 py-4 rounded-xl transition-all duration-300 text-gray-700 hover:bg-blue-50 hover:text-blue-700 group"
           >
-            <div className={`p-2.5 rounded-lg bg-gradient-to-br ${item.gradient}`}>
-              <Icon className="w-6 h-6 text-white" />
+            <div className={`p-2.5 rounded-lg bg-gradient-to-br ${item.gradient} hidden`}>
             </div>
             <div className="flex-1 text-left">
               <span className="font-semibold text-base">{item.label}</span>
             </div>
-            {isExpanded ? (
-              <ChevronDownIcon className="w-5 h-5 transition-transform duration-200" />
-            ) : (
-              <ChevronRightIcon className="w-5 h-5 transition-transform duration-200" />
-            )}
           </button>
 
           <AnimatePresence>
@@ -228,7 +198,6 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
                 className="ml-6 space-y-2 border-l-2 border-blue-100 pl-5"
               >
                 {item.submenu!.map((subItem) => {
-                  const SubIcon = subItem.icon;
                   const isSubActive = isActive(subItem.path);
 
                   return subItem.external ? (
@@ -243,8 +212,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
                         }`}
                     >
                       <div className={`p-2 rounded-md ${isSubActive ? 'bg-white/20' : `bg-gradient-to-br ${subItem.gradient}`
-                        }`}>
-                        <SubIcon className={`w-5 h-5 ${isSubActive ? 'text-white' : 'text-white'}`} />
+                        } hidden`}>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-base">{subItem.label}</div>
@@ -267,8 +235,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
                         }`}
                     >
                       <div className={`p-2 rounded-md ${isSubActive ? 'bg-white/20' : `bg-gradient-to-br ${subItem.gradient}`
-                        }`}>
-                        <SubIcon className={`w-5 h-5 ${isSubActive ? 'text-white' : 'text-white'}`} />
+                        } hidden`}>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-base">{subItem.label}</div>
@@ -304,8 +271,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
           : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
           }`}
       >
-        <div className={`p-2.5 rounded-lg ${isItemActive ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`}`}>
-          <Icon className={`w-6 h-6 ${isItemActive ? 'text-white' : 'text-white'}`} />
+        <div className={`p-2.5 rounded-lg ${isItemActive ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`} hidden`}>
         </div>
         <div className="flex-1">
           <span className="font-semibold text-base">{item.label}</span>
@@ -329,8 +295,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
           : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
           }`}
       >
-        <div className={`p-2.5 rounded-lg ${isItemActive ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`}`}>
-          <Icon className={`w-6 h-6 ${isItemActive ? 'text-white' : 'text-white'}`} />
+        <div className={`p-2.5 rounded-lg ${isItemActive ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`} hidden`}>
         </div>
         <div className="flex-1">
           <span className="font-semibold text-base">{item.label}</span>
@@ -404,9 +369,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
               className="lg:hidden p-3 text-white hover:bg-white/20 rounded-xl transition-colors shadow-lg"
               aria-label="Toggle menu"
             >
-              <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <span className="lg:hidden font-bold">Menu</span>
             </button>
           </div>
         </div>
@@ -433,10 +396,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
           {/* Need Help Section */}
           <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300">
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg flex-shrink-0">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg flex-shrink-0 hidden">
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className="text-sm font-bold text-blue-900 mb-1">{t('needHelp')}</h4>
@@ -447,9 +407,6 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
                   href="mailto:j.akech@alustudent.com"
                   className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                 >
-                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
                   {t('getSupport')}
                 </a>
               </div>

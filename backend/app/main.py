@@ -8,9 +8,23 @@ Author: John Akech
 Last Updated: November 2025
 """
 
+from .middleware.ip_whitelist import IPWhitelistMiddleware
+from .middleware.request_logger import RequestLoggerMiddleware
+from .middleware.security_headers import SecurityHeadersMiddleware
+from .middleware.rate_limiter import RateLimiter
+from .middleware.error_handler import database_error_handler
+from .services.model_service import ModelService
+from .core.config import settings
+from .core.database import init_db, SessionLocal
+from .api.audit_routes import router as audit_router
+from .api.crud_routes import router as crud_router
+from .api.auth_routes import router as auth_router
+from .api.admin_routes import router as admin_router
+from .api.routes import router
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 import os
@@ -21,24 +35,10 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 
 # Import our custom routes
-from api.routes import router
-from api.admin_routes import router as admin_router
-from api.auth_routes import router as auth_router
-from api.crud_routes import router as crud_router
-# Temporarily disabled audit logs due to circular import issue
-# from api.audit_routes import router as audit_router
 
 # Import core functionality
-from core.database import init_db, SessionLocal
-from core.config import settings
-from services.model_service import ModelService
 
 # Import our custom middleware
-from middleware.error_handler import database_error_handler
-from middleware.rate_limiter import RateLimiter
-from middleware.security_headers import SecurityHeadersMiddleware
-from middleware.request_logger import RequestLoggerMiddleware
-from middleware.ip_whitelist import IPWhitelistMiddleware
 
 
 @asynccontextmanager
@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI):
     print("Starting application initialization...")
     init_db()
     print("[OK] Database initialized")
-    
+
     print("Loading ML models...")
     try:
         await ModelService.load_models()
@@ -64,7 +64,24 @@ async def lifespan(app: FastAPI):
         print(f"[ERROR] Error loading models: {e}")
         import traceback
         traceback.print_exc()
-    
+
+    # Initialize push notification service
+    print("Initializing push notification service...")
+    try:
+        from app.services.push_notification_service import initialize_push_service
+        if settings.VAPID_PRIVATE_KEY and settings.VAPID_PUBLIC_KEY:
+            initialize_push_service(
+                vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                vapid_public_key=settings.VAPID_PUBLIC_KEY,
+                vapid_email=settings.VAPID_SUBJECT.replace("mailto:", "")
+            )
+            print("[OK] Push notification service initialized")
+        else:
+            print("[WARNING] VAPID keys not configured - push notifications disabled")
+    except Exception as e:
+        print(
+            f"[WARNING] Push notification service initialization failed: {e}")
+
     yield
     # Shutdown: cleanup would go here if needed
 
@@ -84,13 +101,21 @@ app = FastAPI(
 # Important: Middleware executes in REVERSE ORDER (last added runs first)
 # Think of it like wrapping layers - the outer layer runs first on the way in
 
+# Optional HTTPS enforcement for production deployments
+if settings.FORCE_HTTPS:
+    app.add_middleware(HTTPSRedirectMiddleware)
+
 # 1. Rate limiting (outer layer - runs first)
 # Prevents abuse by limiting requests per hour
-app.add_middleware(RateLimiter, requests=100, window=3600)
+app.add_middleware(
+    RateLimiter,
+    requests=settings.RATE_LIMIT_REQUESTS,
+    window=settings.RATE_LIMIT_WINDOW,
+)
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=[
-        "localhost", "127.0.0.1", "*.floodsense.org", "testserver", "159.203.162.85"
+    allowed_hosts=settings.ALLOWED_HOSTS or [
+        "localhost", "127.0.0.1", "*.floodsense.org", "testserver"
     ]
 )
 
@@ -125,8 +150,7 @@ app.add_middleware(
 # Order matters - more specific routes should be included first
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
-# Temporarily disabled audit logs due to circular import issue
-# app.include_router(audit_router, prefix="/api/v1")  # Audit logs
+app.include_router(audit_router, prefix="/api/v1")  # Audit logs
 app.include_router(router, prefix="/api/v1")
 app.include_router(crud_router, prefix="/api/v1")  # CRUD routes last
 
@@ -148,7 +172,7 @@ async def audit_write_requests(request: Request, call_next):
     response = await call_next(request)
     try:
         if request.method in ("POST", "PUT", "DELETE", "PATCH"):
-            from models.database_models import SystemLog
+            from .models.database_models import SystemLog
             db = SessionLocal()
             try:
                 log = SystemLog(

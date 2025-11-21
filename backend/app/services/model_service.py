@@ -13,6 +13,11 @@ Author: John Angou
 Last Updated: November 2025
 """
 
+try:
+    # Prefer absolute import when app is installed as a package (pytest, uvicorn)
+    from app.core.config import settings
+except ImportError:  # pragma: no cover - fallback for relative execution
+    from ..core.config import settings
 import joblib  # type: ignore
 import numpy as np
 import pandas as pd
@@ -22,6 +27,7 @@ from pathlib import Path
 import sys
 import os
 import time
+from datetime import datetime
 from sklearn.metrics import (  # type: ignore
     roc_auc_score,
     f1_score,
@@ -41,16 +47,19 @@ try:
     torch_available = True
 except ImportError:
     torch_available = False
-    logger.warning("PyTorch not available - TCN and LSTM models will not be loaded")
+    logger.warning(
+        "PyTorch not available - TCN and LSTM models will not be loaded")
 
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-from core.config import settings
 
 # Helper functions
+
+
 def get_device():
     """Check if we have a GPU available, otherwise use CPU"""
     return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 def ensure_tensor_on_device(
     t: Any,
@@ -65,28 +74,29 @@ def ensure_tensor_on_device(
 class TCNModel(torch.nn.Module):
     """
     Temporal Convolutional Network for flood prediction.
-    
+
     This is a neural network that's good at detecting patterns over time.
     Uses multiple convolutional layers with batch normalization to process
     sequential patterns in satellite data for flood detection.
     """
-    
+
     def __init__(self, input_dim, num_channels=[64, 32, 16], kernel_size=3, dropout=0.2):
         super(TCNModel, self).__init__()
         self.tcn_layers = torch.nn.ModuleList()
         in_channels = 1
-        
+
         for out_channels in num_channels:
             self.tcn_layers.append(torch.nn.Sequential(
-                torch.nn.Conv1d(in_channels, out_channels, kernel_size, padding=kernel_size//2),
+                torch.nn.Conv1d(in_channels, out_channels,
+                                kernel_size, padding=kernel_size//2),
                 torch.nn.BatchNorm1d(out_channels),
                 torch.nn.ReLU(),
                 torch.nn.Dropout(dropout)
             ))
             in_channels = out_channels
-        
+
         self.fc = torch.nn.Linear(num_channels[-1] * input_dim, 2)
-    
+
     def forward(self, x):
         # x shape: (batch, features)
         x = x.unsqueeze(1)  # (batch, 1, features)
@@ -99,47 +109,47 @@ class TCNModel(torch.nn.Module):
 class LSTMModel(torch.nn.Module):
     """
     LSTM (Long Short-Term Memory) Network for flood forecasting.
-    
+
     This is a recurrent neural network designed for time series forecasting.
     It can capture long-term dependencies and is particularly useful for
     multi-step ahead flood predictions.
-    
+
     Architecture:
     - Bidirectional LSTM layers to capture both forward and backward temporal patterns
     - Dropout for regularization
     - Fully connected layer for binary classification (flood vs no-flood)
     """
-    
+
     def __init__(self, input_dim=19, hidden_dim=64, num_layers=2, dropout=0.2):
         super(LSTMModel, self).__init__()
         self.hidden_dim = hidden_dim
         self.num_layers = num_layers
-        
+
         # LSTM layer with dropout between layers
         self.lstm = torch.nn.LSTM(
-            input_dim, 
-            hidden_dim, 
+            input_dim,
+            hidden_dim,
             num_layers,
-            batch_first=True, 
+            batch_first=True,
             dropout=dropout if num_layers > 1 else 0,
             bidirectional=False
         )
-        
+
         # Fully connected output layer
         self.fc = torch.nn.Linear(hidden_dim, 2)
         self.dropout = torch.nn.Dropout(dropout)
-    
+
     def forward(self, x):
         # Add sequence dimension if not present
         if len(x.shape) == 2:
             x = x.unsqueeze(1)  # (batch, 1, features) - single time step
-        
+
         # LSTM forward pass
         lstm_out, (hidden, cell) = self.lstm(x)
-        
+
         # Use the last hidden state
         last_hidden = lstm_out[:, -1, :]
-        
+
         # Apply dropout and classification layer
         out = self.dropout(last_hidden)
         return self.fc(out)
@@ -155,7 +165,7 @@ class ModelService:
     lstm_model = None  # LSTM model for time series forecasting
     prototypical_model = None
     scaler = None  # Feature scaler for production models
-    
+
     # PRODUCTION MODELS: Trained on time series data (126 samples, 96.88% accuracy)
     # Features from aggregated_flood_events.csv (16 features total - ACTUAL REAL DATA)
     feature_columns = [
@@ -177,7 +187,7 @@ class ModelService:
     async def load_models(cls):
         """
         Load ML models directly from training pipeline output.
-        
+
         ARCHITECTURE: Models are loaded from ml_pipeline/outputs/04_trained_models/
         This is the single source of truth - no copying or duplication needed.
         """
@@ -189,20 +199,22 @@ class ModelService:
                 # Docker container path
                 Path("/app/backend/ml_pipeline/outputs/04_trained_models"),
                 # From backend/app/services
-                Path(__file__).parent.parent.parent / "ml_pipeline" / "outputs" / "04_trained_models",
+                Path(__file__).parent.parent.parent /
+                "ml_pipeline" / "outputs" / "04_trained_models",
                 # From project root
                 Path.cwd() / "backend" / "ml_pipeline" / "outputs" / "04_trained_models",
             ]
-            
+
             models_dir = None
             for path in possible_paths:
                 if path.exists():
                     models_dir = path
                     logger.info(f"[OK] Found models directory: {path}")
                     break
-            
+
             if not models_dir:
-                logger.error("Models directory not found. Run ml_pipeline/04_train_models.py first.")
+                logger.error(
+                    "Models directory not found. Run ml_pipeline/04_train_models.py first.")
                 cls.models_loaded = False
                 return
 
@@ -212,7 +224,8 @@ class ModelService:
                 cls.scaler = joblib.load(scaler_path)
                 logger.info("Feature scaler loaded")
             else:
-                logger.warning("Feature scaler not found - predictions may fail")
+                logger.warning(
+                    "Feature scaler not found - predictions may fail")
 
             # PRIMARY MODEL 1: Random Forest
             rf_path = models_dir / "random_forest.pkl"
@@ -226,21 +239,28 @@ class ModelService:
             tcn_path = models_dir / "tcn_model.pt"
             if tcn_path.exists() and torch_available:
                 try:
-                    checkpoint = torch.load(tcn_path, map_location=get_device(), weights_only=False)
-                    input_dim = checkpoint.get('hyperparameters', {}).get('input_dim', 19)
+                    checkpoint = torch.load(
+                        tcn_path, map_location=get_device(), weights_only=False)
+                    input_dim = checkpoint.get(
+                        'hyperparameters', {}).get('input_dim', 19)
                     cls.tcn_model = TCNModel(
                         input_dim=input_dim,
-                        num_channels=checkpoint.get('hyperparameters', {}).get('num_channels', [64, 32, 16]),
-                        kernel_size=checkpoint.get('hyperparameters', {}).get('kernel_size', 3),
-                        dropout=checkpoint.get('hyperparameters', {}).get('dropout', 0.2)
+                        num_channels=checkpoint.get('hyperparameters', {}).get(
+                            'num_channels', [64, 32, 16]),
+                        kernel_size=checkpoint.get(
+                            'hyperparameters', {}).get('kernel_size', 3),
+                        dropout=checkpoint.get(
+                            'hyperparameters', {}).get('dropout', 0.2)
                     )
-                    cls.tcn_model.load_state_dict(checkpoint['model_state_dict'])
+                    cls.tcn_model.load_state_dict(
+                        checkpoint['model_state_dict'])
                     cls.tcn_model.eval()
                     logger.info("[OK] PRIMARY: TCN model loaded")
                 except Exception as e:
                     logger.error(f"Failed to load TCN model: {e}")
             elif not torch_available:
-                logger.info("⊘ TCN model skipped (PyTorch not available)")
+                logger.info(
+                    "[SKIPPED] TCN model skipped (PyTorch not available)")
             else:
                 logger.warning("TCN model not found")
 
@@ -248,19 +268,31 @@ class ModelService:
             lstm_path = models_dir / "lstm_model.pt"
             if lstm_path.exists() and torch_available:
                 try:
-                    checkpoint = torch.load(lstm_path, map_location=get_device(), weights_only=False)
-                    input_dim = checkpoint.get('hyperparameters', {}).get('input_dim', 19)
+                    checkpoint = torch.load(
+                        lstm_path, map_location=get_device(), weights_only=False)
+                    input_dim = checkpoint.get(
+                        'hyperparameters', {}).get('input_dim', 19)
                     cls.lstm_model = LSTMModel(
                         input_dim=input_dim,
-                        hidden_dim=checkpoint.get('hyperparameters', {}).get('hidden_dim', 64),
-                        num_layers=checkpoint.get('hyperparameters', {}).get('num_layers', 2),
-                        dropout=checkpoint.get('hyperparameters', {}).get('dropout', 0.2)
+                        hidden_dim=checkpoint.get(
+                            'hyperparameters', {}).get('hidden_dim', 64),
+                        num_layers=checkpoint.get(
+                            'hyperparameters', {}).get('num_layers', 2),
+                        dropout=checkpoint.get(
+                            'hyperparameters', {}).get('dropout', 0.2)
                     )
-                    cls.lstm_model.load_state_dict(checkpoint['model_state_dict'])
+                    cls.lstm_model.load_state_dict(
+                        checkpoint['model_state_dict'])
                     cls.lstm_model.eval()
-                    logger.info("[OK] OPTIONAL: LSTM model loaded (forecasting)")
+                    logger.info(
+                        "[OK] OPTIONAL: LSTM model loaded (forecasting)")
                 except Exception as e:
                     logger.error(f"Failed to load LSTM model: {e}")
+            elif not torch_available:
+                logger.info(
+                    "[SKIPPED] LSTM model skipped (PyTorch not available)")
+            else:
+                logger.info("[SKIPPED] LSTM model not found (optional)")
 
             # OPTIONAL MODEL 2: Gradient Boosting
             gb_path = models_dir / "gradient_boosting.pkl"
@@ -269,7 +301,11 @@ class ModelService:
                     cls.gb_model = joblib.load(gb_path)
                     logger.info("[OK] OPTIONAL: Gradient Boosting loaded")
                 except Exception as e:
-                    logger.error(f"Failed to load Gradient Boosting model: {e}")
+                    logger.error(
+                        f"Failed to load Gradient Boosting model: {e}")
+            else:
+                logger.info(
+                    "[SKIPPED] Gradient Boosting model not found (optional)")
 
             # Validate at least one PRIMARY model is loaded
             if cls.rf_model or cls.tcn_model:
@@ -284,7 +320,8 @@ class ModelService:
                 )
             else:
                 cls.models_loaded = False
-                logger.error("[ERROR] CRITICAL: No PRIMARY models loaded. Run ml_pipeline/04_train_models.py")
+                logger.error(
+                    "[ERROR] CRITICAL: No PRIMARY models loaded. Run ml_pipeline/04_train_models.py")
 
         except Exception as e:
             logger.error(f"Error loading models: {e}")
@@ -360,7 +397,8 @@ class ModelService:
                 probs_ens.append(np.nan)
 
         def metrics_from_probs(probs: List[float]) -> Dict[str, Any]:
-            p = np.array([x if x == x else 0.0 for x in probs])  # replace NaN with 0
+            # replace NaN with 0
+            p = np.array([x if x == x else 0.0 for x in probs])
             y_pred = (p >= 0.5).astype(int)
             try:
                 auc = roc_auc_score(y, p)
@@ -396,7 +434,8 @@ class ModelService:
         if y is None:
             return {"error": "flood_label column missing"}
         y = y.values.astype(int)
-        X_feats = [{col: row.get(col) for col in cls.feature_columns} for _, row in df.iterrows()]
+        X_feats = [{col: row.get(col) for col in cls.feature_columns}
+                   for _, row in df.iterrows()]
 
         # RF Platt scaling: logistic regression on RF logits
         rf_probs = []
@@ -430,7 +469,8 @@ class ModelService:
                     # get logits by running model without softmax/temperature
                     device = get_device()
                     X = cls.preprocess_features(feats)
-                    X_tensor = ensure_tensor_on_device(X, device, dtype=torch.float32)
+                    X_tensor = ensure_tensor_on_device(
+                        X, device, dtype=torch.float32)
                     with torch.no_grad():
                         output = cls.tcn_model(X_tensor)
                         logits = output[0].cpu().numpy()
@@ -441,6 +481,7 @@ class ModelService:
         if tcn_probs:
             logits_arr = np.array(tcn_probs)  # shape (N, 2)
             pos_logits = logits_arr[:, 1]
+
             def nll(temp: float) -> float:
                 q = 1.0 / (1.0 + np.exp(-(pos_logits / max(temp, 1e-3))))
                 q = np.clip(q, 1e-6, 1 - 1e-6)
@@ -459,6 +500,7 @@ class ModelService:
             "rf_platt": {"A": cls.rf_platt_A, "B": cls.rf_platt_B},
             "tcn_temperature": cls.tcn_temperature,
         }
+
     @classmethod
     def get_model_metadata(cls) -> Dict[str, Any]:
         """Return lightweight metadata about loaded models (no large tensors)."""
@@ -478,8 +520,9 @@ class ModelService:
                         if hasattr(c, 'item'):  # numpy scalar
                             classes_list.append(c.item())
                         else:
-                            classes_list.append(int(c) if isinstance(c, (int, float)) else c)
-                
+                            classes_list.append(
+                                int(c) if isinstance(c, (int, float)) else c)
+
                 meta["rf"] = {
                     "type": rf.__class__.__name__,
                     "n_features": int(getattr(rf, "n_features_in_", 0)) if hasattr(rf, "n_features_in_") else None,
@@ -501,7 +544,8 @@ class ModelService:
                             "shape": list(param.shape),
                             "trainable": bool(param.requires_grad),
                         }
-                        for name, param in list(tcn.named_parameters())[:6]  # cap for brevity
+                        # cap for brevity
+                        for name, param in list(tcn.named_parameters())[:6]
                     ],
                 }
             except Exception as e:
@@ -523,13 +567,15 @@ class ModelService:
         try:
             if cls.rf_model is not None:
                 p, c, t = cls.predict_rf(features)
-                out["rf"] = {"probability": p, "confidence": c, "inference_time_ms": t}
+                out["rf"] = {"probability": p,
+                             "confidence": c, "inference_time_ms": t}
         except Exception as e:
             out["rf"] = {"error": str(e)}
         try:
             if cls.tcn_model is not None:
                 p, c, t = cls.predict_tcn(features)
-                out["tcn"] = {"probability": p, "confidence": c, "inference_time_ms": t}
+                out["tcn"] = {"probability": p,
+                              "confidence": c, "inference_time_ms": t}
         except Exception as e:
             out["tcn"] = {"error": str(e)}
         try:
@@ -546,15 +592,20 @@ class ModelService:
 
     @classmethod
     def preprocess_features(cls, features: Dict[str, Any]) -> np.ndarray:
-        """Preprocess input features for model prediction with scaling"""
-        # Create feature vector in correct order for production models
-        feature_vector = []
-        for col in cls.feature_columns:
-            if col in features:
-                feature_vector.append(features[col])
-            else:
-                # Production model features - use 0.0 for missing (will be scaled anyway)
-                feature_vector.append(0.0)
+        """Preprocess input features for model prediction with scaling.
+
+        The production models are calibrated on a strict 16-feature vector. Any
+        missing field now triggers a hard failure so we never fall back to
+        synthetic or default values in real-time predictions.
+        """
+        missing = [col for col in cls.feature_columns if col not in features]
+        if missing:
+            raise ValueError(
+                "Missing required model features: " +
+                ", ".join(sorted(missing))
+            )
+
+        feature_vector = [features[col] for col in cls.feature_columns]
 
         # Apply standard scaling if scaler is loaded (REQUIRED for production models)
         feature_array = np.array(feature_vector).reshape(1, -1)
@@ -562,9 +613,10 @@ class ModelService:
             try:
                 return cls.scaler.transform(feature_array)
             except Exception as e:
-                logger.warning(f"Scaler transform failed: {e}, using unscaled features")
+                logger.warning(
+                    f"Scaler transform failed: {e}, using unscaled features")
                 return feature_array
-        
+
         return feature_array
 
     @classmethod
@@ -583,10 +635,10 @@ class ModelService:
         # Apply Platt scaling if available
         if cls.rf_platt_A is not None and cls.rf_platt_B is not None:
             logit = np.log(max(probability, 1e-6) / max(1 - probability, 1e-6))
-            probability = float(cls._sigmoid(cls.rf_platt_A * logit + cls.rf_platt_B))
-        
-        entropy = -sum(p * np.log(p + 1e-10) for p in proba)
-        confidence = float(1.0 - (entropy / np.log(len(proba))))
+            probability = float(cls._sigmoid(
+                cls.rf_platt_A * logit + cls.rf_platt_B))
+
+        confidence = float(np.max(proba))
         inference_time = (time.time() - start_time) * 1000
 
         return probability, confidence, inference_time
@@ -604,10 +656,8 @@ class ModelService:
         X = cls.preprocess_features(features)
         proba = cls.gb_model.predict_proba(X)[0]
         probability = float(proba[1])
-        
-        # Calculate confidence from entropy
-        entropy = -sum(p * np.log(p + 1e-10) for p in proba)
-        confidence = float(1.0 - (entropy / np.log(len(proba))))
+
+        confidence = float(np.max(proba))
         inference_time = (time.time() - start_time) * 1000
 
         return probability, confidence, inference_time
@@ -630,8 +680,8 @@ class ModelService:
             output = cls.lstm_model(X_tensor)
             probs = torch.softmax(output, dim=1)
             probability = probs[0, 1].item()
-            confidence = float(max(probs[0]).item())
-        
+            confidence = float(torch.max(probs[0]).item())
+
         inference_time = (time.time() - start_time) * 1000
         return float(probability), float(confidence), inference_time
 
@@ -647,40 +697,41 @@ class ModelService:
         start_time = time.time()
         device = get_device()
         X = cls.preprocess_features(features)
-        
+
         # DEBUG: Log input features and raw output
-        logger.info(f"TCN Input shape: {X.shape}, First 5 features: {X[0][:5]}")  
-        
+        logger.info(
+            f"TCN Input shape: {X.shape}, First 5 features: {X[0][:5]}")
+
         X_tensor = ensure_tensor_on_device(X, device, dtype=torch.float32)
 
         with torch.no_grad():
             output = cls.tcn_model(X_tensor)
             logger.info(f"TCN Raw output (logits): {output[0].cpu().numpy()}")
-            
+
             temperature = cls.tcn_temperature
             probs = torch.softmax(output / temperature, dim=1)
-            logger.info(f"TCN After softmax (temp={temperature}): {probs[0].cpu().numpy()}")
-            
+            logger.info(
+                f"TCN After softmax (temp={temperature}): {probs[0].cpu().numpy()}")
+
             probability = probs[0, 1].item()
-            confidence = float(max(probs[0]).item())
-        
+            confidence = float(torch.max(probs[0]).item())
+
         inference_time = (time.time() - start_time) * 1000
-        logger.info(f"TCN Prediction: prob={probability:.4f}, conf={confidence:.4f}")
+        logger.info(
+            f"TCN Prediction: prob={probability:.4f}, conf={confidence:.4f}")
         return float(probability), float(confidence), inference_time
 
-
-    
     @classmethod
     def predict_ensemble(cls, features: Dict[str, Any]) -> Tuple[float, float, Dict[str, float], float]:
         """Ensemble prediction combining RF, GB, TCN, and LSTM with weighted averaging
-        
+
         CONFIDENCE CALCULATION (IMPROVED v2.0):
         1. Model Agreement: How close are predictions? (std deviation)
         2. Individual Certainty: Entropy-based confidence from each model
         3. Probability Certainty: Lower confidence near decision boundary (0.5)
         4. Model Performance: Weight by historical accuracy (RF:93.75%, GB:90.62%, TCN:90.62%, LSTM:87.50%)
         5. Extreme Disagreement Penalty: Reduce confidence if disagreement > 30%
-        
+
         Returns:
             - probability: Weighted average flood probability
             - confidence: How certain we are (0-1), multi-factor analysis
@@ -689,11 +740,11 @@ class ModelService:
         """
         start_time = time.time()
         predictions = {}
-        
+
         # Model weights based on test accuracy (RF:93.75%, GB:90.62%, TCN:90.62%, LSTM:87.50%)
         # Total: 362.49% → Normalize: RF:25.9%, GB:25.0%, TCN:25.0%, LSTM:24.1%
         weights = {'rf': 0.259, 'gb': 0.250, 'tcn': 0.250, 'lstm': 0.241}
-        
+
         logger.info(
             f"Ensemble prediction starting with models: "
             f"RF={cls.rf_model is not None}, "
@@ -701,43 +752,47 @@ class ModelService:
             f"TCN={cls.tcn_model is not None}, "
             f"LSTM={cls.lstm_model is not None}"
         )
-        
+
         try:
             if cls.rf_model is not None:
                 logger.info("Attempting RF prediction...")
                 rf_prob, rf_conf, _ = cls.predict_rf(features)
-                predictions['rf'] = {'probability': rf_prob, 'confidence': rf_conf}
+                predictions['rf'] = {
+                    'probability': rf_prob, 'confidence': rf_conf}
                 logger.info(f"RF prediction successful: {rf_prob}")
         except Exception as e:
             logger.error(f"RF prediction failed: {e}", exc_info=True)
-        
+
         try:
             if cls.gb_model is not None:
                 logger.info("Attempting GB prediction...")
                 gb_prob, gb_conf, _ = cls.predict_gb(features)
-                predictions['gb'] = {'probability': gb_prob, 'confidence': gb_conf}
+                predictions['gb'] = {
+                    'probability': gb_prob, 'confidence': gb_conf}
                 logger.info(f"GB prediction successful: {gb_prob}")
         except Exception as e:
             logger.error(f"GB prediction failed: {e}", exc_info=True)
-        
+
         try:
             if cls.tcn_model is not None:
                 logger.info("Attempting TCN prediction...")
                 tcn_prob, tcn_conf, _ = cls.predict_tcn(features)
-                predictions['tcn'] = {'probability': tcn_prob, 'confidence': tcn_conf}
+                predictions['tcn'] = {
+                    'probability': tcn_prob, 'confidence': tcn_conf}
                 logger.info(f"TCN prediction successful: {tcn_prob}")
         except Exception as e:
             logger.error(f"TCN prediction failed: {e}", exc_info=True)
-        
+
         try:
             if cls.lstm_model is not None:
                 logger.info("Attempting LSTM prediction...")
                 lstm_prob, lstm_conf, _ = cls.predict_lstm(features)
-                predictions['lstm'] = {'probability': lstm_prob, 'confidence': lstm_conf}
+                predictions['lstm'] = {
+                    'probability': lstm_prob, 'confidence': lstm_conf}
                 logger.info(f"LSTM prediction successful: {lstm_prob}")
         except Exception as e:
             logger.error(f"LSTM prediction failed: {e}", exc_info=True)
-        
+
         if not predictions:
             logger.error(
                 f"No predictions available. "
@@ -747,104 +802,63 @@ class ModelService:
                 f"LSTM={cls.lstm_model is not None}"
             )
             raise ValueError("No models available for ensemble prediction")
-        
+
         # Weighted average of probabilities using available models
         total_weight = sum(weights[m] for m in predictions.keys())
         ensemble_prob = sum(
-            predictions[m]['probability'] * weights[m] 
+            predictions[m]['probability'] * weights[m]
             for m in predictions.keys()
         ) / total_weight
-        
+
         # ==== SUPER CONFIDENT v4.0 - Maximum UX Optimization ====
-        probs = np.array([predictions[m]['probability'] for m in predictions.keys()])
-        
+        probs = np.array([predictions[m]['probability']
+                         for m in predictions.keys()])
+
         if len(predictions) == 1:
-            # Single model: very high baseline confidence
-            base_conf = list(predictions.values())[0]['confidence']
-            
-            # Minimal penalty for boundary uncertainty
-            boundary_distance = abs(ensemble_prob - 0.5)
-            boundary_boost = min(boundary_distance * 2.0, 1.0)
-            
-            # Start at 85% baseline (was 80%)
-            ensemble_conf = base_conf * (0.85 + 0.15 * boundary_boost)
+            # Single model: rely entirely on that model's confidence
+            ensemble_conf = list(predictions.values())[0]['confidence']
         else:
-            # Multiple models: ultra-optimistic confidence
-            
-            # 1. Agreement Score - Much more forgiving
+            avg_individual_conf = np.mean(
+                [predictions[m]['confidence'] for m in predictions.keys()])
             prob_std = np.std(probs)
-            if prob_std < 0.08:
-                agreement_score = 1.0  # Excellent agreement (was 0.05)
-            elif prob_std < 0.25:
-                # Very gradual decline
-                agreement_score = 1.0 - (prob_std - 0.08) * 1.0  # 1.0 to 0.83
-            elif prob_std < 0.40:
-                # Still good confidence
-                agreement_score = 0.83 - (prob_std - 0.25) * 0.8  # 0.83 to 0.71
-            else:
-                agreement_score = max(0.71 - (prob_std - 0.40) * 0.5, 0.60)  # 0.71 to 0.60
-            
-            # 2. Individual confidence - trust it more
-            avg_individual_conf = np.mean([predictions[m]['confidence'] for m in predictions.keys()])
-            
-            # 3. Probability Certainty - Super generous
             boundary_distance = abs(ensemble_prob - 0.5)
-            if boundary_distance < 0.08:
-                # Even near boundary, give 75% certainty (was 0.65)
-                probability_certainty = 0.75
-            elif boundary_distance < 0.20:
-                # Steeper climb to high confidence
-                probability_certainty = 0.75 + (boundary_distance - 0.08) * 1.67  # 0.75 to 0.95
-            else:
-                # Almost certain when far from boundary
-                probability_certainty = 0.95 + (boundary_distance - 0.20) * 0.167  # 0.95 to 1.0
-            
-            # 4. Model Quality - Trust our trained model heavily
-            model_quality = 0.9688  # Trained accuracy
-            
-            # 5. NEW FORMULA - Much more weight on model quality and agreement
+
+            # Agreement factor drops as models diverge (std >= 0.5 -> 0)
+            agreement_factor = float(max(0.0, 1.0 - min(prob_std / 0.5, 1.0)))
+            # Certainty factor drops when near decision boundary
+            boundary_factor = float(
+                max(0.0, 1.0 - min(boundary_distance / 0.5, 1.0)))
+            # Reward having more than one model contributing
+            coverage_factor = float(min(len(predictions) / len(weights), 1.0))
+
             ensemble_conf = (
-                0.40 * agreement_score +           # INCREASED from 0.35
-                0.15 * avg_individual_conf +       # REDUCED from 0.20
-                0.10 * probability_certainty +     # REDUCED from 0.15  
-                0.35 * model_quality               # MASSIVELY INCREASED from 0.30
+                0.55 * avg_individual_conf +
+                0.25 * agreement_factor +
+                0.15 * boundary_factor +
+                0.05 * coverage_factor
             )
-            
-            # 6. Much gentler disagreement penalty
+
+            # Penalize extreme disagreement explicitly
             disagreement = np.max(probs) - np.min(probs)
-            if disagreement > 0.50:
-                # Only penalize extreme disagreement (was 0.40)
-                penalty = 1.0 - min((disagreement - 0.50) / 0.50, 0.25)  # Max 25% penalty (was 40%)
-                ensemble_conf *= penalty
-                logger.warning(
-                    f"HIGH MODEL DISAGREEMENT ({float(disagreement)*100:.1f}%%): "
-                    f"Predictions={[f'{float(p)*100:.1f}%%' for p in probs]}. "
-                    f"Confidence reduced by {(1-penalty)*100:.0f}%% to {float(ensemble_conf)*100:.1f}%%"
-                )
-            elif disagreement > 0.30:
-                # Moderate disagreement - tiny penalty (was 0.25)
-                penalty = 1.0 - (disagreement - 0.30) * 0.15  # Max 3% penalty (was 4.5%)
-                ensemble_conf *= penalty
-            
-            # 7. Bigger boost for agreement
-            if agreement_score > 0.80 and avg_individual_conf > 0.65:
-                # Lower bars for boost (was 0.85 and 0.70)
-                boost = min((agreement_score - 0.80) * 1.0, 0.15)  # Up to 15% boost (was 10%)
-                ensemble_conf = min(ensemble_conf + boost, 0.99)
-        
-        # Ultra-generous confidence range [0.65, 0.99] - Start at 65% minimum (was 50%)
-        ensemble_conf = float(np.clip(ensemble_conf, 0.65, 0.99))
-        
-        model_predictions = {m: predictions[m]['probability'] for m in predictions.keys()}
+            if disagreement > 0.35:
+                disagreement_penalty = float(
+                    min((disagreement - 0.35) / 0.65, 1.0))
+                ensemble_conf *= (1.0 - 0.3 * disagreement_penalty)
+
+        # Clamp to a realistic range
+        ensemble_conf = float(np.clip(ensemble_conf, 0.3, 0.98))
+
+        model_predictions = {
+            m: predictions[m]['probability'] for m in predictions.keys()}
         inference_time = (time.time() - start_time) * 1000
-        
+
         # Log results with proper formatting
         prob_std_val = prob_std if len(predictions) > 1 else 0.0
         logger.info(
             f"Ensemble result: prob={ensemble_prob:.3f}, conf={ensemble_conf:.3f}, "
             f"agreement_std={prob_std_val:.3f}, boundary_dist={abs(ensemble_prob-0.5):.3f}"
         )
-        
+
         return float(ensemble_prob), float(ensemble_conf), model_predictions, inference_time
 
     @classmethod
@@ -858,103 +872,73 @@ class ModelService:
             return "medium"
         else:
             return "low"
-    
+
     @classmethod
     def map_gee_to_model_features(cls, gee_features: Dict[str, Any], latitude: float, longitude: float) -> Dict[str, Any]:
-        """Map GEE service features to model's 16 expected features
-        
-        PRODUCTION-CRITICAL: This function transforms real satellite data from GEE API
-        into the exact feature format expected by trained models.
-        
-        Args:
-            gee_features: Raw features from GEE service API
-            latitude: Location latitude (not used - for future extension)
-            longitude: Location longitude (not used - for future extension)
-            
-        Returns:
-            Dict with 16 features matching training data format
-            
-        Raises:
-            ValueError: If required GEE features are missing
+        """Map GEE responses to the strict 16-feature SAR vector.
+
+        Any missing sections or metrics now raise immediately so predictions
+        never rely on heuristics, fallbacks, or mock values.
         """
-        # Validate required GEE features exist
-        required_gee = ['sar_vv', 'sar_vh', 'precipitation', 'elevation', 'water_occurrence']
-        missing = [f for f in required_gee if f not in gee_features]
-        if missing:
-            raise ValueError(f"Missing required GEE features: {missing}")
-        
-        # Extract SAR statistics (VV and VH polarizations)
-        sar_vv = gee_features.get('sar_vv', {})
-        sar_vh = gee_features.get('sar_vh', {})
-        
-        # Extract precipitation statistics
-        precip = gee_features.get('precipitation', {})
-        
-        # Extract topography
-        topo = gee_features.get('elevation', {})
-        
-        # Extract water occurrence
-        water = gee_features.get('water_occurrence', {})
-        
-        # Determine region based on latitude/longitude
-        # Jonglei: lat 5.5-7.5, lon 30.5-33.5
-        # Unity: lat 8.0-10.0, lon 29.0-33.0
-        # Upper Nile: lat 8.5-10.5, lon 31.0-34.0
-        region_jonglei = 1 if (5.5 <= latitude <= 7.5 and 30.5 <= longitude <= 33.5) else 0
-        region_unity = 1 if (8.0 <= latitude <= 10.0 and 29.0 <= longitude <= 33.0) else 0
-        region_upper_nile = 1 if (8.5 <= latitude <= 10.5 and 31.0 <= longitude <= 34.0) else 0
-        
-        # Build 16-feature vector matching training data (NO region encoding)
+
+        required_sections = ['sar_vv', 'sar_vh',
+                             'precipitation', 'elevation', 'water_occurrence']
+        missing_sections = [sec for sec in required_sections
+                            if sec not in gee_features or not isinstance(gee_features.get(sec), dict)]
+        if missing_sections:
+            raise ValueError(
+                f"Missing required GEE feature sections: {sorted(missing_sections)}")
+
+        sar_vv = gee_features['sar_vv']
+        sar_vh = gee_features['sar_vh']
+        precip = gee_features['precipitation']
+        topo = gee_features['elevation']
+        water = gee_features['water_occurrence']
+
+        def require(section: Dict[str, Any], key: str, section_name: str) -> float:
+            if key not in section or section[key] is None:
+                raise ValueError(
+                    f"Missing '{key}' in GEE section '{section_name}'")
+            return float(section[key])
+
         model_features = {
-            # SAR VV statistics (dB)
-            'VV_mean': sar_vv.get('mean', 0.0),
-            'VV_std': sar_vv.get('std', 0.0),
-            'VV_min': sar_vv.get('min', 0.0),
-            'VV_max': sar_vv.get('max', 0.0),
-            
-            # SAR VH statistics (dB)
-            'VH_mean': sar_vh.get('mean', 0.0),
-            'VH_std': sar_vh.get('std', 0.0),
-            'VH_min': sar_vh.get('min', 0.0),
-            'VH_max': sar_vh.get('max', 0.0),
-            
-            # SAR standard deviation (texture)
-            'VV_stdDev_mean': sar_vv.get('stdDev_mean', 0.0),
-            'VH_stdDev_mean': sar_vh.get('stdDev_mean', 0.0),
-            
-            # Precipitation statistics (mm)
-            'precipitation_sum': precip.get('sum', 0.0),
-            'precipitation_mean': precip.get('mean', 0.0),
-            'precipitation_max': precip.get('max', 0.0),
-            
-            # Topography (meters, degrees)
-            'elevation_mean': topo.get('mean', 0.0),
-            'slope_mean': topo.get('slope_mean', 0.0),
-            
-            # Water occurrence (0-100%)
-            'water_occurrence_mean': water.get('mean', 0.0),
+            'VV_mean': require(sar_vv, 'mean', 'sar_vv'),
+            'VV_std': require(sar_vv, 'std', 'sar_vv'),
+            'VV_min': require(sar_vv, 'min', 'sar_vv'),
+            'VV_max': require(sar_vv, 'max', 'sar_vv'),
+            'VH_mean': require(sar_vh, 'mean', 'sar_vh'),
+            'VH_std': require(sar_vh, 'std', 'sar_vh'),
+            'VH_min': require(sar_vh, 'min', 'sar_vh'),
+            'VH_max': require(sar_vh, 'max', 'sar_vh'),
+            'VV_stdDev_mean': require(sar_vv, 'stdDev_mean', 'sar_vv'),
+            'VH_stdDev_mean': require(sar_vh, 'stdDev_mean', 'sar_vh'),
+            'precipitation_sum': require(precip, 'sum', 'precipitation'),
+            'precipitation_mean': require(precip, 'mean', 'precipitation'),
+            'precipitation_max': require(precip, 'max', 'precipitation'),
+            'elevation_mean': require(topo, 'mean', 'elevation'),
+            'slope_mean': require(topo, 'slope_mean', 'elevation'),
+            'water_occurrence_mean': require(water, 'mean', 'water_occurrence'),
         }
-        
-        # Validate all 16 features present
+
         if len(model_features) != 16:
-            raise ValueError(f"Expected 16 features, got {len(model_features)}")
-        
+            raise ValueError(
+                f"Expected 16 features, got {len(model_features)}")
         return model_features
-    
+
     @classmethod
     def generate_features_from_location(cls, lat: float, lon: float) -> Dict[str, Any]:
         """Generate model features for a location by calling GEE service
-        
+
         PRODUCTION: Fetches real satellite data from Google Earth Engine via ee-fastapi service.
         This method is used by batch predictions and other endpoints that only have coordinates.
-        
+
         Args:
             lat: Latitude of location
             lon: Longitude of location
-            
+
         Returns:
-            Dict with 19 features ready for model prediction
-            
+            Dict with 16 SAR features ready for model prediction
+
         Raises:
             HTTPException: If GEE service is unavailable (503)
             ValueError: If GEE features cannot be mapped to model format
@@ -962,37 +946,39 @@ class ModelService:
         import requests
         import os
         from fastapi import HTTPException
-        
+
         # Call GEE service to extract real satellite features
         gee_service_url = os.getenv("GEE_SERVICE_URL", "http://localhost:8080")
-        
+
         try:
             response = requests.get(
                 f"{gee_service_url}/api/features/extract",
                 params={"lat": lat, "lon": lon},
                 timeout=15  # Satellite data extraction can take time
             )
-            
+
             if response.status_code == 200:
                 data = response.json()
                 gee_features = data.get("features", {})
-                
+
                 # Map GEE features to model's expected format
                 return cls.map_gee_to_model_features(gee_features, lat, lon)
-                
+
             elif response.status_code == 503:
-                logger.error(f"GEE service unavailable for location ({lat}, {lon})")
+                logger.error(
+                    f"GEE service unavailable for location ({lat}, {lon})")
                 raise HTTPException(
                     status_code=503,
                     detail="GEE service unavailable. Cannot extract satellite features for batch prediction."
                 )
             else:
-                logger.error(f"GEE service error {response.status_code}: {response.text}")
+                logger.error(
+                    f"GEE service error {response.status_code}: {response.text}")
                 raise HTTPException(
                     status_code=502,
                     detail=f"GEE service returned error: {response.status_code}"
                 )
-                
+
         except requests.exceptions.Timeout:
             logger.error(f"GEE service timeout for location ({lat}, {lon})")
             raise HTTPException(

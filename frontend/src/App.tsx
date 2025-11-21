@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -16,48 +16,55 @@ import RealTimeMonitoring from './pages/RealTimeMonitoring';
 import GISAnalysis from './pages/GISAnalysis';
 import Admin from './pages/Admin';
 import Login from './pages/Login';
+import Simulation from './pages/Simulation';
 import './styles/professional-ui.css';
 import './styles/flood-colors.css';
+import { useNetworkStatus } from './hooks/useNetworkStatus';
+import { usePerformanceProfile } from './hooks/usePerformanceProfile';
+import { DisasterModeProvider, useDisasterMode } from './context/DisasterModeContext';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
-
-  useEffect(() => {
-    // Service worker is registered in main.tsx - don't register here to avoid conflicts
-
-    // Handle online/offline status
-    const handleOnline = () => setIsOnline(true);
-    const handleOffline = () => setIsOnline(false);
-
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }, []);
+  const { isOffline } = useNetworkStatus();
+  const { isLowPowerMode } = usePerformanceProfile();
+  const { isDisasterMode, toggleDisasterMode } = useDisasterMode();
 
   // Handle sidebar toggle
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const rootClasses = [
+    'min-h-screen flex flex-col overflow-hidden transition-colors duration-500',
+    isDisasterMode ? 'bg-slate-900 text-white' : 'bg-cover bg-center bg-fixed bg-no-repeat',
+    isLowPowerMode ? 'low-power-mode' : ''
+  ].join(' ').trim();
+
+  const backgroundStyle = isDisasterMode ? {} : {
+    backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.9), rgba(240, 249, 255, 0.9)), url("/images/map.jpg")`
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 overflow-hidden">
-      {/* Notification Bell - Fixed position with proper spacing */}
-      <div className="fixed top-4 right-4 z-50">
+    <div className={rootClasses} style={backgroundStyle}>
+      {/* Notification Bell & Disaster Toggle - Fixed position */}
+      <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+        <button
+          onClick={toggleDisasterMode}
+          className={`flex items-center gap-2 px-3 py-2 rounded-full shadow-lg transition-all font-bold text-xs sm:text-sm ${isDisasterMode
+            ? 'bg-red-600 text-white hover:bg-red-700 ring-2 ring-red-400 animate-pulse'
+            : 'bg-white text-slate-700 hover:bg-gray-50 border border-slate-200'
+            }`}
+          title={isDisasterMode ? "Deactivate Disaster Mode" : "Activate Disaster Mode (High Contrast)"}
+        >
+          {isDisasterMode ? 'DISASTER MODE' : 'Normal Mode'}
+        </button>
         <NotificationBell />
       </div>
 
       {/* Offline Indicator */}
-      {!isOnline && (
+      {isOffline && (
         <div className="fixed top-0 left-0 right-0 z-40 bg-yellow-500 text-white text-center py-2 text-sm font-medium flex items-center justify-center gap-2">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0" />
-          </svg>
           You're offline - Some features may be limited
         </div>
       )}
@@ -71,9 +78,7 @@ const AppContent: React.FC = () => {
             className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gradient-to-r from-blue-700 to-cyan-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all touch-manipulation"
             aria-label="Toggle menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <span className="font-bold text-sm">MENU</span>
           </button>
 
           {/* Sidebar */}
@@ -107,6 +112,7 @@ const AppContent: React.FC = () => {
                     <Route path="/report" element={<Report />} />
                     <Route path="/analytics" element={<Analytics />} />
                     <Route path="/data-sharing" element={<DataSharing />} />
+                    <Route path="/simulation" element={<Simulation />} />
                     <Route path="/login" element={<Login />} />
 
                     {/* Additional public dashboard routes */}
@@ -156,9 +162,11 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => {
   return (
     <LanguageProvider>
-      <BrowserRouter>
-        <AppContent />
-      </BrowserRouter>
+      <DisasterModeProvider>
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </DisasterModeProvider>
     </LanguageProvider>
   );
 };
