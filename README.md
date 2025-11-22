@@ -64,6 +64,8 @@ FloodSense is a comprehensive flood prediction and early warning system designed
 
 ## System Architecture
 
+**System Architecture Diagram:** [View High-Resolution Diagram](https://drive.google.com/file/d/1UZ5XmmUprbz7Nw3_yiG9reD3pUTrztH4/view?usp=sharing)
+
 FloodSense implements a modern microservices architecture with clear separation of concerns, ensuring scalability, maintainability, and resilience.
 
 ```
