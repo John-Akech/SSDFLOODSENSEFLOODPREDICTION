@@ -67,54 +67,6 @@ FloodSense is a comprehensive flood prediction and early warning system designed
 **System Architecture Diagram:** [View High-Resolution Diagram](https://drive.google.com/file/d/1UZ5XmmUprbz7Nw3_yiG9reD3pUTrztH4/view?usp=sharing)
 
 FloodSense implements a modern microservices architecture with clear separation of concerns, ensuring scalability, maintainability, and resilience.
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        CLIENT TIER                                       │
-│  ┌────────────┐  ┌─────────────┐  ┌────────────┐  ┌─────────────────┐ │
-│  │  Web App   │  │  Mobile PWA │  │  Admin     │  │  NGO Dashboard  │ │
-│  │  (React)   │  │  (React)    │  │  Panel     │  │  (Analytics)    │ │
-│  └─────┬──────┘  └──────┬──────┘  └─────┬──────┘  └────────┬────────┘ │
-└────────┼─────────────────┼───────────────┼──────────────────┼──────────┘
-         │                 │               │                  │
-         └─────────────────┴───────────────┴──────────────────┘
-                                   │ HTTPS/REST API
-                                   ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        APPLICATION TIER                                  │
-├─────────────────────────────────────────────────────────────────────────┤
-│  ┌──────────────┐  ┌─────────────────┐  ┌──────────────┐              │
-│  │   FastAPI    │  │   Auth Service  │  │   Alert      │              │
-│  │   Gateway    │──│   (JWT/OAuth)   │──│   Service    │              │
-│  │   (Nginx)    │  └─────────────────┘  │   (Push/SMS) │              │
-│  └──────┬───────┘                        └──────────────┘              │
-│         │                                                               │
-│  ┌──────┴────────────────────────────────────────────────────────┐    │
-│  │              CORE SERVICES LAYER                              │    │
-│  ├───────────────────┬───────────────────┬───────────────────────┤    │
-│  │  Prediction       │  GIS Service      │  Statistics Service   │    │
-│  │  Service          │  (Geospatial)     │  (Analytics)          │    │
-│  │  (ML Models)      │  (Mapbox/GEE)     │  (Aggregation)        │    │
-│  └───────────────────┴─────────┬─────────┴───────────────────────┘    │
-│                                │                                      │
-│                        ┌───────▼────────┐                             │
-│                        │  SAR Service   │                             │
-│                        │ (Flood Detect) │                             │
-│                        └────────────────┘                             │
-└────────────┬────────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        DATA & ML TIER                                    │
-├─────────────────────────────────────────────────────────────────────────┤
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
-│  │  SQLite/    │  │  ML Models   │  │  GEE Data    │  │  Feature   │ │
-│  │  PostgreSQL │  │  - Random    │  │  Pipeline    │  │  Store     │ │
-│  │  (CRUD)     │  │    Forest    │  │  (Sentinel-1)│  │  (Cache)   │ │
-│  │             │  │  - GradBoost │  │  (CHIRPS)    │  │            │ │
-│  │             │  │  - TCN/LSTM  │  │  (MODIS)     │  │            │ │
-│  └─────────────┘  └──────────────┘  └──────────────┘  └────────────┘ │
-└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Architecture Highlights
