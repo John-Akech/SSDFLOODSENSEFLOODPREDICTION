@@ -27,12 +27,12 @@ const Report: React.FC = () => {
         }));
         setLocationFound(true);
       } else {
-        alert('Location not found in South Sudan. Please check the spelling and try again.');
+        alert(t('locationNotFoundSouthSudan'));
         setLocationFound(false);
       }
     } catch (err) {
       console.error(err);
-      alert('Failed to find location. Please try again.');
+      alert(t('failedToFindLocation'));
       setLocationFound(false);
     } finally {
       setSearchingLocation(false);
@@ -43,7 +43,7 @@ const Report: React.FC = () => {
     e.preventDefault();
 
     if (!formData.latitude || !formData.longitude) {
-      alert('Please search for a location first.');
+      alert(t('searchLocationFirst'));
       return;
     }
 
@@ -84,18 +84,18 @@ const Report: React.FC = () => {
               transition={{ delay: 0.2, duration: 0.8 }}
               className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-orange-100 to-red-100 text-orange-800 rounded-full text-sm font-semibold mb-6 border border-orange-200"
             >
-              Community Reporting Portal
+              {t('communityReportingPortal')}
             </motion.div>
 
             <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-orange-600 via-red-600 to-pink-600 bg-clip-text text-transparent">
               {t('reportFloodEvent')}
             </h1>
             <p className="text-xl text-slate-600 max-w-4xl mx-auto leading-relaxed mb-4">
-              {t('helpCommunity')} - Your reports help train our AI models and protect communities across South Sudan.
+              {t('reportDesc')}
             </p>
             <div className="flex items-center justify-center gap-2 text-slate-500">
               <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-              <span className="text-sm font-medium">Report from anywhere in South Sudan - Your data improves AI accuracy</span>
+              <span className="text-sm font-medium">{t('reportFromAnywhere')}</span>
             </div>
           </div>
         </motion.div>
@@ -111,8 +111,8 @@ const Report: React.FC = () => {
               <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0 hidden">
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-2">Community Contribution</h3>
-                <p className="text-slate-700 text-sm leading-relaxed">{t('helpCommunity')} - Your reports train our AI models and save lives.</p>
+                <h3 className="text-lg font-bold text-slate-900 mb-2">{t('communityContribution')}</h3>
+                <p className="text-slate-700 text-sm leading-relaxed">{t('communityContributionDesc')}</p>
               </div>
             </div>
           </div>
@@ -122,13 +122,13 @@ const Report: React.FC = () => {
               <label className="block text-sm font-bold mb-4 text-slate-900 flex items-center gap-3">
                 <div className="w-8 h-8 bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-lg flex items-center justify-center hidden">
                 </div>
-                Location Name
+                {t('locationName')}
               </label>
               <div className="flex gap-4">
                 <input
                   type="text"
                   className="flex-1 px-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 transition-all duration-200 placeholder-slate-400 text-slate-900 font-medium"
-                  placeholder="Enter place name (e.g., Juba, Bor, Malakal, Bentiu)"
+                  placeholder={t('enterPlaceName')}
                   value={formData.placeName}
                   onChange={e => {
                     setFormData({ ...formData, placeName: e.target.value });
@@ -147,11 +147,11 @@ const Report: React.FC = () => {
                   {searchingLocation ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      Searching...
+                      {t('searching')}
                     </div>
                   ) : (
                     <div className="flex items-center gap-2">
-                      Find
+                      {t('find')}
                     </div>
                   )}
                 </motion.button>
@@ -166,9 +166,9 @@ const Report: React.FC = () => {
                     <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center hidden">
                     </div>
                     <div>
-                      <p className="text-sm text-green-800 font-bold">Location verified in South Sudan</p>
+                      <p className="text-sm text-green-800 font-bold">{t('locationVerified')}</p>
                       <p className="text-xs text-green-700 mt-1">
-                        Coordinates: {formData.latitude}, {formData.longitude}
+                        {t('coordinates')}: {formData.latitude}, {formData.longitude}
                       </p>
                     </div>
                   </div>
@@ -201,23 +201,23 @@ const Report: React.FC = () => {
                 <div className="flex justify-between text-xs text-slate-600 mt-4 font-semibold">
                   <span className="text-center">
                     <div className="w-2 h-2 bg-green-500 rounded-full mx-auto mb-1"></div>
-                    Minor
+                    {t('minor')}
                   </span>
                   <span className="text-center">
                     <div className="w-2 h-2 bg-yellow-500 rounded-full mx-auto mb-1"></div>
-                    Moderate
+                    {t('moderate')}
                   </span>
                   <span className="text-center">
                     <div className="w-2 h-2 bg-orange-500 rounded-full mx-auto mb-1"></div>
-                    Severe
+                    {t('severe')}
                   </span>
                   <span className="text-center">
                     <div className="w-2 h-2 bg-red-500 rounded-full mx-auto mb-1"></div>
-                    Critical
+                    {t('critical')}
                   </span>
                   <span className="text-center">
                     <div className="w-2 h-2 bg-red-700 rounded-full mx-auto mb-1"></div>
-                    Catastrophic
+                    {t('catastrophic')}
                   </span>
                 </div>
               </div>
@@ -239,7 +239,7 @@ const Report: React.FC = () => {
                 </div>
                 <div className="flex-1">
                   <span className="text-lg font-bold text-slate-900 group-hover:text-blue-700 transition-colors">{t('reportFloodEvent')}</span>
-                  <p className="text-sm text-slate-600 mt-1">Check this if flooding has already occurred at this location</p>
+                  <p className="text-sm text-slate-600 mt-1">{t('checkIfFloodingOccurred')}</p>
                 </div>
               </label>
             </div>
@@ -255,7 +255,7 @@ const Report: React.FC = () => {
                 rows={5}
                 value={formData.comments}
                 onChange={e => setFormData({ ...formData, comments: e.target.value })}
-                placeholder="Describe the flood situation: water depth, affected areas, damage to property, people affected, etc."
+                placeholder={t('describeFloodSituation')}
               />
             </div>
 
@@ -286,11 +286,11 @@ const Report: React.FC = () => {
               >
                 <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6 hidden">
                 </div>
-                <h3 className="text-2xl font-bold mb-3">Report Submitted Successfully!</h3>
-                <p className="text-lg opacity-90 mb-4">{t('helpCommunity')} - Thank you for contributing to community safety.</p>
+                <h3 className="text-2xl font-bold mb-3">{t('reportSubmittedSuccess')}</h3>
+                <p className="text-lg opacity-90 mb-4">{t('thankYouContribution')}</p>
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 rounded-full text-sm font-semibold">
                   <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  Your report is being processed
+                  {t('reportProcessing')}
                 </div>
               </motion.div>
             )}
@@ -304,9 +304,9 @@ const Report: React.FC = () => {
           className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8"
         >
           {[
-            { title: 'Real-time Processing', desc: 'Reports processed instantly', color: 'from-blue-500 to-cyan-500' },
-            { title: 'Verified Data', desc: 'AI validates all submissions', color: 'from-green-500 to-emerald-500' },
-            { title: 'Community Impact', desc: 'Helps protect thousands', color: 'from-purple-500 to-pink-500' }
+            { titleKey: 'realTimeProcessing', descKey: 'reportsProcessedInstantly', color: 'from-blue-500 to-cyan-500' },
+            { titleKey: 'verifiedData', descKey: 'aiValidatesSubmissions', color: 'from-green-500 to-emerald-500' },
+            { titleKey: 'communityImpact', descKey: 'helpsProtectThousands', color: 'from-purple-500 to-pink-500' }
           ].map((item, idx) => (
             <motion.div
               key={idx}
@@ -318,8 +318,8 @@ const Report: React.FC = () => {
             >
               <div className={`w-16 h-16 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg hidden`}>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-3">{item.title}</h3>
-              <p className="text-slate-600 leading-relaxed">{item.desc}</p>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">{t(item.titleKey as any)}</h3>
+              <p className="text-slate-600 leading-relaxed">{t(item.descKey as any)}</p>
             </motion.div>
           ))}
         </motion.div>

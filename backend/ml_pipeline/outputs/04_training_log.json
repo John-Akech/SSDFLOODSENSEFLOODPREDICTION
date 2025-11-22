@@ -1,6 +1,6 @@
 {
   "step": "04_train_models",
-  "created_at": "2025-11-10T00:29:59.091158",
+  "created_at": "2025-11-21T21:29:24.632644",
   "data": {
     "total_samples": 126,
     "train_samples": 94,
@@ -28,7 +28,7 @@
         "max_samples": 0.8,
         "ccp_alpha": 0.0005
       },
-      "training_time_seconds": 0.804306,
+      "training_time_seconds": 0.808119,
       "training_samples": 134
     },
     "tcn": {
@@ -44,7 +44,7 @@
         "dropout": 0.5
       },
       "epochs": 100,
-      "training_time_seconds": 7.487251,
+      "training_time_seconds": 25.227007,
       "training_samples": 134
     },
     "lstm": {
@@ -58,7 +58,7 @@
         "dropout": 0.2
       },
       "epochs": 50,
-      "training_time_seconds": 1.136035,
+      "training_time_seconds": 2.203411,
       "training_samples": 134
     },
     "gradient_boosting": {
@@ -79,7 +79,7 @@
         "tol": 0.0001,
         "ccp_alpha": 0.0003
       },
-      "training_time_seconds": 0.026935,
+      "training_time_seconds": 0.117197,
       "training_samples": 134
     }
   },

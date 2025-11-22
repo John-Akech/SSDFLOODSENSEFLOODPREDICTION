@@ -23,7 +23,7 @@
   }
 
   body {
-    @apply text-gray-800;
+    @apply text-gray-800 dark:text-gray-100 dark:bg-slate-900;
     background-image:
       linear-gradient(180deg, rgba(248, 250, 252, 0.92) 0%, rgba(224, 242, 254, 0.85) 40%, rgba(255, 255, 255, 0.92) 100%),
       url('/images/map.jpg');
@@ -36,6 +36,14 @@
     font-size: 16px;
     color: #0f172a;
     position: relative;
+  }
+
+  .dark body {
+    background-image:
+      linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 40%, rgba(15, 23, 42, 0.95) 100%),
+      url('/images/map.jpg');
+    background-blend-mode: multiply;
+    color: #f1f5f9;
   }
 
   body::before {
@@ -234,7 +242,7 @@
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 0.01em;
-    color: #0f172a;
+    @apply text-slate-900 dark:text-white;
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -290,15 +298,15 @@
 
   /* Card Components */
   .card {
-    @apply bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 overflow-hidden p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1;
+    @apply bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 dark:border-slate-700/50 overflow-hidden p-8 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1;
   }
 
   .card-elevated {
-    @apply bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 overflow-hidden p-8 hover:shadow-blue-200/50 transition-all duration-300 hover:-translate-y-1;
+    @apply bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 dark:border-slate-700/60 overflow-hidden p-8 hover:shadow-blue-200/50 dark:hover:shadow-blue-900/30 transition-all duration-300 hover:-translate-y-1;
   }
 
   .card-glass {
-    @apply bg-white/60 backdrop-blur-lg rounded-3xl shadow-lg border border-white/40 overflow-hidden p-8;
+    @apply bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg rounded-3xl shadow-lg border border-white/40 dark:border-slate-700/40 overflow-hidden p-8;
   }
 
   .card-gradient {
@@ -307,7 +315,7 @@
 
   /* Input Components */
   .input {
-    @apply w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 placeholder-gray-400;
+    @apply w-full px-4 py-3 bg-white dark:bg-slate-800 border-2 border-gray-200 dark:border-slate-700 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 dark:text-white transition-all duration-200 placeholder-gray-400 dark:placeholder-gray-500;
   }
 
   .input-error {
@@ -345,7 +353,7 @@
 
   /* Navigation Components */
   .nav-link {
-    @apply flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 rounded-xl hover:bg-blue-50 hover:text-blue-700 transition-all duration-200;
+    @apply flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-300 rounded-xl hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400 transition-all duration-200;
   }
 
   .nav-link-active {
@@ -354,7 +362,7 @@
 
   /* Layout Components */
   .page-container {
-    @apply min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 p-6 sm:p-8 lg:p-10;
+    @apply min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-6 sm:p-8 lg:p-10;
   }
 
   .content-wrapper {
@@ -460,7 +468,7 @@
 
   /* Flood Card */
   .flood-card {
-    @apply bg-white/90 backdrop-blur-sm rounded-[28px] border border-slate-100/70 shadow-lg relative overflow-hidden transition-all duration-300;
+    @apply bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-[28px] border border-slate-100/70 dark:border-slate-700/70 shadow-lg relative overflow-hidden transition-all duration-300;
     padding: clamp(1.5rem, 2vw, 2.75rem);
     display: flex;
     flex-direction: column;

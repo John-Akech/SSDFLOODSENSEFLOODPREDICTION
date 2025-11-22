@@ -280,7 +280,26 @@ Actual No Flood    155      0
 ### Pipeline Automation
 
 The ML pipeline is fully automated and can be triggered:
-1. **Manually:** Run `backend/ml_pipeline/00_extract_gee_data.py` through `07_save_model.py`
+
+1. **Manually (Step-by-Step):**
+
+   ```bash
+   # Navigate to backend directory
+   cd backend
+   
+   # Ensure virtual environment is active
+   # source venv/bin/activate  # or venv\Scripts\activate on Windows
+   
+   # Run pipeline steps sequentially
+   python ml_pipeline/01_load_merge_data.py    # Load and merge datasets
+   python ml_pipeline/02_explore_visualize.py  # Generate EDA plots
+   python ml_pipeline/03_preprocess_data.py    # Feature engineering
+   python ml_pipeline/04_train_models.py       # Train RF, GBM, TCN models
+   python ml_pipeline/05_evaluate_tune.py      # Evaluate model performance
+   python ml_pipeline/06_compare_models.py     # Generate comparison metrics
+   python ml_pipeline/07_save_model.py         # Serialize best models
+   ```
+
 2. **Scheduled:** GitHub Actions workflow runs weekly (Mondays 03:00 UTC)
 3. **On-Demand:** Manual workflow dispatch with custom parameters
 

@@ -3,6 +3,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../i18n/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import { useTheme } from '../context/ThemeContext';
+import { Moon, Sun } from 'lucide-react';
 
 interface SubMenuItem {
   path: string;
@@ -29,118 +31,119 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
   const location = useLocation();
   const isAdmin = localStorage.getItem('userRole') === 'admin';
   const { t } = useLanguage();
-  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['dashboards']));
+  const { theme, toggleTheme } = useTheme();
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set([t('dashboards')]));
 
   const menuItems: MenuItem[] = [
     {
-      label: 'Dashboards',
+      label: t('dashboards'),
       gradient: 'from-purple-500 to-pink-500',
       submenu: [
         {
           path: '/home',
-          label: 'Dashboard',
-          description: 'Main overview and statistics',
+          label: t('dashboard'),
+          description: t('mainOverview'),
           gradient: 'from-blue-500 to-cyan-500'
         },
         {
           path: '/analytics',
-          label: 'Flood Analytics',
-          description: 'Advanced flood data analysis and insights',
+          label: t('floodAnalytics'),
+          description: t('dataDrivenInsights'),
           gradient: 'from-purple-500 to-pink-500'
         },
         {
           path: '/predictions',
-          label: 'Prediction Center',
-          description: 'Flood prediction models and forecasts',
+          label: t('predictiveModels'),
+          description: t('aiForecasting'),
           gradient: 'from-indigo-500 to-purple-500'
         },
         {
           path: '/simulation',
-          label: 'Flood Simulator',
-          description: 'Interactive flood scenario analysis',
+          label: t('simulationMode'),
+          description: t('simulationModeDesc'),
           gradient: 'from-pink-500 to-rose-500'
         },
         {
           path: '/monitoring',
-          label: 'Real-time Monitoring',
-          description: 'Live flood monitoring and alerts',
+          label: t('floodMonitoring'),
+          description: t('realTimeAlerts'),
           gradient: 'from-green-500 to-teal-500'
         },
         {
           path: '/reports',
-          label: 'Reports & Insights',
-          description: 'Comprehensive flood reports and analysis',
+          label: t('downloadReports'),
+          description: t('dataExport'),
           gradient: 'from-orange-500 to-amber-500'
         },
       ]
     },
     {
-      label: 'Maps & GIS',
+      label: t('mapsAndGis'),
       gradient: 'from-emerald-500 to-teal-500',
       submenu: [
         {
           path: import.meta.env.VITE_SAR_URL || 'http://localhost:8080',
           label: 'SAR Detection',
-          description: 'Satellite-based flood detection',
+          description: t('geospatialVis'),
           gradient: 'from-purple-500 to-indigo-500',
           external: true
         },
         {
           path: '/gis-analysis',
-          label: 'GIS Analysis',
-          description: 'Advanced geospatial analysis tools',
+          label: t('regionalAnalysis'),
+          description: t('areaSpecificData'),
           gradient: 'from-cyan-500 to-blue-500'
         }
       ]
     },
     {
-      label: 'Data & Sharing',
+      label: t('dataAndSharing'),
       gradient: 'from-indigo-500 to-purple-500',
       submenu: [
         {
           path: '/data-sharing',
-          label: 'Data Sharing',
-          description: 'Contribute and share flood data',
+          label: t('dataAndSharing'),
+          description: t('exportAndApi'),
           gradient: 'from-indigo-500 to-purple-500'
         },
         {
           path: '/data-sources',
-          label: 'Data Sources',
-          description: 'Available data sources and APIs',
+          label: t('apiDocumentation'),
+          description: t('developerAccess'),
           gradient: 'from-blue-500 to-indigo-500'
         }
       ]
     },
     {
       path: '/report',
-      label: 'Report Flood',
+      label: t('reportFlood'),
       gradient: 'from-orange-500 to-amber-500',
-      description: 'Report new flood events'
+      description: t('reportFloodEvent')
     }
   ];
 
   // Only show admin section if user is authenticated admin
   if (isAdmin) {
     menuItems.push({
-      label: 'Administration',
+      label: t('administration'),
       gradient: 'from-red-500 to-pink-500',
       submenu: [
         {
           path: '/admin',
-          label: 'Admin Panel',
-          description: 'System administration and management',
+          label: t('adminPanel'),
+          description: t('systemOverview'),
           gradient: 'from-red-500 to-pink-500'
         },
         {
           path: '/admin/users',
-          label: 'User Management',
-          description: 'Manage users and permissions',
+          label: t('userManagement'),
+          description: t('manageSystemUsers'),
           gradient: 'from-pink-500 to-rose-500'
         },
         {
           path: '/admin/system',
-          label: 'System Settings',
-          description: 'System configuration and settings',
+          label: t('systemSettings'),
+          description: t('configureSystem'),
           gradient: 'from-rose-500 to-red-500'
         }
       ]
@@ -149,9 +152,9 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
     // Show login option for non-authenticated users
     menuItems.push({
       path: '/login',
-      label: 'Admin Login',
+      label: t('adminLogin'),
       gradient: 'from-gray-500 to-gray-600',
-      description: 'Access admin dashboard'
+      description: t('accessControlPanel')
     });
   }
 
@@ -179,7 +182,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
         <div key={item.label} className="space-y-2">
           <button
             onClick={() => toggleMenu(item.label)}
-            className="w-full flex items-center gap-5 px-6 py-4 rounded-xl transition-all duration-300 text-gray-700 hover:bg-blue-50 hover:text-blue-700 group"
+            className="w-full flex items-center gap-5 px-6 py-4 rounded-xl transition-all duration-300 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400 group"
           >
             <div className={`p-2.5 rounded-lg bg-gradient-to-br ${item.gradient} hidden`}>
             </div>
@@ -208,7 +211,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
                       rel="noopener noreferrer"
                       className={`group flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 ${isSubActive
                         ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
                         }`}
                     >
                       <div className={`p-2 rounded-md ${isSubActive ? 'bg-white/20' : `bg-gradient-to-br ${subItem.gradient}`
@@ -231,7 +234,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
                       to={subItem.path}
                       className={`group flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 ${isSubActive
                         ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                        : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
                         }`}
                     >
                       <div className={`p-2 rounded-md ${isSubActive ? 'bg-white/20' : `bg-gradient-to-br ${subItem.gradient}`
@@ -268,7 +271,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
         rel="noopener noreferrer"
         className={`group flex items-center gap-5 px-6 py-4 rounded-xl transition-all duration-300 ${isItemActive
           ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105'
-          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
+          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400 hover:scale-105'
           }`}
       >
         <div className={`p-2.5 rounded-lg ${isItemActive ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`} hidden`}>
@@ -292,7 +295,7 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
         to={item.path!}
         className={`group flex items-center gap-5 px-6 py-4 rounded-xl transition-all duration-300 ${isItemActive
           ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105'
-          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
+          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400 hover:scale-105'
           }`}
       >
         <div className={`p-2.5 rounded-lg ${isItemActive ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`} hidden`}>
@@ -339,9 +342,9 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
           background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 50%, #1e40af 100%) !important;
         }
       `}</style>
-      <aside className="w-72 bg-gradient-to-b from-slate-50 to-white border-r-2 border-slate-200/80 h-screen fixed left-0 top-0 z-40 flex flex-col shadow-2xl">
+      <aside className="w-72 bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950 border-r-2 border-slate-200/80 dark:border-slate-800/80 h-screen fixed left-0 top-0 z-40 flex flex-col shadow-2xl">
         {/* Header with Logo */}
-        <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 p-8 border-b-2 border-blue-500/30">
+        <div className="bg-gradient-to-br from-blue-600 via-blue-700 to-cyan-700 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 p-8 border-b-2 border-blue-500/30 dark:border-slate-700">
           <div className="flex items-center justify-between">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-4 group">
@@ -387,20 +390,27 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
         </nav>
 
         {/* Bottom Section - Fixed at bottom */}
-        <div className="p-5 space-y-4 border-t-2 border-slate-200/80 bg-gradient-to-br from-slate-50 to-blue-50/30 flex-shrink-0">
-          {/* Language Switcher */}
-          <div className="flex justify-center">
+        <div className="p-5 space-y-4 border-t-2 border-slate-200/80 dark:border-slate-800/80 bg-gradient-to-br from-slate-50 to-blue-50/30 dark:from-slate-900 dark:to-slate-800/30 flex-shrink-0">
+          {/* Language Switcher & Theme Toggle */}
+          <div className="flex justify-center items-center gap-3">
             <LanguageSwitcher />
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 shadow-sm transition-all"
+              title={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
           </div>
 
           {/* Need Help Section */}
-          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300">
+          <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-800 dark:to-slate-900 border-2 border-blue-200 dark:border-slate-700 rounded-xl p-4 shadow-lg hover:shadow-xl transition-all duration-300">
             <div className="flex items-start gap-3">
               <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg flex-shrink-0 hidden">
               </div>
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-blue-900 mb-1">{t('needHelp')}</h4>
-                <p className="text-xs text-blue-700 mb-3 leading-relaxed">
+                <h4 className="text-sm font-bold text-blue-900 dark:text-blue-100 mb-1">{t('needHelp')}</h4>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mb-3 leading-relaxed">
                   {t('contactSupport')}
                 </p>
                 <a
@@ -415,18 +425,18 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
 
           {/* Quick Stats */}
           <div className="space-y-2">
-            <div className="text-xs text-slate-600 font-bold uppercase tracking-wider">System Status</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400 font-bold uppercase tracking-wider">{t('systemStatus')}</div>
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 p-3 rounded-lg text-center shadow-md hover:shadow-lg transition-all duration-300">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800 p-3 rounded-lg text-center shadow-md hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center justify-center gap-1.5 mb-0.5">
                   <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                  <div className="font-bold text-green-700 text-sm">Live</div>
+                  <div className="font-bold text-green-700 dark:text-green-400 text-sm">{t('live')}</div>
                 </div>
-                <div className="text-green-600 text-[10px] font-medium">Monitoring</div>
+                <div className="text-green-600 dark:text-green-500 text-[10px] font-medium">{t('monitoring')}</div>
               </div>
-              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 p-3 rounded-lg text-center shadow-md hover:shadow-lg transition-all duration-300">
-                <div className="font-bold text-blue-700 text-sm mb-0.5">24/7</div>
-                <div className="text-blue-600 text-[10px] font-medium">Support</div>
+              <div className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border border-blue-200 dark:border-blue-800 p-3 rounded-lg text-center shadow-md hover:shadow-lg transition-all duration-300">
+                <div className="font-bold text-blue-700 dark:text-blue-400 text-sm mb-0.5">24/7</div>
+                <div className="text-blue-600 dark:text-blue-500 text-[10px] font-medium">{t('support')}</div>
               </div>
             </div>
           </div>

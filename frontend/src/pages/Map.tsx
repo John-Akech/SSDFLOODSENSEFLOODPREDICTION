@@ -96,7 +96,7 @@ const MapSizeInvalidator: React.FC = () => {
 };
 
 const Map: React.FC = () => {
-  useLanguage();
+  const { t, language } = useLanguage();
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [existingPredictions, setExistingPredictions] = useState<Prediction[]>([]);
@@ -174,13 +174,13 @@ const Map: React.FC = () => {
       setLocationNames(prev => ({ ...prev, ...newLocationNames }));
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      setError('Could not load map data. Please check your network or backend status.');
+      setError(t('mapDataLoadError'));
       // Set fallback data
       setStats(prev => ({ ...prev, lastUpdate: new Date().toLocaleTimeString() }));
     } finally {
       setLoading(false);
     }
-  }, [mapCenter]);
+  }, [mapCenter, t]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -208,17 +208,17 @@ const Map: React.FC = () => {
         console.warn('Failed to get location name:', error);
         setLocationNames(prev => ({
           ...prev,
-          [`${lat},${lng}`]: 'Unknown Location'
+          [`${lat},${lng}`]: t('unknownLocation')
         }));
       }
     } catch (error) {
       console.error('Failed to create prediction:', error);
       // Show error notification
-      alert('Failed to create prediction. Please try again.');
+      alert(t('predictionFailed'));
     } finally {
       setPredicting(false);
     }
-  }, [predicting]);
+  }, [predicting, t]);
 
   const handleSearch = useCallback(async () => {
     if (!searchPlace.trim() || searching) return;
@@ -235,15 +235,15 @@ const Map: React.FC = () => {
           handleMapClick(coords.lat, coords.lon);
         }, 1000);
       } else {
-        alert('Location not found. Please try a different search term.');
+        alert(t('locationNotFound'));
       }
     } catch (error) {
       console.error('Search failed:', error);
-      alert('Search failed. Please try again.');
+      alert(t('searchFailed'));
     } finally {
       setSearching(false);
     }
-  }, [searchPlace, searching, handleMapClick]);
+  }, [searchPlace, searching, handleMapClick, t]);
 
   const getRiskColor = (severity: string) => {
     switch (severity) {
@@ -282,7 +282,7 @@ const Map: React.FC = () => {
             onClick={() => { setError(null); setLoading(true); fetchData(); }}
             className="btn-flood-primary px-4 py-2 mt-2"
           >
-            Retry</button>
+            {t('retry')}</button>
         </div>
       </div>
     );
@@ -293,7 +293,7 @@ const Map: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading flood risk map...</p>
+          <p className="text-slate-600">{t('loadingMap')}</p>
         </div>
       </div>
     );
@@ -312,10 +312,10 @@ const Map: React.FC = () => {
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-slate-900">
                 <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
-                  Flood Risk Map
+                  {t('floodRiskMap')}
                 </span>
               </h1>
-              <p className="text-sm sm:text-base text-slate-600">Interactive flood prediction and monitoring</p>
+              <p className="text-sm sm:text-base text-slate-600">{t('interactiveFloodMonitoring')}</p>
             </div>
 
             <div className="flex flex-row items-center gap-3 sm:gap-4 flex-wrap">
@@ -323,7 +323,7 @@ const Map: React.FC = () => {
               <div className="flex items-center space-x-2">
                 <input
                   type="text"
-                  placeholder="Search location..."
+                  placeholder={t('searchLocation')}
                   value={searchPlace}
                   onChange={(e) => setSearchPlace(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -335,7 +335,7 @@ const Map: React.FC = () => {
                   disabled={searching}
                   className="btn-flood-primary px-4 py-2 disabled:opacity-50"
                 >
-                  {searching ? 'Searching...' : 'Search'}
+                  {searching ? t('searching') : t('search')}
                 </button>
               </div>
 
@@ -345,11 +345,11 @@ const Map: React.FC = () => {
                 onChange={(e) => setSelectedRiskLevel(e.target.value)}
                 className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="all">All Risk Levels</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
+                <option value="all">{t('allRiskLevels')}</option>
+                <option value="critical">{t('critical')}</option>
+                <option value="high">{t('high')}</option>
+                <option value="medium">{t('medium')}</option>
+                <option value="low">{t('low')}</option>
               </select>
 
               {/* Legend Toggle */}
@@ -357,7 +357,7 @@ const Map: React.FC = () => {
                 onClick={() => setShowLegend(!showLegend)}
                 className="btn-risk-warning px-4 py-2"
               >
-                {showLegend ? 'Hide Legend' : 'Show Legend'}
+                {showLegend ? t('hideLegend') : t('showLegend')}
               </button>
             </div>
           </div>
@@ -403,14 +403,14 @@ const Map: React.FC = () => {
                   <div className="p-2">
                     <div className="flex items-center space-x-2 mb-2">
                       <RiskBadge severity={alert.severity as 'low' | 'medium' | 'high' | 'critical'} />
-                      <span className="font-semibold">Flood Alert</span>
+                      <span className="font-semibold">{t('floodAlert')}</span>
                     </div>
                     <p className="text-sm text-slate-600 mb-1">
                       {locationNames[`${alert.latitude},${alert.longitude}`] ||
                         `${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}`}
                     </p>
                     <p className="text-sm text-slate-500">
-                      Created: {alert.created_at ? new Date(alert.created_at).toLocaleDateString('en-US', {
+                      {t('created')}: {alert.created_at ? new Date(alert.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG' : language === 'sw' ? 'sw-KE' : 'en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',
@@ -434,20 +434,20 @@ const Map: React.FC = () => {
                   <div className="p-2">
                     <div className="flex items-center space-x-2 mb-2">
                       <RiskBadge severity={prediction.risk_level} />
-                      <span className="font-semibold">Flood Prediction</span>
+                      <span className="font-semibold">{t('floodPrediction')}</span>
                     </div>
                     <p className="text-sm text-slate-600 mb-1">
                       {locationNames[`${prediction.latitude},${prediction.longitude}`] ||
                         `${prediction.latitude.toFixed(4)}, ${prediction.longitude.toFixed(4)}`}
                     </p>
                     <p className="text-sm text-slate-700 font-semibold">
-                      Flood Probability: {Math.round(prediction.flood_probability * 100)}%
+                      {t('floodProbability')}: {Math.round(prediction.flood_probability * 100)}%
                     </p>
                     <p className="text-sm text-slate-500">
-                      Confidence: {Math.round(prediction.confidence_score * 100)}%
+                      {t('confidence')}: {Math.round(prediction.confidence_score * 100)}%
                     </p>
                     <p className="text-sm text-slate-500">
-                      Created: {new Date(prediction.created_at).toLocaleDateString()}
+                      {t('created')}: {new Date(prediction.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG' : language === 'sw' ? 'sw-KE' : 'en-US')}
                     </p>
                   </div>
                 </Popup>
@@ -475,14 +475,14 @@ const Map: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               className="absolute top-4 right-4 flood-card p-4 sm:p-5 max-w-xs z-[100] shadow-xl"
             >
-              <h3 className="text-lg font-bold mb-4 text-slate-900">Risk Levels</h3>
+              <h3 className="text-lg font-bold mb-4 text-slate-900">{t('riskLevels')}</h3>
               <div className="space-y-2">
                 {[
-                  { level: 'Critical', color: '#dc2626', desc: 'Immediate evacuation' },
-                  { level: 'High', color: '#ea580c', desc: 'Prepare for evacuation' },
-                  { level: 'Medium', color: '#d97706', desc: 'Monitor closely' },
-                  { level: 'Low', color: '#ca8a04', desc: 'Stay alert' },
-                  { level: 'Minimal', color: '#65a30d', desc: 'Normal conditions' }
+                  { level: 'Critical', color: '#dc2626', descKey: 'immediateEvacuation' },
+                  { level: 'High', color: '#ea580c', descKey: 'prepareEvacuation' },
+                  { level: 'Medium', color: '#d97706', descKey: 'monitorClosely' },
+                  { level: 'Low', color: '#ca8a04', descKey: 'stayAlert' },
+                  { level: 'Minimal', color: '#65a30d', descKey: 'normalConditions' }
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-center space-x-3">
                     <div
@@ -490,15 +490,15 @@ const Map: React.FC = () => {
                       style={{ backgroundColor: item.color }}
                     ></div>
                     <div>
-                      <span className="text-sm font-medium text-slate-700">{item.level}</span>
-                      <p className="text-xs text-slate-500">{item.desc}</p>
+                      <span className="text-sm font-medium text-slate-700">{t(item.level.toLowerCase() as any)}</span>
+                      <p className="text-xs text-slate-500">{t(item.descKey as any)}</p>
                     </div>
                   </div>
                 ))}
               </div>
               <div className="mt-4 pt-3 border-t border-slate-200">
                 <p className="text-xs text-slate-500">
-                  Click on map to create flood prediction
+                  {t('clickMapToPredict')}
                 </p>
               </div>
             </motion.div>
@@ -509,7 +509,7 @@ const Map: React.FC = () => {
             <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="flood-card p-6 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-slate-600">Analyzing flood risk...</p>
+                <p className="text-slate-600">{t('analyzingFloodRisk')}</p>
               </div>
             </div>
           )}
@@ -524,19 +524,19 @@ const Map: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
             <div>
               <p className="text-xl font-bold text-flood-title">{stats.totalAlerts}</p>
-              <p className="text-sm text-slate-600">Active Alerts</p>
+              <p className="text-sm text-slate-600">{t('activeAlerts')}</p>
             </div>
             <div>
               <p className="text-xl font-bold text-flood-title">{stats.totalPredictions}</p>
-              <p className="text-sm text-slate-600">Predictions</p>
+              <p className="text-sm text-slate-600">{t('predictionsCount')}</p>
             </div>
             <div>
               <p className="text-xl font-bold text-flood-title">{stats.highRiskAreas}</p>
-              <p className="text-sm text-slate-600">High Risk Areas</p>
+              <p className="text-sm text-slate-600">{t('highRiskAreas')}</p>
             </div>
             <div>
               <p className="text-xl font-bold text-flood-title">{stats.lastUpdate}</p>
-              <p className="text-sm text-slate-600">Last Update</p>
+              <p className="text-sm text-slate-600">{t('lastUpdated')}</p>
             </div>
           </div>
         </motion.div>

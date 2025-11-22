@@ -74,7 +74,7 @@ const Home: React.FC = () => {
           return { key: `${item.latitude},${item.longitude}`, name };
         } catch (error) {
           console.warn('Failed to get location name:', error);
-          return { key: `${item.latitude},${item.longitude}`, name: 'Unknown Location' };
+          return { key: `${item.latitude},${item.longitude}`, name: t('unknownLocation') };
         }
       });
 
@@ -88,7 +88,7 @@ const Home: React.FC = () => {
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Failed to fetch data:', error);
-      setError('Failed to load flood monitoring data. Please check your connection.');
+      setError(t('failedToLoadData'));
     } finally {
       setLoading(false);
     }
@@ -156,13 +156,13 @@ const Home: React.FC = () => {
         <div className="text-center max-w-md mx-auto p-6 bg-white rounded-xl shadow-lg border border-red-100">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4 hidden">
           </div>
-          <h3 className="text-lg font-bold text-slate-900 mb-2">System Error</h3>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">{t('systemError')}</h3>
           <p className="text-slate-600 mb-6">{error}</p>
           <button
             onClick={fetchData}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
           >
-            Retry Connection
+            {t('retryConnection')}
           </button>
         </div>
       </div>
@@ -176,22 +176,22 @@ const Home: React.FC = () => {
           {/* Emergency Header */}
           <div className="border-b-4 border-red-600 pb-6 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center animate-pulse gap-4">
             <div>
-              <h1 className="text-4xl md:text-5xl font-black text-red-500 tracking-tighter uppercase">Disaster Mode</h1>
-              <p className="text-lg md:text-xl text-red-400 mt-2 font-bold tracking-widest">EMERGENCY RESPONSE PROTOCOL ACTIVE</p>
+              <h1 className="text-4xl md:text-5xl font-black text-red-500 tracking-tighter uppercase">{t('disasterMode')}</h1>
+              <p className="text-lg md:text-xl text-red-400 mt-2 font-bold tracking-widest">{t('emergencyProtocol')}</p>
             </div>
             <div className="text-left md:text-right">
               <div className="text-2xl md:text-3xl font-bold text-white">{lastUpdate.toLocaleTimeString()}</div>
-              <div className="text-red-500 font-bold tracking-wider">LIVE DATA FEED</div>
+              <div className="text-red-500 font-bold tracking-wider">{t('liveDataFeed')}</div>
             </div>
           </div>
 
           {/* Critical Status Banner */}
           <div className="bg-red-900/20 border-l-8 border-red-600 p-6 md:p-8 mb-12 shadow-[0_0_50px_rgba(220,38,38,0.2)]">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 uppercase">
-              {stats.high > 0 ? "Critical Flood Warning" : "System Monitoring - Elevated Alert"}
+              {stats.high > 0 ? t('criticalFloodWarning') : t('systemMonitoringElevated')}
             </h2>
             <p className="text-xl md:text-2xl text-red-200 font-medium">
-              {stats.high} High Risk Zones Detected • Immediate Action Required
+              {stats.high} {t('highRiskZonesDetected')}
             </p>
           </div>
 
@@ -213,13 +213,13 @@ const Home: React.FC = () => {
 
           {/* Critical Alerts Feed */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-white border-b-2 border-slate-700 pb-4 mb-6 tracking-wider">PRIORITY INCIDENT FEED</h3>
+            <h3 className="text-2xl font-bold text-white border-b-2 border-slate-700 pb-4 mb-6 tracking-wider">{t('priorityIncidentFeed')}</h3>
             {alerts.filter(a => a.severity === 'high' || a.severity === 'critical').length > 0 ? (
               alerts.filter(a => a.severity === 'high' || a.severity === 'critical').map((alert, idx) => (
                 <div key={idx} className="bg-red-950/40 border-2 border-red-500/30 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-red-900/30 transition-colors">
                   <div>
                     <div className="text-2xl md:text-3xl font-bold text-white mb-2">
-                      {locationNames[`${alert.latitude},${alert.longitude}`] || `Alert Zone ${idx + 1}`}
+                      {locationNames[`${alert.latitude},${alert.longitude}`] || `${t('alertZone')} ${idx + 1}`}
                     </div>
                     <div className="text-lg md:text-xl text-red-300 font-medium">{alert.message}</div>
                   </div>
@@ -230,7 +230,7 @@ const Home: React.FC = () => {
                 </div>
               ))
             ) : (
-              <div className="text-slate-500 text-xl italic p-8 border border-slate-800 bg-slate-900/50">No critical high-severity alerts at this moment. System monitoring active.</div>
+              <div className="text-slate-500 text-xl italic p-8 border border-slate-800 bg-slate-900/50">{t('noCriticalAlerts')}</div>
             )}
           </div>
         </div>
@@ -571,7 +571,7 @@ const Home: React.FC = () => {
                     tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
                   />
                   <Tooltip
-                    formatter={(value) => [value.toLocaleString(), 'Population']}
+                    formatter={(value) => [value.toLocaleString(), t('population')]}
                     contentStyle={{
                       backgroundColor: '#f8fafc',
                       border: '1px solid #e2e8f0',

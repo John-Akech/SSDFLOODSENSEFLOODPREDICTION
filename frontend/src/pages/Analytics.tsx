@@ -11,7 +11,7 @@ import { useSystemAccuracy } from '../hooks/useSystemAccuracy';
 import '../styles/flood-colors.css';
 
 const Analytics: React.FC = () => {
-  const { t: _ } = useLanguage();
+  const { t, language } = useLanguage();
   const [timeFilter, setTimeFilter] = useState('monthly');
   const [stats, setStats] = useState<any>(null);
   const [stateStats, setStateStats] = useState<any>({});
@@ -133,7 +133,7 @@ const Analytics: React.FC = () => {
           : 0;
 
         data.push({
-          period: `Week ${i + 1}`,
+          period: `${t('week')} ${i + 1}`,
           rainfall: 0, // Will be fetched from API if available
           floodRisk: Math.round(avgRisk * 100),
           alerts: weekAlerts.length,
@@ -141,12 +141,12 @@ const Analytics: React.FC = () => {
         });
       }
     } else if (timeFilter === 'monthly') {
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const currentMonth = now.getMonth();
 
       for (let i = 0; i < 12; i++) {
         const monthIndex = (currentMonth - 11 + i + 12) % 12;
-        const monthName = months[monthIndex];
+        const date = new Date(2024, monthIndex, 1);
+        const monthName = date.toLocaleString(language === 'ar' ? 'ar-EG' : language === 'sw' ? 'sw-KE' : 'en-US', { month: 'short' });
 
         // Filter predictions in this month
         const monthPredictions = predictions.filter(p => {
@@ -244,11 +244,11 @@ const Analytics: React.FC = () => {
   }, {});
 
   const severityDistribution = [
-    { name: 'Critical', value: severityCounts.critical || 0, color: 'var(--risk-critical)' },
-    { name: 'High', value: severityCounts.high || 0, color: 'var(--risk-high)' },
-    { name: 'Medium', value: severityCounts.medium || 0, color: 'var(--risk-medium)' },
-    { name: 'Low', value: severityCounts.low || 0, color: 'var(--risk-low)' },
-    { name: 'Minimal', value: 0, color: 'var(--risk-minimal)' }
+    { name: t('critical'), value: severityCounts.critical || 0, color: 'var(--risk-critical)' },
+    { name: t('high'), value: severityCounts.high || 0, color: 'var(--risk-high)' },
+    { name: t('medium'), value: severityCounts.medium || 0, color: 'var(--risk-medium)' },
+    { name: t('low'), value: severityCounts.low || 0, color: 'var(--risk-low)' },
+    { name: t('minimal'), value: 0, color: 'var(--risk-minimal)' }
   ].filter(item => item.value > 0);
 
   const getRiskColor = (riskLevel: string) => {
@@ -266,7 +266,7 @@ const Analytics: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading analytics data...</p>
+          <p className="text-slate-600">{t('loadingAnalytics')}</p>
         </div>
       </div>
     );
@@ -284,13 +284,13 @@ const Analytics: React.FC = () => {
           <h1 className="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
             <div>
               <div className="flex items-center gap-3">
-                Flood Analytics Dashboard
+                {t('floodAnalyticsTitle')}
                 <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full animate-pulse">
-                  LIVE DATA
+                  {t('liveData')}
                 </span>
               </div>
               <p className="text-lg font-normal text-gray-600 mt-1">
-                Real-time comprehensive flood risk analysis and predictive insights
+                {t('floodAnalyticsSubtitle')}
               </p>
             </div>
           </h1>
@@ -304,44 +304,44 @@ const Analytics: React.FC = () => {
           className="flex flex-wrap gap-4 mb-8"
         >
           <div className="flex items-center gap-2 bg-white p-3 rounded-lg shadow">
-            <span className="text-gray-700 font-medium">Time Period:</span>
+            <span className="text-gray-700 font-medium">{t('timePeriod')}:</span>
             <button
               onClick={() => setTimeFilter('weekly')}
               className={`px-4 py-2 rounded-lg font-medium transition ${timeFilter === 'weekly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
-              Weekly
+              {t('weekly')}
             </button>
             <button
               onClick={() => setTimeFilter('monthly')}
               className={`px-4 py-2 rounded-lg font-medium transition ${timeFilter === 'monthly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
-              Monthly
+              {t('monthly')}
             </button>
             <button
               onClick={() => setTimeFilter('yearly')}
               className={`px-4 py-2 rounded-lg font-medium transition ${timeFilter === 'yearly' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
-              Yearly
+              {t('yearly')}
             </button>
           </div>
 
           {stats && (
             <div className="flex items-center gap-4 bg-white p-3 rounded-lg shadow">
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-medium">Total Alerts:</span>
+                <span className="text-gray-700 font-medium">{t('totalAlerts')}:</span>
                 <span className="text-xl font-bold text-red-600">{alerts.length}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-medium">Predictions:</span>
+                <span className="text-gray-700 font-medium">{t('predictionsCount')}:</span>
                 <span className="text-xl font-bold text-blue-600">{predictions.length}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-700 font-medium">System Accuracy:</span>
+                <span className="text-gray-700 font-medium">{t('systemAccuracy')}:</span>
                 <span className="text-xl font-bold text-green-600">
-                  {accuracyLoading ? 'Updating...' : (accuracyLabel || '-')}
+                  {accuracyLoading ? t('updating') : (accuracyLabel || '-')}
                 </span>
               </div>
             </div>
@@ -357,7 +357,7 @@ const Analytics: React.FC = () => {
             transition={{ delay: 0.3 }}
             className="flood-card p-6 sm:p-8 h-full flex flex-col"
           >
-            <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Risk Trends</h3>
+            <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">{t('floodRiskTrend')}</h3>
             <div className="h-[400px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={timeSeriesData}>
@@ -391,7 +391,7 @@ const Analytics: React.FC = () => {
                     yAxisId="left"
                     dataKey="alerts"
                     fill="var(--flood-medium)"
-                    name="Active Alerts"
+                    name={t('activeAlerts')}
                     radius={[2, 2, 0, 0]}
                   />
                   <Line
@@ -400,7 +400,7 @@ const Analytics: React.FC = () => {
                     dataKey="floodRisk"
                     stroke="var(--flood-critical)"
                     strokeWidth={3}
-                    name="Flood Risk %"
+                    name={t('floodRiskPercentage')}
                     dot={{ fill: 'var(--flood-critical)', r: 4 }}
                   />
                 </ComposedChart>
@@ -415,7 +415,7 @@ const Analytics: React.FC = () => {
             transition={{ delay: 0.4 }}
             className="flood-card p-6 sm:p-8 h-full flex flex-col"
           >
-            <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">Alert Severity Distribution</h3>
+            <h3 className="text-flood-title text-xl font-bold mb-7 sm:mb-8">{t('alertDistribution')}</h3>
             <div className="h-[400px] w-full mb-4">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -447,7 +447,7 @@ const Analytics: React.FC = () => {
                     />
                     <span className="text-sm font-medium text-gray-700">{item.name}</span>
                   </div>
-                  <span className="text-sm font-bold text-gray-800">{item.value} alerts</span>
+                  <span className="text-sm font-bold text-gray-800">{item.value} {t('alerts').toLowerCase()}</span>
                 </div>
               ))}
             </div>
@@ -461,16 +461,16 @@ const Analytics: React.FC = () => {
           transition={{ delay: 0.5 }}
           className="flood-card p-6 sm:p-8 overflow-x-auto"
         >
-          <h3 className="text-flood-title text-lg sm:text-xl font-bold mb-6 sm:mb-8">State-by-State Analysis</h3>
+          <h3 className="text-flood-title text-lg sm:text-xl font-bold mb-6 sm:mb-8">{t('stateAnalysis')}</h3>
           <div className="overflow-x-auto -mx-6 sm:-mx-8 sm:mx-0">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-gray-200">
-                  <th className="text-left py-4 px-5 font-semibold text-gray-700">State</th>
-                  <th className="text-right py-4 px-5 font-semibold text-gray-700">Population at Risk</th>
-                  <th className="text-right py-4 px-5 font-semibold text-gray-700">Flood Events</th>
-                  <th className="text-center py-4 px-5 font-semibold text-gray-700">Risk Level</th>
-                  <th className="text-left py-4 px-5 font-semibold text-gray-700">Last Event</th>
+                  <th className="text-left py-4 px-5 font-semibold text-gray-700">{t('location')}</th>
+                  <th className="text-right py-4 px-5 font-semibold text-gray-700">{t('populationAtRisk')}</th>
+                  <th className="text-right py-4 px-5 font-semibold text-gray-700">{t('floodEvents')}</th>
+                  <th className="text-center py-4 px-5 font-semibold text-gray-700">{t('riskLevel')}</th>
+                  <th className="text-left py-4 px-5 font-semibold text-gray-700">{t('lastEvent')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -489,7 +489,7 @@ const Analytics: React.FC = () => {
                           color: getRiskColor(state.riskLevel)
                         }}
                       >
-                        {state.riskLevel}
+                        {t(state.riskLevel.toLowerCase() as any)}
                       </span>
                     </td>
                     <td className="py-4 px-5 text-gray-600 text-sm">{state.lastEvent}</td>
@@ -510,11 +510,11 @@ const Analytics: React.FC = () => {
           >
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-3">
               <div>
-                <h3 className="text-flood-title text-xl font-bold">Prediction Model Performance</h3>
-                <p className="text-sm text-gray-500">Live per-model metrics from the last {modelWindow} predictions.</p>
+                <h3 className="text-flood-title text-xl font-bold">{t('aiModelPerformance')}</h3>
+                <p className="text-sm text-gray-500">{t('liveModelMetrics')} {modelWindow} {t('predictionsCount').toLowerCase()}.</p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-sm text-gray-600">Window:</span>
+                <span className="text-sm text-gray-600">{t('window')}:</span>
                 <div className="flex items-center gap-2">
                   {[100, 300, 1000].map((n) => (
                     <button
@@ -523,12 +523,12 @@ const Analytics: React.FC = () => {
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${modelWindow === n ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                     >
-                      Last {n}
+                      {t('last')} {n}
                     </button>
                   ))}
                 </div>
                 {liveModelsTimestamp && (
-                  <span className="text-xs text-gray-500 ml-2">Updated: {new Date(liveModelsTimestamp).toLocaleString()}</span>
+                  <span className="text-xs text-gray-500 ml-2">{t('updated')}: {new Date(liveModelsTimestamp).toLocaleString()}</span>
                 )}
               </div>
             </div>
@@ -538,13 +538,13 @@ const Analytics: React.FC = () => {
                   <h4 className="font-semibold text-blue-900 mb-2 capitalize">{model.replace('_', ' ')}</h4>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-blue-700">Live accuracy (last {modelWindow}):</span>
+                      <span className="text-blue-700">{t('liveAccuracy')} ({t('last').toLowerCase()} {modelWindow}):</span>
                       <span className="font-bold text-blue-900">
                         {Math.round(((metrics.avg_probability || 0)) * 100)}%
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-blue-700">F1 Score (proxy):</span>
+                      <span className="text-blue-700">{t('f1ScoreProxy')}:</span>
                       <span className="font-bold text-blue-900">
                         {Math.round(((metrics.avg_confidence || 0)) * 100)}%
                       </span>

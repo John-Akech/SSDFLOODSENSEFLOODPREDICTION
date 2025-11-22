@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { LanguageProvider } from './i18n/LanguageContext';
+import { LanguageProvider, useLanguage } from './i18n/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import EnhancedSidebar from './components/EnhancedSidebar';
 import Footer from './components/Footer';
@@ -22,6 +22,8 @@ import './styles/flood-colors.css';
 import { useNetworkStatus } from './hooks/useNetworkStatus';
 import { usePerformanceProfile } from './hooks/usePerformanceProfile';
 import { DisasterModeProvider, useDisasterMode } from './context/DisasterModeContext';
+import { useTheme } from './context/ThemeContext';
+import { Moon, Sun } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const location = useLocation();
@@ -29,6 +31,8 @@ const AppContent: React.FC = () => {
   const { isOffline } = useNetworkStatus();
   const { isLowPowerMode } = usePerformanceProfile();
   const { isDisasterMode, toggleDisasterMode } = useDisasterMode();
+  const { theme, toggleTheme } = useTheme();
+  const { t } = useLanguage();
 
   // Handle sidebar toggle
   const toggleSidebar = () => {
@@ -37,11 +41,11 @@ const AppContent: React.FC = () => {
 
   const rootClasses = [
     'min-h-screen flex flex-col overflow-hidden transition-colors duration-500',
-    isDisasterMode ? 'bg-slate-900 text-white' : 'bg-cover bg-center bg-fixed bg-no-repeat',
+    isDisasterMode ? 'bg-slate-900 text-white' : 'bg-cover bg-center bg-fixed bg-no-repeat dark:bg-slate-900 dark:text-white',
     isLowPowerMode ? 'low-power-mode' : ''
   ].join(' ').trim();
 
-  const backgroundStyle = isDisasterMode ? {} : {
+  const backgroundStyle = isDisasterMode || theme === 'dark' ? {} : {
     backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.9), rgba(240, 249, 255, 0.9)), url("/images/map.jpg")`
   };
 
@@ -50,14 +54,21 @@ const AppContent: React.FC = () => {
       {/* Notification Bell & Disaster Toggle - Fixed position */}
       <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
         <button
+          onClick={toggleTheme}
+          className="p-2 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-lg hover:bg-gray-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all"
+          title={theme === 'dark' ? t('switchToLight') : t('switchToDark')}
+        >
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+        <button
           onClick={toggleDisasterMode}
           className={`flex items-center gap-2 px-3 py-2 rounded-full shadow-lg transition-all font-bold text-xs sm:text-sm ${isDisasterMode
             ? 'bg-red-600 text-white hover:bg-red-700 ring-2 ring-red-400 animate-pulse'
-            : 'bg-white text-slate-700 hover:bg-gray-50 border border-slate-200'
+            : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
             }`}
-          title={isDisasterMode ? "Deactivate Disaster Mode" : "Activate Disaster Mode (High Contrast)"}
+          title={isDisasterMode ? t('deactivateDisasterMode') : t('activateDisasterMode')}
         >
-          {isDisasterMode ? 'DISASTER MODE' : 'Normal Mode'}
+          {isDisasterMode ? t('disasterMode') : t('normalMode')}
         </button>
         <NotificationBell />
       </div>
@@ -65,7 +76,7 @@ const AppContent: React.FC = () => {
       {/* Offline Indicator */}
       {isOffline && (
         <div className="fixed top-0 left-0 right-0 z-40 bg-yellow-500 text-white text-center py-2 text-sm font-medium flex items-center justify-center gap-2">
-          You're offline - Some features may be limited
+          {t('offlineMessage')}
         </div>
       )}
 
@@ -78,7 +89,7 @@ const AppContent: React.FC = () => {
             className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-gradient-to-r from-blue-700 to-cyan-800 text-white rounded-lg shadow-lg hover:shadow-xl transition-all touch-manipulation"
             aria-label="Toggle menu"
           >
-            <span className="font-bold text-sm">MENU</span>
+            <span className="font-bold text-sm">{t('menu')}</span>
           </button>
 
           {/* Sidebar */}

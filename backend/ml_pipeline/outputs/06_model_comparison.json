@@ -1,0 +1,101 @@
+{
+  "step": "06_compare_models",
+  "created_at": "2025-11-21T21:30:19.394712",
+  "models_compared": 4,
+  "comparison_table": [
+    {
+      "Model": "Gradient Boosting",
+      "Test_Accuracy": 0.96875,
+      "CV_Accuracy": 0.9283076923076923,
+      "CV_Std": 0.058958214066550226,
+      "Precision": 1.0,
+      "Recall": 0.9565217391304348,
+      "F1_Score": 0.9777777777777777,
+      "ROC_AUC": 0.9806763285024155,
+      "True_Negatives": 9,
+      "False_Positives": 0,
+      "False_Negatives": 1,
+      "True_Positives": 22,
+      "False_Alarm_Rate": 0.0,
+      "Miss_Rate": 0.043478260869565216,
+      "Passes_86": " Yes"
+    },
+    {
+      "Model": "Random Forest",
+      "Test_Accuracy": 0.96875,
+      "CV_Accuracy": 0.8886153846153846,
+      "CV_Std": 0.04708396126372573,
+      "Precision": 1.0,
+      "Recall": 0.9565217391304348,
+      "F1_Score": 0.9777777777777777,
+      "ROC_AUC": 0.9903381642512077,
+      "True_Negatives": 9,
+      "False_Positives": 0,
+      "False_Negatives": 1,
+      "True_Positives": 22,
+      "False_Alarm_Rate": 0.0,
+      "Miss_Rate": 0.043478260869565216,
+      "Passes_86": " Yes"
+    },
+    {
+      "Model": "Lstm",
+      "Test_Accuracy": 0.90625,
+      "CV_Accuracy": 0.90625,
+      "CV_Std": 0.0,
+      "Precision": 0.9166666666666666,
+      "Recall": 0.9565217391304348,
+      "F1_Score": 0.9361702127659575,
+      "ROC_AUC": 0.9420289855072463,
+      "True_Negatives": 7,
+      "False_Positives": 2,
+      "False_Negatives": 1,
+      "True_Positives": 22,
+      "False_Alarm_Rate": 0.2222222222222222,
+      "Miss_Rate": 0.043478260869565216,
+      "Passes_86": " Yes"
+    },
+    {
+      "Model": "Tcn",
+      "Test_Accuracy": 0.96875,
+      "CV_Accuracy": 0.96875,
+      "CV_Std": 0.0,
+      "Precision": 1.0,
+      "Recall": 0.9565217391304348,
+      "F1_Score": 0.9777777777777777,
+      "ROC_AUC": 0.9855072463768116,
+      "True_Negatives": 9,
+      "False_Positives": 0,
+      "False_Negatives": 1,
+      "True_Positives": 22,
+      "False_Alarm_Rate": 0.0,
+      "Miss_Rate": 0.043478260869565216,
+      "Passes_86": " Yes"
+    }
+  ],
+  "best_by_criterion": {
+    "accuracy": {
+      "model": "Gradient Boosting",
+      "value": 0.96875
+    },
+    "recall": {
+      "model": "Gradient Boosting",
+      "value": 0.9565217391304348
+    },
+    "precision": {
+      "model": "Gradient Boosting",
+      "value": 1.0
+    },
+    "f1_score": {
+      "model": "Gradient Boosting",
+      "value": 0.9777777777777777
+    }
+  },
+  "final_recommendation": {
+    "model": "Gradient Boosting",
+    "status": "production_ready",
+    "reason": "Highest accuracy (96.88%) among production-ready models",
+    "test_accuracy": 0.96875,
+    "cv_accuracy": 0.9283076923076923,
+    "production_ready": true
+  }
+}

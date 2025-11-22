@@ -45,24 +45,35 @@ OUTPUT_DIR = PIPELINE_DIR / "outputs"
 MODELS_DIR = OUTPUT_DIR / "04_trained_models"
 
 # Define PyTorch model architectures (must match training)
+
+
 class TCNModel(nn.Module):
     """Temporal Convolutional Network for time series flood prediction"""
+
     def __init__(self, input_dim, num_channels=[64, 32], kernel_size=3, dropout=0.4):
         super(TCNModel, self).__init__()
         self.tcn_layers = nn.ModuleList()
         in_channels = 1
-        
+
         for out_channels in num_channels:
             self.tcn_layers.append(nn.Sequential(
-                nn.Conv1d(in_channels, out_channels, kernel_size, padding=kernel_size//2),
+                nn.Conv1d(in_channels, out_channels,
+                          kernel_size, padding=kernel_size//2),
                 nn.BatchNorm1d(out_channels),
                 nn.ReLU(),
                 nn.Dropout(dropout)
             ))
             in_channels = out_channels
-        
-        self.fc = nn.Linear(num_channels[-1] * input_dim, 2)
-    
+
+        # Calculate output size dynamically to match training script
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 1, input_dim)
+            for layer in self.tcn_layers:
+                dummy_input = layer(dummy_input)
+            flattened_size = dummy_input.flatten(1).shape[1]
+
+        self.fc = nn.Linear(flattened_size, 2)
+
     def forward(self, x):
         x = x.unsqueeze(1)  # (batch, 1, features)
         for layer in self.tcn_layers:
@@ -70,8 +81,10 @@ class TCNModel(nn.Module):
         x = x.flatten(1)
         return self.fc(x)
 
+
 class LSTMModel(nn.Module):
     """LSTM Network for sequential flood forecasting"""
+
     def __init__(self, input_dim, hidden_dim=64, num_layers=2, dropout=0.2):
         super(LSTMModel, self).__init__()
         self.lstm = nn.LSTM(
@@ -79,11 +92,12 @@ class LSTMModel(nn.Module):
             batch_first=True, dropout=dropout if num_layers > 1 else 0
         )
         self.fc = nn.Linear(hidden_dim, 2)
-    
+
     def forward(self, x):
         x = x.unsqueeze(1)  # (batch, 1, features)
         lstm_out, _ = self.lstm(x)
         return self.fc(lstm_out[:, -1, :])
+
 
 print("=" * 80)
 print("STEP 5: EVALUATE AND TUNE")
@@ -121,9 +135,10 @@ for model_file in MODELS_DIR.glob("*.pkl"):
 if TORCH_AVAILABLE:
     for model_file in MODELS_DIR.glob("*.pt"):
         if model_file.stem in ['tcn_model', 'lstm_model']:
-            checkpoint = torch.load(model_file, map_location=torch.device('cpu'))
+            checkpoint = torch.load(
+                model_file, map_location=torch.device('cpu'))
             hyperparams = checkpoint['hyperparameters']
-            
+
             if model_file.stem == 'tcn_model':
                 model = TCNModel(**hyperparams)
                 model.load_state_dict(checkpoint['model_state_dict'])
@@ -152,7 +167,7 @@ for name, model in models.items():
     print(f"\n{'=' * 80}")
     print(f"MODEL: {name.upper().replace('_', ' ')}")
     print(f"{'=' * 80}")
-    
+
     # Predictions (handle PyTorch models differently)
     if name in ['tcn', 'lstm']:
         # PyTorch model predictions
@@ -166,32 +181,33 @@ for name, model in models.items():
         # Scikit-learn model predictions
         y_pred = model.predict(X_test)
         y_pred_proba = model.predict_proba(X_test)[:, 1]
-    
+
     # Metrics
     acc = accuracy_score(y_test, y_pred)
     prec = precision_score(y_test, y_pred, zero_division=0)
     rec = recall_score(y_test, y_pred, zero_division=0)
     f1 = f1_score(y_test, y_pred, zero_division=0)
     roc_auc = roc_auc_score(y_test, y_pred_proba)
-    
+
     tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
-    
+
     print(f"PERFORMANCE:")
-    print(f"   Accuracy:  {acc:.2%} {' PASS' if acc >= 0.86 else ' FAIL (need 86%)'}")
+    print(
+        f"   Accuracy:  {acc:.2%} {' PASS' if acc >= 0.86 else ' FAIL (need 86%)'}")
     print(f"   Precision: {prec:.2%}")
     print(f"   Recall:    {rec:.2%}")
     print(f"   F1-Score:  {f1:.2%}")
     print(f"   ROC-AUC:   {roc_auc:.4f}")
-    
+
     print(f"\n CONFUSION MATRIX:")
     print(f"   TN: {tn:3d} | FP: {fp:3d}")
     print(f"   FN: {fn:3d} | TP: {tp:3d}")
-    
+
     if tp + fn > 0 and fp + tn > 0:
         print(f"\n  ERRORS:")
         print(f"   False Alarms: {fp} ({fp/(fp+tn)*100:.1f}% of non-floods)")
         print(f"   Missed Floods: {fn} ({fn/(fn+tp)*100:.1f}% of floods)")
-    
+
     results[name] = {
         'test_metrics': {
             'accuracy': float(acc),
@@ -225,7 +241,8 @@ else:
     print("ERROR: No target column found")
     exit(1)
 
-exclude_cols = ['event_id', 'flood', 'is_flood_event', 'start_date', 'end_date', 'region']
+exclude_cols = ['event_id', 'flood', 'is_flood_event',
+                'start_date', 'end_date', 'region']
 feature_cols = [col for col in df.columns if col not in exclude_cols]
 
 X_full = df[feature_cols].values
@@ -245,7 +262,8 @@ for name, model in models.items():
             'note': 'Using test accuracy (CV skipped for PyTorch models)'
         }
     else:
-        cv_scores = cross_val_score(model, X_full, y_full, cv=cv, scoring='accuracy')
+        cv_scores = cross_val_score(
+            model, X_full, y_full, cv=cv, scoring='accuracy')
         results[name]['cross_validation'] = {
             'mean_accuracy': float(cv_scores.mean()),
             'std_accuracy': float(cv_scores.std()),
@@ -285,16 +303,17 @@ if num_models == 1:
 else:
     axes = axes.flatten()
 
-fig.suptitle('Confusion Matrices: Model Performance', fontsize=16, fontweight='bold')
+fig.suptitle('Confusion Matrices: Model Performance',
+             fontsize=16, fontweight='bold')
 
 for idx, (name, model) in enumerate(models.items()):
     ax = axes[idx]
     cm_dict = results[name]['confusion_matrix']
-    
+
     # Reconstruct confusion matrix as 2D array
     cm = np.array([[cm_dict['tn'], cm_dict['fp']],
                    [cm_dict['fn'], cm_dict['tp']]])
-    
+
     # Plot confusion matrix
     sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', ax=ax,
                 cbar=False, square=True, linewidths=2, linecolor='black')
@@ -306,7 +325,8 @@ for idx, (name, model) in enumerate(models.items()):
     ax.set_yticklabels(['No Flood', 'Flood'])
 
 plt.tight_layout()
-plt.savefig(VIZ_DIR / '09_confusion_matrices.png', dpi=300, bbox_inches='tight')
+plt.savefig(VIZ_DIR / '09_confusion_matrices.png',
+            dpi=300, bbox_inches='tight')
 plt.close()
 viz_count += 1
 
@@ -324,11 +344,12 @@ for name, model in models.items():
             y_pred_proba = torch.softmax(outputs, dim=1)[:, 1].numpy()
     else:
         y_pred_proba = model.predict_proba(X_test)[:, 1]
-    
+
     fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
     auc = results[name]['test_metrics']['roc_auc']
-    
-    plt.plot(fpr, tpr, linewidth=2, label=f"{name.replace('_', ' ').title()} (AUC = {auc:.3f})")
+
+    plt.plot(fpr, tpr, linewidth=2,
+             label=f"{name.replace('_', ' ').title()} (AUC = {auc:.3f})")
 
 # Plot random classifier line
 plt.plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random Classifier')
@@ -354,27 +375,33 @@ metric_names = ['Accuracy', 'Precision', 'Recall', 'F1-Score']
 
 for idx, (metric, name_label) in enumerate(zip(metrics_to_plot, metric_names)):
     ax = axes[idx // 2, idx % 2]
-    
-    values = [results[name]['test_metrics'][metric] * 100 for name in models.keys()]
+
+    values = [results[name]['test_metrics']
+              [metric] * 100 for name in models.keys()]
     model_names = [name.replace('_', ' ').title() for name in models.keys()]
-    colors = ['#3498db' if v < 90 else '#27ae60' if v < 95 else '#2ecc71' for v in values]
-    
-    bars = ax.barh(model_names, values, color=colors, alpha=0.7, edgecolor='black')
+    colors = ['#3498db' if v < 90 else '#27ae60' if v <
+              95 else '#2ecc71' for v in values]
+
+    bars = ax.barh(model_names, values, color=colors,
+                   alpha=0.7, edgecolor='black')
     ax.set_xlabel(f'{name_label} (%)', fontsize=11)
     ax.set_title(name_label, fontsize=12, fontweight='bold')
     ax.set_xlim([0, 100])
-    ax.axvline(x=86, color='red', linestyle='--', linewidth=1.5, label='Min Required (86%)')
+    ax.axvline(x=86, color='red', linestyle='--',
+               linewidth=1.5, label='Min Required (86%)')
     ax.grid(axis='x', alpha=0.3)
-    
+
     # Add value labels
     for i, (bar, val) in enumerate(zip(bars, values)):
-        ax.text(val + 1, i, f'{val:.1f}%', va='center', fontsize=10, fontweight='bold')
-    
+        ax.text(val + 1, i, f'{val:.1f}%', va='center',
+                fontsize=10, fontweight='bold')
+
     if idx == 0:
         ax.legend(fontsize=9)
 
 plt.tight_layout()
-plt.savefig(VIZ_DIR / '11_metrics_comparison.png', dpi=300, bbox_inches='tight')
+plt.savefig(VIZ_DIR / '11_metrics_comparison.png',
+            dpi=300, bbox_inches='tight')
 plt.close()
 viz_count += 1
 
@@ -392,7 +419,7 @@ for i, (name, model) in enumerate(models.items()):
     labels.append(name.replace('_', ' ').title())
 
 bp = plt.boxplot(cv_data, positions=positions, labels=labels, patch_artist=True,
-                  widths=0.6, showmeans=True, meanline=True)
+                 widths=0.6, showmeans=True, meanline=True)
 
 # Color boxes
 colors = ['#3498db', '#e74c3c', '#27ae60', '#f39c12']
@@ -401,8 +428,10 @@ for patch, color in zip(bp['boxes'], colors[:len(bp['boxes'])]):
     patch.set_alpha(0.6)
 
 plt.ylabel('Accuracy Score', fontsize=12)
-plt.title('Cross-Validation Score Distribution (5-Fold)', fontsize=14, fontweight='bold')
-plt.axhline(y=0.86, color='red', linestyle='--', linewidth=1.5, label='Min Required (86%)')
+plt.title('Cross-Validation Score Distribution (5-Fold)',
+          fontsize=14, fontweight='bold')
+plt.axhline(y=0.86, color='red', linestyle='--',
+            linewidth=1.5, label='Min Required (86%)')
 plt.grid(axis='y', alpha=0.3)
 plt.legend(fontsize=10)
 plt.ylim([0.7, 1.0])
@@ -415,22 +444,23 @@ viz_count += 1
 print("   Creating performance summary table...")
 
 # Determine best model by accuracy then CV mean
-best_name = max(models.keys(), 
-                key=lambda x: (results[x]['test_metrics']['accuracy'], 
-                              results[x]['cross_validation']['mean_accuracy']))
+best_name = max(models.keys(),
+                key=lambda x: (results[x]['test_metrics']['accuracy'],
+                               results[x]['cross_validation']['mean_accuracy']))
 
 fig, ax = plt.subplots(figsize=(14, 6))
 ax.axis('tight')
 ax.axis('off')
 
 table_data = []
-table_data.append(['Model', 'Accuracy', 'Precision', 'Recall', 'F1-Score', 'ROC-AUC', 'CV Mean', 'CV Std', 'Passes 86%'])
+table_data.append(['Model', 'Accuracy', 'Precision', 'Recall',
+                  'F1-Score', 'ROC-AUC', 'CV Mean', 'CV Std', 'Passes 86%'])
 
 for name in models.keys():
     metrics = results[name]['test_metrics']
     cv = results[name]['cross_validation']
     passes = 'PASS' if results[name]['passes_86'] else 'FAIL'
-    
+
     table_data.append([
         name.replace('_', ' ').title(),
         f"{metrics['accuracy']:.1%}",
@@ -444,7 +474,7 @@ for name in models.keys():
     ])
 
 table = ax.table(cellText=table_data, cellLoc='center', loc='center',
-                colWidths=[0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+                 colWidths=[0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
 table.auto_set_font_size(False)
 table.set_fontsize(10)
 table.scale(1, 2.5)
@@ -463,9 +493,11 @@ for i in range(1, len(table_data)):
         elif i % 2 == 0:
             table[(i, j)].set_facecolor('#ecf0f1')
 
-plt.title('Model Performance Summary Table', fontsize=14, fontweight='bold', pad=20)
+plt.title('Model Performance Summary Table',
+          fontsize=14, fontweight='bold', pad=20)
 plt.tight_layout()
-plt.savefig(VIZ_DIR / '13_performance_summary.png', dpi=300, bbox_inches='tight')
+plt.savefig(VIZ_DIR / '13_performance_summary.png',
+            dpi=300, bbox_inches='tight')
 plt.close()
 viz_count += 1
 
@@ -482,7 +514,8 @@ best_acc = results[best_name]['test_metrics']['accuracy']
 
 print(f"\n Best Model: {best_name.upper().replace('_', ' ')}")
 print(f"   Test Accuracy: {best_acc:.2%}")
-print(f"   CV Accuracy: {results[best_name]['cross_validation']['mean_accuracy']:.2%}")
+print(
+    f"   CV Accuracy: {results[best_name]['cross_validation']['mean_accuracy']:.2%}")
 
 # Compile report
 report = {
@@ -528,7 +561,8 @@ for name, metrics in results.items():
     print(f"   - {name:20s}: Test={test_acc:.2%}, CV={cv_acc:.2%} [{status}]")
 print(f"\n Best Model: {best_name.replace('_', ' ').title()}")
 print(f"   Test Accuracy: {best_acc:.2%}")
-print(f"   Production Ready: {'YES' if report['best_model']['production_ready'] else 'NO'}")
+print(
+    f"   Production Ready: {'YES' if report['best_model']['production_ready'] else 'NO'}")
 print(f"\n View evaluation charts in: {VIZ_DIR}/")
 print(f"\nNext step: Run 06_compare_models.py")
 print("=" * 80)

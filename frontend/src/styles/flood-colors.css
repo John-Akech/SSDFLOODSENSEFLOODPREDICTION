@@ -79,6 +79,33 @@
   /* Dark red for critical text */
 }
 
+/* Dark Mode Overrides */
+.dark {
+  /* Background Colors */
+  --bg-water-surface: #0f172a;
+  /* Dark navy for water surface */
+  --bg-flood-panel: #1e293b;
+  /* Dark slate for flood panels */
+  --bg-risk-panel: #451a03;
+  /* Dark amber for risk panels */
+  --bg-success: #064e3b;
+  /* Dark green for success states */
+  --bg-warning: #451a03;
+  /* Dark amber for warning states */
+  --bg-error: #7f1d1d;
+  /* Dark red for error states */
+
+  /* Text Colors */
+  --text-flood: #e0f2fe;
+  /* Light blue for flood text */
+  --text-water: #bae6fd;
+  /* Lighter blue for water text */
+  --text-risk: #fcd34d;
+  /* Light amber for risk text */
+  --text-critical: #fca5a5;
+  /* Light red for critical text */
+}
+
 /* Flood Level Gradients */
 .flood-gradient-critical {
   background: linear-gradient(135deg, var(--flood-critical) 0%, var(--water-deep) 100%);

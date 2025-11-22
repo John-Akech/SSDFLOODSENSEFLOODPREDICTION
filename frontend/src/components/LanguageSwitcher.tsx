@@ -7,7 +7,7 @@ const LanguageSwitcher: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const languages: { code: Language; name: string; flag: string }[] = [
-    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'en', name: 'FloodSense', flag: '🇬🇧' },
     { code: 'ar', name: 'العربية', flag: '🇸🇩' },
     { code: 'sw', name: 'Kiswahili', flag: '🇰🇪' }
   ];

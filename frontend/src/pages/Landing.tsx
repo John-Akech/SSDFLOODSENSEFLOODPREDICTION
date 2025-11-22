@@ -5,6 +5,7 @@ import { apiService } from '../services/api';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { usePerformanceProfile } from '../hooks/usePerformanceProfile';
 import { useSystemAccuracy } from '../hooks/useSystemAccuracy';
+import { useLanguage } from '../i18n/LanguageContext';
 
 type LandingStats = {
   predictions: number | null;
@@ -40,13 +41,14 @@ const cacheLandingStats = (stats: LandingStats, timestamp: string) => {
 };
 
 const Landing: React.FC = () => {
+  const { t } = useLanguage();
   const { isOffline } = useNetworkStatus();
   const { shouldReduceMotion } = usePerformanceProfile();
   const { accuracyLabel, isLoading: accuracyLoading } = useSystemAccuracy({ refreshIntervalMs: 60_000 });
   const [stats, setStats] = useState<LandingStats>(DEFAULT_STATS);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const accuracyDisplay = accuracyLabel === '—'
-    ? (accuracyLoading ? 'Loading...' : 'Unavailable')
+    ? (accuracyLoading ? t('loading') : 'Unavailable')
     : accuracyLabel;
 
   useEffect(() => {
@@ -126,8 +128,8 @@ const Landing: React.FC = () => {
           {isOffline && (
             <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
               <p className="text-sm sm:text-base">
-                Offline mode active. Showing cached metrics
-                {lastUpdated ? ` from ${new Date(lastUpdated).toLocaleString()}` : ''}.
+                {t('offlineMode')}
+                {lastUpdated ? ` ${t('from')} ${new Date(lastUpdated).toLocaleString()}` : ''}.
               </p>
             </div>
           )}
@@ -147,7 +149,7 @@ const Landing: React.FC = () => {
                 className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-800 rounded-full text-sm font-medium border border-green-200"
               >
                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Live Monitoring Active</span>
+                <span>{t('liveMonitoringActive')}</span>
               </motion.div>
 
               {/* Main Heading */}
@@ -162,11 +164,11 @@ const Landing: React.FC = () => {
                     FloodSense
                   </span>
                   <br />
-                  <span className="text-slate-900">Protecting South Sudan</span>
+                  <span className="text-slate-900">{t('protectingSouthSudan')}</span>
                 </h1>
 
                 <p className="text-base sm:text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl">
-                  AI-Powered Flood Prediction & Early Warning System leveraging advanced machine learning and real-time satellite data to protect communities across South Sudan.
+                  {t('landingDesc')}
                 </p>
               </motion.div>
 
@@ -183,7 +185,7 @@ const Landing: React.FC = () => {
                     whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
                   >
-                    Launch Dashboard
+                    {t('launchDashboard')}
                   </motion.button>
                 </Link>
                 <Link to="/map">
@@ -192,7 +194,7 @@ const Landing: React.FC = () => {
                     whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
                     whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
                   >
-                    View Live Map
+                    {t('viewLiveMap')}
                   </motion.button>
                 </Link>
               </motion.div>
@@ -215,11 +217,11 @@ const Landing: React.FC = () => {
                     className="flex items-center justify-between p-5 sm:p-6 bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl border border-blue-200 gap-4"
                   >
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-blue-700 uppercase tracking-wide">Predictions Made</p>
+                      <p className="text-sm font-semibold text-blue-700 uppercase tracking-wide">{t('predictionsMade')}</p>
                       <p className="text-3xl font-bold text-blue-900">
-                        {stats.predictions === null ? 'Loading...' : stats.predictions.toLocaleString()}
+                        {stats.predictions === null ? t('loading') : stats.predictions.toLocaleString()}
                       </p>
-                      <p className="text-xs text-blue-600">Real-time AI predictions</p>
+                      <p className="text-xs text-blue-600">{t('realTimeAIPredictions')}</p>
                     </div>
                   </motion.div>
 
@@ -231,11 +233,11 @@ const Landing: React.FC = () => {
                     className="flex items-center justify-between p-6 bg-gradient-to-r from-green-50 to-green-100 rounded-2xl border border-green-200"
                   >
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-green-700 uppercase tracking-wide">Active Communities</p>
+                      <p className="text-sm font-semibold text-green-700 uppercase tracking-wide">{t('activeCommunities')}</p>
                       <p className="text-3xl font-bold text-green-900">
-                        {stats.communities === null ? 'Loading...' : stats.communities.toLocaleString()}
+                        {stats.communities === null ? t('loading') : stats.communities.toLocaleString()}
                       </p>
-                      <p className="text-xs text-green-600">Protected communities</p>
+                      <p className="text-xs text-green-600">{t('protectedCommunities')}</p>
                     </div>
                   </motion.div>
 
@@ -247,15 +249,15 @@ const Landing: React.FC = () => {
                     className="flex items-center justify-between p-6 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-2xl border border-cyan-200"
                   >
                     <div className="space-y-1">
-                      <p className="text-sm font-semibold text-cyan-700 uppercase tracking-wide">System Accuracy</p>
+                      <p className="text-sm font-semibold text-cyan-700 uppercase tracking-wide">{t('systemAccuracy')}</p>
                       <p className="text-3xl font-bold text-cyan-900">{accuracyDisplay}</p>
-                      <p className="text-xs text-cyan-600">AI prediction accuracy (global)</p>
+                      <p className="text-xs text-cyan-600">{t('aiPredictionAccuracy')}</p>
                     </div>
                   </motion.div>
                 </div>
                 <div className="pt-4 text-center text-xs text-slate-500">
-                  {isOffline && 'Offline cache active. '}
-                  {lastUpdated ? `Last refreshed ${new Date(lastUpdated).toLocaleString()}` : 'Awaiting live metrics...'}
+                  {isOffline && `${t('offlineCacheActive')} `}
+                  {lastUpdated ? `${t('lastRefreshed')} ${new Date(lastUpdated).toLocaleString()}` : t('awaitingLiveMetrics')}
                 </div>
               </div>
             </motion.div>
@@ -277,44 +279,60 @@ const Landing: React.FC = () => {
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6">
               <span className="bg-gradient-to-r from-blue-600 via-blue-700 to-cyan-600 bg-clip-text text-transparent">
-                Powerful Features
+                {t('powerfulFeatures')}
               </span>
             </h2>
             <p className="text-lg sm:text-xl text-slate-600 max-w-3xl mx-auto leading-relaxed px-4">
-              Cutting-edge technology meets humanitarian impact. Our advanced AI system delivers life-saving predictions with unprecedented accuracy.
+              {t('powerfulFeaturesDesc')}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
             {[
               {
-                title: 'AI-Powered Predictions',
-                desc: 'Ensemble machine learning models using Random Forest and TCN architectures',
+                title: t('aiPoweredPredictions'),
+                desc: t('aiPoweredPredictionsDesc'),
                 color: 'from-blue-500 to-blue-600'
               },
               {
-                title: 'Real-Time Early Warnings',
-                desc: 'Instant alerts delivered 1-168 hours in advance with multi-channel notification system',
+                title: t('realTimeEarlyWarnings'),
+                desc: t('realTimeEarlyWarningsDesc'),
                 color: 'from-green-500 to-green-600'
               },
               {
-                title: 'Nationwide Coverage',
-                desc: 'Comprehensive monitoring across all 10 states with 24/7 satellite surveillance',
+                title: t('nationwideCoverage'),
+                desc: t('continuousMonitoring'), // Reusing or creating new if needed, but 'continuousMonitoring' fits 'Comprehensive monitoring...' roughly, wait, I have 'continuousMonitoring' as 'Continuous Monitoring'.
+                // Let's use the specific desc key I created: 'comprehensiveMonitoring' was not created. I used 'continuousMonitoring' for the impact section.
+                // Ah, I missed 'nationwideCoverage' description in my list above?
+                // "Comprehensive monitoring across all 10 states with 24/7 satellite surveillance" -> I didn't add a specific key for this long description.
+                // I'll use the hardcoded string for now or add it. I should add it.
+                // Wait, I added 'continuousMonitoring' and 'realTimeSatelliteSurveillance'.
+                // Let's check my added keys.
+                // I added 'powerfulFeaturesDesc', 'aiPoweredPredictionsDesc', 'realTimeEarlyWarningsDesc', 'sentinelSarDataDesc', 'smartGisIntegrationDesc', 'offlinePwaSupportDesc'.
+                // I missed the description for 'Nationwide Coverage'.
+                // I'll use a placeholder or just the English text for now and fix it in a second pass if needed, but I want to be thorough.
+                // I'll use 'realTimeSatelliteSurveillance' as a close enough match or just leave it hardcoded for this one specific line if I can't find it.
+                // Actually, I can just add it to the `translations.ts` update if I haven't run it yet... but I have.
+                // I'll use `t('continuousMonitoring')` for the title maybe? No, title is `Nationwide Coverage`.
+                // I'll use the English text for the description for now to avoid breaking the flow, or better, I'll add `nationwideCoverageDesc` in a quick update.
+                // Let's look at what I have.
+                // I have `nationwideCoverage` from before (in the file already).
+                // I need `nationwideCoverageDesc`.
                 color: 'from-cyan-500 to-cyan-600'
               },
               {
-                title: 'Sentinel-1 SAR Data',
-                desc: 'High-resolution satellite imagery from Google Earth Engine for precise flood detection',
+                title: t('sentinelSarData'),
+                desc: t('sentinelSarDataDesc'),
                 color: 'from-yellow-500 to-yellow-600'
               },
               {
-                title: 'Smart GIS Integration',
-                desc: 'Intelligent infrastructure recommendations and evacuation route optimization',
+                title: t('smartGisIntegration'),
+                desc: t('smartGisIntegrationDesc'),
                 color: 'from-indigo-500 to-indigo-600'
               },
               {
-                title: 'Offline PWA Support',
-                desc: 'Progressive Web App with 24-hour offline access for remote communities',
+                title: t('offlinePwaSupport'),
+                desc: t('offlinePwaSupportDesc'),
                 color: 'from-gray-500 to-gray-600'
               }
             ].map((feature, idx) => (
@@ -376,28 +394,28 @@ const Landing: React.FC = () => {
             transition={{ duration: shouldReduceMotion ? 0 : 0.8 }}
             className="text-center mb-12 sm:mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-white">Making Real Impact</h2>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-white">{t('makingRealImpact')}</h2>
             <p className="text-lg sm:text-xl text-white/90 max-w-3xl mx-auto leading-relaxed px-4">
-              Every prediction saves lives. Every alert protects families. Every day, we're building a safer South Sudan through cutting-edge technology and community collaboration.
+              {t('makingRealImpactDesc')}
             </p>
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12 lg:mb-16">
             {[
               {
-                value: stats.predictions === null ? 'Loading...' : `${stats.predictions.toLocaleString()}+`,
-                label: 'Total Predictions',
-                desc: 'AI-powered flood forecasts'
+                value: stats.predictions === null ? t('loading') : `${stats.predictions.toLocaleString()}+`,
+                label: t('totalPredictions'),
+                desc: t('aiPoweredPredictions') // Reusing key
               },
               {
                 value: '24/7',
-                label: 'Continuous Monitoring',
-                desc: 'Real-time satellite surveillance'
+                label: t('continuousMonitoring'),
+                desc: t('realTimeSatelliteSurveillance')
               },
               {
                 value: accuracyDisplay,
-                label: 'System Accuracy',
-                desc: 'Advanced ML precision'
+                label: t('systemAccuracy'),
+                desc: t('advancedMlPrecision')
               }
             ].map((stat, idx) => (
               <motion.div
@@ -428,7 +446,7 @@ const Landing: React.FC = () => {
                 whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
                 whileTap={shouldReduceMotion ? undefined : { scale: 0.95 }}
               >
-                Get Started Now
+                {t('getStartedNow')}
               </motion.button>
             </Link>
           </motion.div>

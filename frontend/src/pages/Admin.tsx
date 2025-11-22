@@ -78,9 +78,9 @@ const Admin: React.FC = () => {
     } catch (err: any) {
       if (err.name === 'AbortError') {
         console.warn('[PERFORMANCE] Users fetch timed out');
-        setError('Loading users took too long - using cached data');
+        setError(t('usersLoadTimeout'));
       } else {
-        setError('Failed to load users');
+        setError(t('usersLoadFailed'));
       }
       return [];
     }
@@ -100,9 +100,9 @@ const Admin: React.FC = () => {
     } catch (err: any) {
       if (err.name === 'AbortError') {
         console.warn('[PERFORMANCE] Alerts fetch timed out');
-        setError('Loading alerts took too long - using cached data');
+        setError(t('alertsLoadTimeout'));
       } else {
-        setError('Failed to load alerts');
+        setError(t('alertsLoadFailed'));
       }
       return [];
     }
@@ -122,9 +122,9 @@ const Admin: React.FC = () => {
     } catch (err: any) {
       if (err.name === 'AbortError') {
         console.warn('[PERFORMANCE] Predictions fetch timed out');
-        setError('Loading predictions took too long - using cached data');
+        setError(t('predictionsLoadTimeout'));
       } else {
-        setError('Failed to load predictions');
+        setError(t('predictionsLoadFailed'));
       }
       return [];
     }
@@ -178,7 +178,7 @@ const Admin: React.FC = () => {
       setSuccessMessage(t('settingsSaved'));
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      setError('Failed to save settings');
+      setError(t('saveSettingsFailed'));
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -293,41 +293,41 @@ const Admin: React.FC = () => {
 
   // CRUD operations
   const handleDeleteUser = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+    if (!confirm(t('confirmDeleteUser'))) return;
     try {
       await apiService.deleteUser(id);
-      setSuccessMessage('User deleted successfully');
+      setSuccessMessage(t('userDeletedSuccess'));
       setTimeout(() => setSuccessMessage(null), 3000);
       await fetchUsers();
     } catch (err: any) {
       console.error('Delete user error:', err);
-      setError(err.response?.data?.detail || 'Failed to delete user');
+      setError(err.response?.data?.detail || t('deleteUserFailed'));
       setTimeout(() => setError(null), 3000);
     }
   };
 
   const handleDeleteAlert = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this alert?')) return;
+    if (!confirm(t('confirmDeleteAlert'))) return;
     try {
       await apiService.deleteAlert(id);
-      setSuccessMessage('Alert deleted successfully');
+      setSuccessMessage(t('alertDeletedSuccess'));
       setTimeout(() => setSuccessMessage(null), 3000);
       await fetchAlerts();
     } catch (err) {
-      setError('Failed to delete alert');
+      setError(t('deleteAlertFailed'));
       setTimeout(() => setError(null), 3000);
     }
   };
 
   const handleDeletePrediction = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this prediction?')) return;
+    if (!confirm(t('confirmDeletePrediction'))) return;
     try {
       await apiService.deletePrediction(id);
-      setSuccessMessage('Prediction deleted successfully');
+      setSuccessMessage(t('predictionDeletedSuccess'));
       setTimeout(() => setSuccessMessage(null), 3000);
       await fetchPredictions();
     } catch (err) {
-      setError('Failed to delete prediction');
+      setError(t('deletePredictionFailed'));
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -337,11 +337,11 @@ const Admin: React.FC = () => {
       await apiService.register(newUser);
       setShowUserForm(false);
       setNewUser({ email: '', full_name: '', role: 'community_member', password: '' });
-      setSuccessMessage('User added successfully');
+      setSuccessMessage(t('userAddedSuccess'));
       setTimeout(() => setSuccessMessage(null), 3000);
       await fetchUsers();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to add user');
+      setError(err.response?.data?.detail || t('addUserFailed'));
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -351,18 +351,18 @@ const Admin: React.FC = () => {
       await apiService.createAlert(newAlert);
       setShowAlertForm(false);
       setNewAlert({ latitude: 6.877, longitude: 31.307, severity: 'high', message: '' });
-      setSuccessMessage('Alert created successfully');
+      setSuccessMessage(t('alertCreatedSuccess'));
       setTimeout(() => setSuccessMessage(null), 3000);
       await fetchAlerts();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create alert');
+      setError(err.response?.data?.detail || t('createAlertFailed'));
       setTimeout(() => setError(null), 3000);
     }
   };
 
   const handleCreatePrediction = async () => {
     if (!newPrediction.latitude || !newPrediction.longitude) {
-      setError('Please provide valid coordinates');
+      setError(t('invalidCoordinates'));
       setTimeout(() => setError(null), 3000);
       return;
     }
@@ -377,11 +377,11 @@ const Admin: React.FC = () => {
       );
       setShowPredictionForm(false);
       setNewPrediction({ latitude: 6.877, longitude: 31.307, model_type: 'ensemble', lead_time_hours: 48 });
-      setSuccessMessage(`Prediction created: ${result.risk_level} risk detected with ${Math.round(result.confidence_score * 100)}% confidence`);
+      setSuccessMessage(t('predictionCreatedSuccess').replace('{risk}', result.risk_level).replace('{confidence}', Math.round(result.confidence_score * 100).toString()));
       setTimeout(() => setSuccessMessage(null), 5000);
       await fetchPredictions();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create prediction');
+      setError(err.response?.data?.detail || t('createPredictionFailed'));
       setTimeout(() => setError(null), 3000);
     } finally {
       setPredictionLoading(false);
@@ -445,8 +445,8 @@ const Admin: React.FC = () => {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="w-12 h-12 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-600 font-medium">Loading dashboard...</p>
-          <p className="text-gray-400 text-sm mt-1">This should take less than 2 seconds</p>
+          <p className="text-gray-600 font-medium">{t('loadingDashboard')}</p>
+          <p className="text-gray-400 text-sm mt-1">{t('loadingTimeMsg')}</p>
         </div>
       </div>
     );
@@ -477,8 +477,8 @@ const Admin: React.FC = () => {
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center shadow-lg">
             </div>
             <div>
-              <span className="font-bold text-lg text-gray-900 block">Admin Panel</span>
-              <p className="text-xs text-gray-500">FloodSense Management</p>
+              <span className="font-bold text-lg text-gray-900 block">{t('adminPanel')}</span>
+              <p className="text-xs text-gray-500">{t('floodSenseManagement')}</p>
             </div>
           </div>
         </div>
@@ -507,7 +507,7 @@ const Admin: React.FC = () => {
             transition={{ delay: 0.3 }}
             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 bg-red-50 hover:bg-red-100 text-red-700 hover:text-red-800"
           >
-            Logout
+            {t('logout')}
           </motion.button>
         </div>
       </aside>
@@ -567,10 +567,10 @@ const Admin: React.FC = () => {
               >
                 <div>
                   <h3 className="text-3xl font-bold text-gray-900 mb-2">{users.length}</h3>
-                  <p className="text-gray-600 font-medium">Total Users</p>
+                  <p className="text-gray-600 font-medium">{t('totalUsers')}</p>
                 </div>
                 <div className="mt-4 flex items-center text-sm text-green-600 font-medium bg-green-50 w-fit px-2 py-1 rounded">
-                  All active
+                  {t('allActive')}
                 </div>
               </motion.div>
 
@@ -582,10 +582,10 @@ const Admin: React.FC = () => {
               >
                 <div>
                   <h3 className="text-3xl font-bold text-gray-900 mb-2">{activeAlerts}</h3>
-                  <p className="text-gray-600 font-medium">Active Alerts</p>
+                  <p className="text-gray-600 font-medium">{t('activeAlertsCount')}</p>
                 </div>
                 <div className="mt-4 flex items-center text-sm text-red-600 font-medium bg-red-50 w-fit px-2 py-1 rounded">
-                  <span className="font-bold mr-1">{criticalAlerts}</span> critical
+                  <span className="font-bold mr-1">{t('criticalAlertsCount').replace('{count}', criticalAlerts.toString())}</span>
                 </div>
               </motion.div>
 
@@ -597,10 +597,10 @@ const Admin: React.FC = () => {
               >
                 <div>
                   <h3 className="text-3xl font-bold text-gray-900 mb-2">{predictions.length}</h3>
-                  <p className="text-gray-600 font-medium">Predictions</p>
+                  <p className="text-gray-600 font-medium">{t('predictionsCountLabel')}</p>
                 </div>
                 <div className="mt-4 flex items-center text-sm text-blue-600 font-medium bg-blue-50 w-fit px-2 py-1 rounded">
-                  System operational
+                  {t('systemOperational')}
                 </div>
               </motion.div>
 
@@ -613,17 +613,17 @@ const Admin: React.FC = () => {
                 <div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">System Accuracy</p>
+                      <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">{t('systemAccuracy')}</p>
                       <p className="text-2xl font-bold text-gray-900 mt-1">{systemAccuracyDisplay}</p>
                     </div>
                   </div>
                 </div>
                 <div className="border-t border-gray-200 pt-4 mt-auto">
-                  <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">Live Model Accuracy</p>
+                  <p className="text-xs uppercase tracking-wide text-gray-500 font-semibold">{t('liveModelAccuracy')}</p>
                   <p className="text-xl font-bold text-green-600 mt-1">
                     {modelStats?.overall_accuracy ? `${(modelStats.overall_accuracy * 100).toFixed(1)}%` : '--'}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">Last {liveWindow} predictions</p>
+                  <p className="text-xs text-gray-500 mt-1">{t('lastPredictions').replace('{count}', liveWindow)}</p>
                 </div>
               </motion.div>
             </div>
@@ -636,7 +636,7 @@ const Admin: React.FC = () => {
                 transition={{ delay: 0.5 }}
                 className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-full flex flex-col"
               >
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Alert Distribution</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">{t('alertDistribution')}</h3>
                 <div className="flex-grow min-h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={[
@@ -667,7 +667,7 @@ const Admin: React.FC = () => {
                 transition={{ delay: 0.6 }}
                 className="bg-white p-6 rounded-xl shadow-lg border border-gray-100 h-full flex flex-col"
               >
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Prediction Risk Levels</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">{t('predictionRiskLevels')}</h3>
                 <div className="flex-grow min-h-[250px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={[
@@ -710,8 +710,8 @@ const Admin: React.FC = () => {
                 transition={{ delay: 0.7 }}
                 className="bg-white rounded-xl shadow-lg p-6 border border-gray-100"
               >
-                <h2 className="text-xl font-bold text-gray-900">AI Model Performance</h2>
-                <p className="text-sm text-gray-500 mb-6">Live metrics from the most recent {liveWindow} predictions per model.</p>
+                <h2 className="text-xl font-bold text-gray-900">{t('aiModelPerformance')}</h2>
+                <p className="text-sm text-gray-500 mb-6">{t('aiModelPerformanceDesc').replace('{count}', liveWindow)}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {modelStats.models && Object.entries(modelStats.models).map(([modelName, stats]: [string, any], idx) => {
                     console.log(`[DEBUG] Rendering ${modelName}:`, stats);
@@ -728,25 +728,25 @@ const Admin: React.FC = () => {
                         </div>
                         <div className="space-y-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Live accuracy (last {liveWindow})</span>
+                            <span className="text-sm text-gray-600">{t('liveAccuracy').replace('{count}', liveWindow)}</span>
                             <span className="text-lg font-bold text-purple-700">
                               {stats.accuracy ? (stats.accuracy * 100).toFixed(1) : 'N/A'}%
                             </span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Confidence</span>
+                            <span className="text-sm text-gray-600">{t('confidence')}</span>
                             <span className="text-sm font-semibold text-gray-700">
                               {stats.confidence ? (stats.confidence * 100).toFixed(1) : 'N/A'}%
                             </span>
                           </div>
                           <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600">Predictions</span>
+                            <span className="text-sm text-gray-600">{t('predictionsLabel')}</span>
                             <span className="text-sm font-semibold text-gray-700">
                               {stats.prediction_count || 0}
                             </span>
                           </div>
                           <div className="mt-2 pt-2 border-t border-purple-200">
-                            <span className="text-xs text-gray-500">Last Update: {new Date().toLocaleTimeString()}</span>
+                            <span className="text-xs text-gray-500">{t('lastUpdate')}: {new Date().toLocaleTimeString()}</span>
                           </div>
                         </div>
                       </motion.div>
@@ -758,25 +758,25 @@ const Admin: React.FC = () => {
                 <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-1">Live Accuracy (last {liveWindow})</p>
+                      <p className="text-sm text-gray-600 mb-1">{t('liveAccuracy').replace('{count}', liveWindow)}</p>
                       <p className="text-2xl font-bold text-green-700">
                         {(modelStats.overall_accuracy * 100).toFixed(1)}%
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-1">Total Predictions</p>
+                      <p className="text-sm text-gray-600 mb-1">{t('totalPredictions')}</p>
                       <p className="text-2xl font-bold text-green-700">
                         {modelStats.total_predictions || 0}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-1">Best Model</p>
+                      <p className="text-sm text-gray-600 mb-1">{t('bestModel')}</p>
                       <p className="text-lg font-bold text-green-700 capitalize">
                         {modelStats.best_model?.replace('_', ' ') || 'N/A'}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-sm text-gray-600 mb-1">Avg Confidence</p>
+                      <p className="text-sm text-gray-600 mb-1">{t('avgConfidence')}</p>
                       <p className="text-2xl font-bold text-green-700">
                         {modelStats.average_confidence ? `${(modelStats.average_confidence * 100).toFixed(1)}%` : 'N/A'}
                       </p>
@@ -788,31 +788,31 @@ const Admin: React.FC = () => {
 
             {/* Quick Actions */}
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Actions</h2>
+              <h2 className="text-xl font-bold text-gray-900 mb-4">{t('quickActions')}</h2>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <button
                   onClick={() => { setSection('users'); setShowUserForm(true); }}
                   className="flex items-center gap-3 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors border border-blue-200"
                 >
-                  Add New User
+                  {t('addNewUser')}
                 </button>
                 <button
                   onClick={() => { setSection('alerts'); setShowAlertForm(true); }}
                   className="flex items-center gap-3 px-4 py-3 bg-orange-50 hover:bg-orange-100 text-orange-700 rounded-lg transition-colors border border-orange-200"
                 >
-                  Create Alert
+                  {t('createAlert')}
                 </button>
                 <button
                   onClick={() => { setSection('data'); setShowPredictionForm(true); }}
                   className="flex items-center gap-3 px-4 py-3 bg-cyan-50 hover:bg-cyan-100 text-cyan-700 rounded-lg transition-colors border border-cyan-200"
                 >
-                  Make Prediction
+                  {t('makePrediction')}
                 </button>
                 <button
                   onClick={() => window.location.reload()}
                   className="flex items-center gap-3 px-4 py-3 bg-green-50 hover:bg-green-100 text-green-700 rounded-lg transition-colors border border-green-200"
                 >
-                  Refresh Data
+                  {t('refreshData')}
                 </button>
               </div>
             </div>
@@ -823,14 +823,14 @@ const Admin: React.FC = () => {
           <section>
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-                <p className="text-gray-600 mt-1">Manage system users and permissions</p>
+                <h1 className="text-3xl font-bold text-gray-900">{t('userManagementTitle')}</h1>
+                <p className="text-gray-600 mt-1">{t('userManagementDesc')}</p>
               </div>
               <button
                 onClick={() => setShowUserForm(!showUserForm)}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
               >
-                {showUserForm ? 'Cancel' : 'Add User'}
+                {showUserForm ? t('cancel') : t('addNewUser')}
               </button>
             </div>
 
@@ -839,7 +839,7 @@ const Admin: React.FC = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search users by email or name..."
+                  placeholder={t('searchUsersPlaceholder')}
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition-all"
@@ -853,25 +853,25 @@ const Admin: React.FC = () => {
                 animate={{ opacity: 1, height: 'auto' }}
                 className="bg-white p-6 rounded-xl shadow-lg mb-6 border border-gray-100"
               >
-                <h3 className="font-bold text-lg mb-4 text-gray-900">Add New User</h3>
+                <h3 className="font-bold text-lg mb-4 text-gray-900">{t('addNewUser')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="email"
-                    placeholder="Email address"
+                    placeholder={t('emailAddress')}
                     value={newUser.email}
                     onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   />
                   <input
                     type="text"
-                    placeholder="Full Name"
+                    placeholder={t('fullName')}
                     value={newUser.full_name}
                     onChange={(e) => setNewUser({ ...newUser, full_name: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   />
                   <input
                     type="password"
-                    placeholder="Password"
+                    placeholder={t('password')}
                     value={newUser.password}
                     onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
@@ -881,16 +881,16 @@ const Admin: React.FC = () => {
                     onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all"
                   >
-                    <option value="community_member">Community Member</option>
-                    <option value="ngo_partner">NGO Partner</option>
-                    <option value="admin">Administrator</option>
+                    <option value="community_member">{t('roleCommunityMember')}</option>
+                    <option value="ngo_partner">{t('roleNgoPartner')}</option>
+                    <option value="admin">{t('roleAdministrator')}</option>
                   </select>
                 </div>
                 <button
                   onClick={handleAddUser}
                   className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
                 >
-                  Add User
+                  {t('addNewUser')}
                 </button>
               </motion.div>
             )}
@@ -900,19 +900,19 @@ const Admin: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-blue-50 to-blue-100">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Role</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Created</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colName')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colEmail')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colRole')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colStatus')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colCreated')}</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colActions')}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredUsers.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
-                          <p>No users found</p>
+                          <p>{t('noUsersFound')}</p>
                         </td>
                       </tr>
                     ) : (
@@ -931,7 +931,9 @@ const Admin: React.FC = () => {
                                 ? 'bg-purple-100 text-purple-800 border border-purple-200'
                                 : 'bg-blue-100 text-blue-800 border border-blue-200'
                               }`}>
-                              {user.role.replace('_', ' ')}
+                              {user.role === 'admin' ? t('roleAdministrator') :
+                                user.role === 'ngo_partner' ? t('roleNgoPartner') :
+                                  t('roleCommunityMember')}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -939,7 +941,7 @@ const Admin: React.FC = () => {
                               ? 'bg-green-100 text-green-800 border border-green-200'
                               : 'bg-gray-100 text-gray-700 border border-gray-300'
                               }`}>
-                              {user.is_active ? 'Active' : 'Inactive'}
+                              {user.is_active ? t('statusActive') : t('statusInactive')}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -950,7 +952,7 @@ const Admin: React.FC = () => {
                               onClick={() => handleDeleteUser(user.id)}
                               className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
                             >
-                              Delete
+                              {t('actionDelete')}
                             </button>
                           </td>
                         </tr>
@@ -967,14 +969,14 @@ const Admin: React.FC = () => {
           <section>
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Alerts Management</h1>
-                <p className="text-gray-600 mt-1">Monitor and manage flood alerts</p>
+                <h1 className="text-3xl font-bold text-gray-900">{t('alertsManagementTitle')}</h1>
+                <p className="text-gray-600 mt-1">{t('alertsManagementDesc')}</p>
               </div>
               <button
                 onClick={() => setShowAlertForm(!showAlertForm)}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white px-5 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
               >
-                {showAlertForm ? 'Cancel' : 'Create Alert'}
+                {showAlertForm ? t('cancel') : t('createAlert')}
               </button>
             </div>
 
@@ -1000,12 +1002,12 @@ const Admin: React.FC = () => {
                 animate={{ opacity: 1, height: 'auto' }}
                 className="bg-white p-6 rounded-xl shadow-lg mb-6 border border-gray-100"
               >
-                <h3 className="font-bold text-lg mb-4 text-gray-900">Create New Alert</h3>
+                <h3 className="font-bold text-lg mb-4 text-gray-900">{t('createNewAlert')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="number"
                     step="0.0001"
-                    placeholder="Latitude"
+                    placeholder={t('latitude')}
                     value={newAlert.latitude || ''}
                     onChange={(e) => setNewAlert({ ...newAlert, latitude: e.target.value ? parseFloat(e.target.value) : 0 })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
@@ -1013,7 +1015,7 @@ const Admin: React.FC = () => {
                   <input
                     type="number"
                     step="0.0001"
-                    placeholder="Longitude"
+                    placeholder={t('longitude')}
                     value={newAlert.longitude || ''}
                     onChange={(e) => setNewAlert({ ...newAlert, longitude: e.target.value ? parseFloat(e.target.value) : 0 })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
@@ -1023,14 +1025,14 @@ const Admin: React.FC = () => {
                     onChange={(e) => setNewAlert({ ...newAlert, severity: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
                   >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="critical">Critical</option>
+                    <option value="low">{t('lowLabel')}</option>
+                    <option value="medium">{t('mediumLabel')}</option>
+                    <option value="high">{t('highLabel')}</option>
+                    <option value="critical">{t('criticalLabel')}</option>
                   </select>
                   <input
                     type="text"
-                    placeholder="Alert Message"
+                    placeholder={t('alertMessage')}
                     value={newAlert.message}
                     onChange={(e) => setNewAlert({ ...newAlert, message: e.target.value })}
                     className="border-2 border-gray-200 rounded-lg px-4 py-2.5 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all"
@@ -1040,7 +1042,7 @@ const Admin: React.FC = () => {
                   onClick={handleAddAlert}
                   className="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-6 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
                 >
-                  Create Alert
+                  {t('createAlert')}
                 </button>
               </motion.div>
             )}
@@ -1050,12 +1052,12 @@ const Admin: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-orange-50 to-red-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Location</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Severity</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Message</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Created</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colLocation')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colSeverity')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colMessage')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colStatus')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colCreated')}</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colActions')}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -1083,7 +1085,7 @@ const Admin: React.FC = () => {
                             ? 'bg-green-100 text-green-800 border border-green-200'
                             : 'bg-gray-100 text-gray-700 border border-gray-300'
                             }`}>
-                            {alert.is_active ? 'Active' : 'Inactive'}
+                            {alert.is_active ? t('statusActive') : t('statusInactive')}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -1094,7 +1096,7 @@ const Admin: React.FC = () => {
                             onClick={() => handleDeleteAlert(alert.id)}
                             className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
                           >
-                            Delete
+                            {t('actionDelete')}
                           </button>
                         </td>
                       </tr>
@@ -1110,14 +1112,14 @@ const Admin: React.FC = () => {
           <section>
             <div className="flex justify-between items-center mb-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Prediction Data Management</h1>
-                <p className="text-gray-600 mt-1">View, manage, and create AI-generated flood predictions</p>
+                <h1 className="text-3xl font-bold text-gray-900">{t('predictionDataTitle')}</h1>
+                <p className="text-gray-600 mt-1">{t('predictionDataDesc')}</p>
               </div>
               <button
                 onClick={() => setShowPredictionForm(!showPredictionForm)}
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-white px-5 py-2.5 rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
               >
-                {showPredictionForm ? 'Cancel' : 'Make Prediction'}
+                {showPredictionForm ? t('cancel') : t('makePrediction')}
               </button>
             </div>
 
@@ -1129,14 +1131,14 @@ const Admin: React.FC = () => {
                 className="bg-white/95 backdrop-blur p-6 rounded-xl shadow-lg mb-6 border border-cyan-200"
               >
                 <div className="mb-6">
-                  <h3 className="font-bold text-xl text-gray-900">AI Flood Risk Prediction</h3>
-                  <p className="text-sm text-gray-600 mt-1">Enter coordinates to generate flood risk assessment</p>
+                  <h3 className="font-bold text-xl text-gray-900">{t('aiFloodRiskPrediction')}</h3>
+                  <p className="text-sm text-gray-600 mt-1">{t('aiFloodRiskPredictionDesc')}</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Latitude
+                      {t('latitude')}
                     </label>
                     <input
                       type="number"
@@ -1149,7 +1151,7 @@ const Admin: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Longitude
+                      {t('longitude')}
                     </label>
                     <input
                       type="number"
@@ -1162,7 +1164,7 @@ const Admin: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Model Type
+                      {t('modelType')}
                     </label>
                     <select
                       value={newPrediction.model_type}
@@ -1178,7 +1180,7 @@ const Admin: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Lead Time (Hours)
+                      {t('leadTimeHours')}
                     </label>
                     <input
                       type="number"
@@ -1194,11 +1196,11 @@ const Admin: React.FC = () => {
                 <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-4">
                   <div className="flex items-start gap-2">
                     <div className="text-sm text-blue-900">
-                      <p className="font-semibold mb-1">How it works:</p>
+                      <p className="font-semibold mb-1">{t('howItWorks')}</p>
                       <ul className="list-disc list-inside space-y-1 text-blue-800">
-                        <li>Our AI model analyzes historical data, rainfall patterns, and terrain</li>
-                        <li>Prediction takes 2-5 seconds to process</li>
-                        <li>Results include risk level (low/medium/high/critical) and confidence score</li>
+                        <li>{t('howItWorks1')}</li>
+                        <li>{t('howItWorks2')}</li>
+                        <li>{t('howItWorks3')}</li>
                       </ul>
                     </div>
                   </div>
@@ -1212,11 +1214,11 @@ const Admin: React.FC = () => {
                   >
                     {predictionLoading ? (
                       <>
-                        Analyzing...
+                        {t('analyzing')}
                       </>
                     ) : (
                       <>
-                        Generate Prediction
+                        {t('generatePrediction')}
                       </>
                     )}
                   </button>
@@ -1224,7 +1226,7 @@ const Admin: React.FC = () => {
                     onClick={() => setNewPrediction({ latitude: 6.877, longitude: 31.307, model_type: 'ensemble', lead_time_hours: 48 })}
                     className="px-4 py-3 bg-white hover:bg-gray-50 text-gray-700 rounded-lg border-2 border-gray-300 transition-colors font-medium"
                   >
-                    Reset
+                    {t('reset')}
                   </button>
                 </div>
               </motion.div>
@@ -1251,12 +1253,12 @@ const Admin: React.FC = () => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-cyan-50 to-blue-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Location</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Risk Level</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Flood Probability</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Confidence</th>
-                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Date</th>
-                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colLocation')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colRiskLevel')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colFloodProbability')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colConfidence')}</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colDate')}</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">{t('colActions')}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
@@ -1269,7 +1271,7 @@ const Admin: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            title={pred.risk_level === 'uncertain' && pred.flood_probability >= 0.6 ? "Downgraded from High/Critical due to low confidence" : ""}
+                            title={pred.risk_level === 'uncertain' && pred.flood_probability >= 0.6 ? t('downgradedRisk') : ""}
                             className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${pred.risk_level === 'critical' ? 'bg-red-200 text-red-900 border border-red-300' :
                               pred.risk_level === 'high' ? 'bg-orange-200 text-orange-900 border border-orange-300' :
                                 pred.risk_level === 'medium' ? 'bg-yellow-200 text-yellow-900 border border-yellow-300' :
@@ -1290,8 +1292,8 @@ const Admin: React.FC = () => {
                               {pred.confidence_score ? Math.round(pred.confidence_score * 100) + '%' : '-'}
                             </div>
                             {pred.confidence_score < 0.6 && (
-                              <span className="ml-2 text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title="Low confidence (<60%) downgrades risk to Uncertain">
-                                Low
+                              <span className="ml-2 text-xs text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200" title={t('lowConfidenceWarning')}>
+                                {t('lowLabel')}
                               </span>
                             )}
                           </div>
@@ -1304,7 +1306,7 @@ const Admin: React.FC = () => {
                             onClick={() => handleDeletePrediction(pred.id)}
                             className="inline-flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
                           >
-                            Delete
+                            {t('actionDelete')}
                           </button>
                         </td>
                       </tr>

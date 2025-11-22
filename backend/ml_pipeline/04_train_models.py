@@ -27,7 +27,8 @@ import json
 import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
-from imblearn.over_sampling import SMOTE
+# from imblearn.over_sampling import SMOTE # Removed due to compatibility issues
+from sklearn.utils import resample
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -53,31 +54,35 @@ MODELS_DIR.mkdir(exist_ok=True)
 TRAIN_OPTIONAL_MODELS = True  # Set to False to train only primary models
 
 # Deep Learning Model Architectures
+
+
 class TCNModel(nn.Module):
     """Temporal Convolutional Network for time series flood prediction"""
+
     def __init__(self, input_dim, num_channels=[64, 32, 16], kernel_size=3, dropout=0.2):
         super(TCNModel, self).__init__()
         self.tcn_layers = nn.ModuleList()
         in_channels = 1
-        
+
         for out_channels in num_channels:
             self.tcn_layers.append(nn.Sequential(
-                nn.Conv1d(in_channels, out_channels, kernel_size, padding=kernel_size//2),
+                nn.Conv1d(in_channels, out_channels,
+                          kernel_size, padding=kernel_size//2),
                 nn.BatchNorm1d(out_channels),
                 nn.ReLU(),
                 nn.Dropout(dropout)
             ))
             in_channels = out_channels
-        
+
         # Calculate output size dynamically
         with torch.no_grad():
             dummy_input = torch.randn(1, 1, input_dim)
             for layer in self.tcn_layers:
                 dummy_input = layer(dummy_input)
             flattened_size = dummy_input.flatten(1).shape[1]
-        
+
         self.fc = nn.Linear(flattened_size, 2)
-    
+
     def forward(self, x):
         # x shape: (batch, features)
         x = x.unsqueeze(1)  # (batch, 1, features)
@@ -86,8 +91,10 @@ class TCNModel(nn.Module):
         x = x.flatten(1)
         return self.fc(x)
 
+
 class LSTMModel(nn.Module):
     """LSTM Network for sequential flood forecasting"""
+
     def __init__(self, input_dim, hidden_dim=64, num_layers=2, dropout=0.2):
         super(LSTMModel, self).__init__()
         self.lstm = nn.LSTM(
@@ -95,12 +102,13 @@ class LSTMModel(nn.Module):
             batch_first=True, dropout=dropout if num_layers > 1 else 0
         )
         self.fc = nn.Linear(hidden_dim, 2)
-    
+
     def forward(self, x):
         # x shape: (batch, features)
         x = x.unsqueeze(1)  # (batch, 1, features) - single time step
         lstm_out, _ = self.lstm(x)
         return self.fc(lstm_out[:, -1, :])
+
 
 print("=" * 80)
 print("STEP 4: TRAIN MODELS")
@@ -138,7 +146,8 @@ else:
 
 print(f"  Using target column: '{target_col}'")
 
-exclude_cols = ['event_id', 'flood', 'is_flood_event', 'start_date', 'end_date', 'region']
+exclude_cols = ['event_id', 'flood', 'is_flood_event',
+                'start_date', 'end_date', 'region']
 
 # Get feature columns (exclude any metadata/target columns)
 feature_cols = [col for col in df.columns if col not in exclude_cols]
@@ -163,19 +172,48 @@ X_train, X_test, y_train, y_test = train_test_split(
     stratify=y
 )
 
-print(f" Training: {len(X_train)} samples | Flood: {y_train.sum()} ({y_train.mean()*100:.1f}%)")
-print(f" Test: {len(X_test)} samples | Flood: {y_test.sum()} ({y_test.mean()*100:.1f}%)")
+print(
+    f" Training: {len(X_train)} samples | Flood: {y_train.sum()} ({y_train.mean()*100:.1f}%)")
+print(
+    f" Test: {len(X_test)} samples | Flood: {y_test.sum()} ({y_test.mean()*100:.1f}%)")
 
-# Apply SMOTE if class imbalance
+# Apply SMOTE if class imbalance (Manual implementation to avoid imblearn issues)
 train_balance = y_train.mean()
 if train_balance < 0.4 or train_balance > 0.6:
-    print(f"\n   Applying SMOTE (class imbalance: {train_balance:.1%})...")
-    smote = SMOTE(random_state=42, k_neighbors=min(3, y_train.sum() - 1))
-    X_train_balanced, y_train_balanced = smote.fit_resample(X_train, y_train)
+    print(
+        f"\n   Applying Oversampling (class imbalance: {train_balance:.1%})...")
+
+    # Combine X and y for resampling
+    train_data = pd.DataFrame(X_train, columns=feature_cols)
+    train_data['target'] = y_train
+
+    # Separate majority and minority classes
+    if train_balance < 0.5:
+        df_majority = train_data[train_data.target == 0]
+        df_minority = train_data[train_data.target == 1]
+    else:
+        df_majority = train_data[train_data.target == 1]
+        df_minority = train_data[train_data.target == 0]
+
+    # Upsample minority class
+    df_minority_upsampled = resample(df_minority,
+                                     replace=True,     # sample with replacement
+                                     # to match majority class
+                                     n_samples=len(df_majority),
+                                     random_state=42)  # reproducible results
+
+    # Combine majority class with upsampled minority class
+    df_upsampled = pd.concat([df_majority, df_minority_upsampled])
+
+    X_train_balanced = df_upsampled[feature_cols].values
+    y_train_balanced = df_upsampled['target'].values
+
     print(f"    Balanced: {len(X_train_balanced)} samples")
-    print(f"      Flood: {y_train_balanced.sum()} | Non-flood: {len(y_train_balanced) - y_train_balanced.sum()}")
+    print(
+        f"      Flood: {sum(y_train_balanced == 1)} | Non-flood: {sum(y_train_balanced == 0)}")
 else:
-    print(f"    Classes balanced ({train_balance:.1%}), no SMOTE needed")
+    print(
+        f"    Classes balanced ({train_balance:.1%}), no oversampling needed")
     X_train_balanced = X_train
     y_train_balanced = y_train
 
@@ -198,12 +236,12 @@ rf_params = {
     'max_depth': 12,         # Slightly deeper for complex patterns
     'min_samples_split': 8,  # Balanced regularization
     'min_samples_leaf': 4,   # Allow finer-grained decisions
-    'max_features': 'sqrt',  
+    'max_features': 'sqrt',
     'class_weight': 'balanced',
     'random_state': 42,
     'n_jobs': -1,
     'bootstrap': True,
-    'oob_score': True,       
+    'oob_score': True,
     'criterion': 'gini',
     'min_impurity_decrease': 0.005,  # Less aggressive pruning
     'max_samples': 0.8,      # Use more data per tree
@@ -228,51 +266,54 @@ print(f"       Trained in {train_time:.2f}s")
 
 # [PRIMARY 2/2] TCN (Temporal Convolutional Network) with Few-Shot Learning
 if TORCH_AVAILABLE:
-    print("\n   [PRIMARY 2/2] Training TCN with Few-Shot Learning (Data Augmentation)...")
-    
+    print(
+        "\n   [PRIMARY 2/2] Training TCN with Few-Shot Learning (Data Augmentation)...")
+
     # Ensure data is numeric (convert object dtypes to float32)
     X_train_numeric = X_train_balanced.astype(np.float32)
     X_test_numeric = X_test.astype(np.float32)
-    
+
     # FEW-SHOT LEARNING: Data Augmentation for small datasets
     print("      Applying few-shot learning techniques...")
-    
+
     # 1. Add Gaussian noise (creates variations of existing samples)
     noise_factor = 0.05  # 5% noise
     X_augmented = []
     y_augmented = []
-    
+
     # Original data
     X_augmented.append(X_train_numeric)
     y_augmented.append(y_train_balanced)
-    
+
     # Augmentation 1: Add small random noise
     noise1 = np.random.normal(0, noise_factor, X_train_numeric.shape)
     X_noise1 = X_train_numeric + noise1 * np.abs(X_train_numeric)
     X_augmented.append(X_noise1.astype(np.float32))
     y_augmented.append(y_train_balanced)
-    
+
     # Augmentation 2: Add different noise pattern
     noise2 = np.random.normal(0, noise_factor * 0.5, X_train_numeric.shape)
     X_noise2 = X_train_numeric + noise2 * np.abs(X_train_numeric)
     X_augmented.append(X_noise2.astype(np.float32))
     y_augmented.append(y_train_balanced)
-    
+
     # Combine augmented data
     X_train_aug = np.vstack(X_augmented).astype(np.float32)
     y_train_aug = np.hstack(y_augmented)
-    
-    print(f"      Original samples: {len(X_train_numeric)} -> Augmented: {len(X_train_aug)}")
-    
+
+    print(
+        f"      Original samples: {len(X_train_numeric)} -> Augmented: {len(X_train_aug)}")
+
     # Prepare PyTorch datasets with augmented data
     X_train_tensor = torch.FloatTensor(X_train_aug)
     y_train_tensor = torch.LongTensor(y_train_aug)
     X_test_tensor = torch.FloatTensor(X_test_numeric)
     y_test_tensor = torch.LongTensor(y_test)
-    
+
     train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)  # Smaller batch for few-shot
-    
+    # Smaller batch for few-shot
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+
     # Initialize model with SIMPLER architecture for few-shot learning
     tcn_params = {
         'input_dim': X_train.shape[1],  # 16 features
@@ -281,26 +322,29 @@ if TORCH_AVAILABLE:
         'dropout': 0.5                  # Very strong regularization for few-shot
     }
     tcn_model = TCNModel(**tcn_params)
-    
+
     print(
         f"      TCN Parameters: input={X_train.shape[1]}, "
         f"channels={tcn_params['num_channels']}, "
         f"total_params={sum(p.numel() for p in tcn_model.parameters())}"
     )
-    
+
     # Few-shot learning configuration
-    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)  # Label smoothing for few-shot
-    optimizer = optim.Adam(tcn_model.parameters(), lr=0.0005, weight_decay=1e-3)  # Lower LR, higher reg
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=10)
+    # Label smoothing for few-shot
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+    optimizer = optim.Adam(tcn_model.parameters(), lr=0.0005,
+                           weight_decay=1e-3)  # Lower LR, higher reg
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.5, patience=10)
     epochs = 100  # More epochs with early stopping
-    
+
     # Train with early stopping
     start_time = datetime.now()
     tcn_model.train()
     best_loss = float('inf')
     patience_counter = 0
     patience = 10
-    
+
     for epoch in range(epochs):
         epoch_loss = 0
         for batch_X, batch_y in train_loader:
@@ -310,26 +354,27 @@ if TORCH_AVAILABLE:
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
-        
+
         avg_loss = epoch_loss / len(train_loader)
         scheduler.step(avg_loss)
-        
+
         # Early stopping
         if avg_loss < best_loss:
             best_loss = avg_loss
             patience_counter = 0
         else:
             patience_counter += 1
-        
+
         if (epoch + 1) % 10 == 0:
-            print(f"        Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Best: {best_loss:.4f}")
-        
+            print(
+                f"        Epoch {epoch+1}/{epochs}, Loss: {avg_loss:.4f}, Best: {best_loss:.4f}")
+
         if patience_counter >= patience:
             print(f"        Early stopping at epoch {epoch+1}")
             break
-    
+
     train_time = (datetime.now() - start_time).total_seconds()
-    
+
     models['tcn'] = tcn_model
     training_log['tcn'] = {
         'model_type': 'TCNModel',
@@ -348,15 +393,15 @@ else:
 
 if TRAIN_OPTIONAL_MODELS:
     print("\n   Training optional models...")
-    
+
     # [OPTIONAL 1/2] LSTM for Forecasting
     if TORCH_AVAILABLE:
         print("\n   [OPTIONAL 1/2] Training LSTM (Forecasting)...")
-        
+
         # Ensure data is numeric (use same numeric data as TCN)
         X_train_numeric = X_train_balanced.astype(np.float32)
         X_test_numeric = X_test.astype(np.float32)
-        
+
         # Initialize with CORRECT input_dim (16 features, not 19)
         lstm_params = {
             'input_dim': X_train.shape[1],  # This will be 16
@@ -365,19 +410,19 @@ if TRAIN_OPTIONAL_MODELS:
             'dropout': 0.2
         }
         lstm_model = LSTMModel(**lstm_params)
-        
+
         # Prepare PyTorch datasets
         X_train_tensor = torch.FloatTensor(X_train_numeric)
         y_train_tensor = torch.LongTensor(y_train_balanced)
-        
+
         train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
         train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-        
+
         # Training configuration
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(lstm_model.parameters(), lr=0.001)
         epochs = 50
-        
+
         # Train
         start_time = datetime.now()
         lstm_model.train()
@@ -390,12 +435,13 @@ if TRAIN_OPTIONAL_MODELS:
                 loss.backward()
                 optimizer.step()
                 epoch_loss += loss.item()
-            
+
             if (epoch + 1) % 10 == 0:
-                print(f"        Epoch {epoch+1}/{epochs}, Loss: {epoch_loss/len(train_loader):.4f}")
-        
+                print(
+                    f"        Epoch {epoch+1}/{epochs}, Loss: {epoch_loss/len(train_loader):.4f}")
+
         train_time = (datetime.now() - start_time).total_seconds()
-        
+
         models['lstm'] = lstm_model
         training_log['lstm'] = {
             'model_type': 'LSTMModel',
@@ -410,9 +456,10 @@ if TRAIN_OPTIONAL_MODELS:
         print(f"       Trained in {train_time:.2f}s")
     else:
         print("\n   [OPTIONAL 1/2] LSTM skipped (PyTorch not available)")
-    
+
     # [OPTIONAL 2/2] Gradient Boosting
-    print("\n   [OPTIONAL 2/2] Training Gradient Boosting (OPTIMIZED FOR 86%+ ACCURACY)...")
+    print(
+        "\n   [OPTIONAL 2/2] Training Gradient Boosting (OPTIMIZED FOR 86%+ ACCURACY)...")
     # Optimized parameters for high accuracy
     gb_params = {
         'n_estimators': 200,      # Increased for better learning
@@ -421,19 +468,19 @@ if TRAIN_OPTIONAL_MODELS:
         'min_samples_leaf': 4,    # Allow finer decisions
         'learning_rate': 0.08,    # Faster learning
         'subsample': 0.8,         # More data per tree
-        'max_features': 'sqrt',   
+        'max_features': 'sqrt',
         'random_state': 42,
-        'validation_fraction': 0.15,  
+        'validation_fraction': 0.15,
         'n_iter_no_change': 20,       # More patience for convergence
         'tol': 1e-4,                  # Stricter tolerance
         'ccp_alpha': 0.0003          # Light pruning
     }
-    
+
     gb = GradientBoostingClassifier(**gb_params)
     start_time = datetime.now()
     gb.fit(X_train_balanced, y_train_balanced)
     train_time = (datetime.now() - start_time).total_seconds()
-    
+
     models['gradient_boosting'] = gb
     training_log['gradient_boosting'] = {
         'model_type': 'GradientBoostingClassifier',

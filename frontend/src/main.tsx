@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { LanguageProvider } from './i18n/LanguageContext';
+import { ThemeProvider } from './context/ThemeContext';
 import './styles/index.css';
 
 type AppEnv = Record<string, string | undefined>;
@@ -38,7 +39,9 @@ if (typeof window !== 'undefined') {
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <LanguageProvider>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </LanguageProvider>
   </React.StrictMode>
 );
