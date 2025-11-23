@@ -33,7 +33,7 @@ services:
     value: ${sar-detection.PUBLIC_URL}
   - key: CORS_ORIGINS
     scope: RUN_AND_BUILD_TIME
-    value: "*"
+    value: https://floodsense-app-6a3uy.ondigitalocean.app,https://floodsense.org,http://localhost:3000,http://localhost:5173,http://localhost:80,http://localhost
 - name: frontend
   github:
     branch: master

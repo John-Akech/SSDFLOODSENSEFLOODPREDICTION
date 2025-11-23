@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     def parse_cors_origins(cls, v: Any) -> list[str]:
         """Parse CORS_ORIGINS from string or list"""
         if isinstance(v, str):
+            # Handle wildcard
+            if v.strip() == "*":
+                return ["*"]
             # Handle comma-separated string from environment variable
             if not v or v.strip() == "":
                 return []

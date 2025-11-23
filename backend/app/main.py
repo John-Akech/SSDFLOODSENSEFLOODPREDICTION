@@ -125,20 +125,25 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 # CORS must be LAST (most inner layer) to handle preflight OPTIONS requests
 # Ensure frontend, admin dashboard, and all clients can communicate
+cors_origins = settings.CORS_ORIGINS if hasattr(settings, "CORS_ORIGINS") else [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://localhost:80",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:80",
+    "http://localhost",
+    "https://floodsense.org",
+    "https://www.floodsense.org"
+]
+
+# Handle wildcard CORS
+allow_origins = ["*"] if "*" in cors_origins else cors_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS if hasattr(settings, "CORS_ORIGINS") else [
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://localhost:80",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:80",
-        "http://localhost",
-        "https://floodsense.org",
-        "https://www.floodsense.org"
-    ],
-    allow_credentials=True,
+    allow_origins=allow_origins,
+    allow_credentials=False if "*" in cors_origins else True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     max_age=3600
