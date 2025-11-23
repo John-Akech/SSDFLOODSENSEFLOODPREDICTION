@@ -37,14 +37,23 @@ try:
     service_account_key_env = os.getenv('GEE_SERVICE_ACCOUNT_KEY', '')
     service_account_file = '/app/gee-service-account-key.json'
 
+    # Debug: Log environment variable info
+    logger.info(f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY present: {bool(service_account_key_env)}")
+    if service_account_key_env:
+        logger.info(f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY length: {len(service_account_key_env)}")
+        logger.info(f"[DEBUG] Starts with '{{': {service_account_key_env.strip().startswith('{')}")
+        logger.info(f"[DEBUG] First 50 chars: {service_account_key_env[:50]}")
+
     # Check if GEE_SERVICE_ACCOUNT_KEY contains JSON content (production)
-    if service_account_key_env and (service_account_key_env.startswith('{') or len(service_account_key_env) > 200):
-        logger.info("[INFO] Writing service account key from environment variable")
+    if service_account_key_env and (service_account_key_env.strip().startswith('{') or len(service_account_key_env) > 200):
+        logger.info(
+            "[INFO] Writing service account key from environment variable")
         # Write the JSON content to file
         with open(service_account_file, 'w') as f:
             f.write(service_account_key_env)
-        logger.info(f"[INFO] Service account key written to: {service_account_file}")
-    
+        logger.info(
+            f"[INFO] Service account key written to: {service_account_file}")
+
     # Check if service account key file exists
     if os.path.exists(service_account_file):
         logger.info(
