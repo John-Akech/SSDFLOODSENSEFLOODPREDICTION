@@ -25,6 +25,7 @@ export default [
             globals: {
                 ...globals.browser,
                 ...globals.node,
+                ...globals.jest,
                 VITE_API_URL: "readonly",
                 VITE_VAPID_PUBLIC_KEY: "readonly",
             },
