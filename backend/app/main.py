@@ -90,12 +90,12 @@ app = FastAPI(
     description="Community-Based Predictive Flood Forecasting and Early Warning System for South Sudan",
     version="2.0.0",
     lifespan=lifespan,
+    root_path="/api/v1",  # This makes OpenAPI docs show correct external URLs
     # Hide docs in production for security
-    docs_url="/api/v1/docs" if os.getenv(
+    docs_url="/docs" if os.getenv(
         "ENVIRONMENT") != "production" else None,
-    redoc_url="/api/v1/redoc" if os.getenv(
-        "ENVIRONMENT") != "production" else None,
-    openapi_url="/api/v1/openapi.json"
+    redoc_url="/redoc" if os.getenv(
+        "ENVIRONMENT") != "production" else None
 )
 
 # Add middleware layers
@@ -154,11 +154,13 @@ app.add_middleware(
 
 # Include API routes
 # Order matters - more specific routes should be included first
-app.include_router(admin_router, prefix="/api/v1")
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(audit_router, prefix="/api/v1")  # Audit logs
-app.include_router(router, prefix="/api/v1")
-app.include_router(crud_router, prefix="/api/v1")  # CRUD routes last
+# NOTE: Routes are served at root level by the backend, but DigitalOcean routing
+# adds /api/v1 prefix externally. Docs are configured to show the external paths.
+app.include_router(admin_router)
+app.include_router(auth_router)
+app.include_router(audit_router)  # Audit logs
+app.include_router(router)
+app.include_router(crud_router)  # CRUD routes last
 
 
 @app.get("/")
