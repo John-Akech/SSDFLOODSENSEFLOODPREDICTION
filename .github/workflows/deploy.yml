@@ -22,7 +22,7 @@ jobs:
 
       - name: Build and push backend image
         run: |
-          docker build -t ${{ secrets.DO_REGISTRY }}/floodsense-backend:${{ github.sha }} -f backend/Dockerfile ./backend
+          docker build -t ${{ secrets.DO_REGISTRY }}/floodsense-backend:${{ github.sha }} -f backend/Dockerfile .
           docker push ${{ secrets.DO_REGISTRY }}/floodsense-backend:${{ github.sha }}
 
       - name: Build and push sar-detection image
