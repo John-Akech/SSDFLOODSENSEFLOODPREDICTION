@@ -40,7 +40,7 @@ services:
     deploy_on_push: true
     repo: John-Akech/SSDFLOODSENSEFLOODPREDICTION
   dockerfile_path: frontend/Dockerfile
-  source_dir: /
+  source_dir: frontend
   http_port: 80
   routes:
   - path: /
@@ -62,7 +62,7 @@ services:
     deploy_on_push: true
     repo: John-Akech/SSDFLOODSENSEFLOODPREDICTION
   dockerfile_path: ee-fastapi/Dockerfile
-  source_dir: /
+  source_dir: ee-fastapi
   http_port: 8080
   routes:
   - path: /sar

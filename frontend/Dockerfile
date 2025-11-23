@@ -10,10 +10,10 @@ ENV VITE_API_URL=${VITE_API_URL}
 ENV VITE_SAR_URL=${VITE_SAR_URL}
 ENV VITE_VAPID_PUBLIC_KEY=${VITE_VAPID_PUBLIC_KEY}
 
-COPY frontend/package*.json ./
+COPY package*.json ./
 RUN npm ci
 
-COPY frontend/ .
+COPY . .
 RUN npm run build
 
 FROM nginx:alpine
@@ -22,7 +22,7 @@ FROM nginx:alpine
 RUN apk add --no-cache curl
 
 COPY --from=builder /app/dist /usr/share/nginx/html
-COPY frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 
