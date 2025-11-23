@@ -1,9 +1,15 @@
 name: floodsense
 services:
 - name: backend
+  github:
+    branch: master
+    deploy_on_push: true
+    repo: John-Akech/SSDFLOODSENSEFLOODPREDICTION
   dockerfile_path: backend/Dockerfile
   source_dir: /
   http_port: 8000
+  routes:
+  - path: /api/v1
   instance_count: 1
   instance_size_slug: basic-xxs
   envs:
@@ -29,9 +35,15 @@ services:
     scope: RUN_AND_BUILD_TIME
     value: "*"
 - name: frontend
+  github:
+    branch: master
+    deploy_on_push: true
+    repo: John-Akech/SSDFLOODSENSEFLOODPREDICTION
   dockerfile_path: Dockerfile
   source_dir: /frontend
   http_port: 80
+  routes:
+  - path: /
   instance_count: 1
   instance_size_slug: basic-xxs
   envs:
@@ -45,9 +57,15 @@ services:
     scope: BUILD_TIME
     value: ${backend.VAPID_PUBLIC_KEY}
 - name: sar-detection
+  github:
+    branch: master
+    deploy_on_push: true
+    repo: John-Akech/SSDFLOODSENSEFLOODPREDICTION
   dockerfile_path: Dockerfile
   source_dir: /ee-fastapi
   http_port: 8080
+  routes:
+  - path: /sar
   instance_count: 1
   instance_size_slug: basic-xxs
   envs:
