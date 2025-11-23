@@ -14,7 +14,7 @@
 
 ---
 
-## 📖 Overview
+## Overview
 
 FloodSense is a comprehensive flood prediction and early warning system designed to address the critical challenge of flood disasters in South Sudan. By integrating satellite remote sensing (Sentinel-1, CHIRPS, MODIS), machine learning algorithms, and real-time alert mechanisms, it provides accurate flood predictions and timely warnings to at-risk communities.
 
@@ -29,7 +29,7 @@ FloodSense is a comprehensive flood prediction and early warning system designed
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 **[View High-Resolution Architecture Diagram](https://drive.google.com/file/d/1UZ5XmmUprbz7Nw3_yiG9reD3pUTrztH4/view?usp=sharing)**
 
@@ -42,9 +42,8 @@ FloodSense implements a modern microservices architecture:
 
 ---
 
-<<<<<<< HEAD
-## 🚀 Getting Started
-=======
+## Getting Started
+
 ## System Architecture
 
 **System Architecture Diagram:** [View High-Resolution Diagram](https://drive.google.com/file/d/1UZ5XmmUprbz7Nw3_yiG9reD3pUTrztH4/view?usp=sharing)
@@ -302,7 +301,7 @@ python ml_pipeline/run_pipeline.py
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 SSDFLOODSENSEFLOODPREDICTION/
@@ -322,7 +321,7 @@ SSDFLOODSENSEFLOODPREDICTION/
 
 ---
 
-## 🧪 Testing & Validation
+## Testing & Validation
 
 *   **Unit/Integration Tests:** `pytest` (100% pass rate).
 *   **Frontend Tests:** `npm test` (Vitest/Jest).
@@ -335,7 +334,7 @@ docker-compose exec backend pytest
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome!
 1.  Fork the repository.
@@ -346,7 +345,7 @@ Contributions are welcome!
 
 ---
 
-## 📄 License & Contact
+## License & Contact
 
 **License:** Academic / MIT. See [LICENSE](LICENSE) for details.
 
