@@ -10,11 +10,13 @@ sys.path.insert(0, os.path.join(
 try:
     from core.database import SessionLocal, init_db
     from models.database_models import Alert, Prediction, FloodEvent, User, Location, Shelter
+    from core.security import get_password_hash
 except ImportError:
     # Try adding the parent directory if the above fails (e.g. running from root)
     sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
     from app.core.database import SessionLocal, init_db
     from app.models.database_models import Alert, Prediction, FloodEvent, User, Location, Shelter
+    from app.core.security import get_password_hash
 
 
 def seed_data():
@@ -31,15 +33,18 @@ def seed_data():
             User.email == "admin@floodsense.org").first()
         if not user:
             print("Creating admin user...")
+            # Default password: admin123 (CHANGE THIS IN PRODUCTION!)
             user = User(
                 email="admin@floodsense.org",
-                hashed_password="dummy_hash",  # In a real scenario, use a proper hash
+                hashed_password=get_password_hash("admin123"),
                 full_name="System Admin",
-                role="admin"
+                role="admin",
+                is_active=True
             )
             db.add(user)
             db.commit()
             db.refresh(user)
+            print("✓ Admin user created: admin@floodsense.org / admin123")
 
         # Seed Locations (Real South Sudan Data)
         if db.query(Location).count() == 0:

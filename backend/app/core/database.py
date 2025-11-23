@@ -78,6 +78,40 @@ def init_db():
     from models import database_models
     Base.metadata.create_all(bind=engine)
 
+    # Create default admin user if it doesn't exist
+    create_default_admin()
+
+
+def create_default_admin():
+    """Create a default admin user if none exists"""
+    try:
+        from models.database_models import User
+        from core.security import get_password_hash
+
+        db = SessionLocal()
+        try:
+            # Check if admin user exists
+            admin_exists = db.query(User).filter(
+                User.email == "admin@floodsense.org").first()
+            if not admin_exists:
+                admin_user = User(
+                    email="admin@floodsense.org",
+                    hashed_password=get_password_hash("admin123"),
+                    full_name="System Administrator",
+                    role="admin",
+                    is_active=True
+                )
+                db.add(admin_user)
+                db.commit()
+                print(
+                    "[OK] Default admin user created: admin@floodsense.org / admin123")
+            else:
+                print("[INFO] Admin user already exists")
+        finally:
+            db.close()
+    except Exception as e:
+        print(f"[WARNING] Could not create default admin user: {e}")
+
 
 # SQLite performance pragmas for development
 if is_sqlite:
