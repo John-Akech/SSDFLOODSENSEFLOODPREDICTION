@@ -34,10 +34,18 @@ gee_error = None
 # Try to initialize Earth Engine on startup
 try:
     project_id = os.getenv('GEE_PROJECT_ID', 'ace-connection-474712-p1')
-    service_account_file = os.getenv(
-        'GEE_SERVICE_ACCOUNT_KEY', '/app/gee-service-account-key.json')
+    service_account_key_env = os.getenv('GEE_SERVICE_ACCOUNT_KEY', '')
+    service_account_file = '/app/gee-service-account-key.json'
 
-    # Check if service account key exists
+    # Check if GEE_SERVICE_ACCOUNT_KEY contains JSON content (production)
+    if service_account_key_env and (service_account_key_env.startswith('{') or len(service_account_key_env) > 200):
+        logger.info("[INFO] Writing service account key from environment variable")
+        # Write the JSON content to file
+        with open(service_account_file, 'w') as f:
+            f.write(service_account_key_env)
+        logger.info(f"[INFO] Service account key written to: {service_account_file}")
+    
+    # Check if service account key file exists
     if os.path.exists(service_account_file):
         logger.info(
             f"[INFO] Using service account authentication: {service_account_file}")
