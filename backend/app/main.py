@@ -151,11 +151,12 @@ app.add_middleware(
 
 # Include API routes
 # Order matters - more specific routes should be included first
-app.include_router(admin_router, prefix="/api/v1")
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(audit_router, prefix="/api/v1")  # Audit logs
-app.include_router(router, prefix="/api/v1")
-app.include_router(crud_router, prefix="/api/v1")  # CRUD routes last
+# Note: The /api/v1 prefix is handled by DigitalOcean ingress routing
+app.include_router(admin_router)
+app.include_router(auth_router)
+app.include_router(audit_router)  # Audit logs
+app.include_router(router)
+app.include_router(crud_router)  # CRUD routes last
 
 
 @app.get("/")
