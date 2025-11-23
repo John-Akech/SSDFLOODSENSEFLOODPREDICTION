@@ -1,21 +1,4 @@
 name: floodsense
-ingress:
-  rules:
-  - component:
-      name: backend
-    match:
-      path:
-        prefix: /api/v1
-  - component:
-      name: frontend
-    match:
-      path:
-        prefix: /
-  - component:
-      name: sar-detection
-    match:
-      path:
-        prefix: /sar
 services:
 - name: backend
   github:
@@ -25,6 +8,9 @@ services:
   dockerfile_path: backend/Dockerfile
   source_dir: /
   http_port: 8000
+  routes:
+  - path: /api/v1
+    preserve_path_prefix: true
   instance_count: 1
   instance_size_slug: basic-xxs
   envs:
@@ -57,6 +43,8 @@ services:
   dockerfile_path: frontend/Dockerfile
   source_dir: frontend
   http_port: 80
+  routes:
+  - path: /
   instance_count: 1
   instance_size_slug: basic-xxs
   envs:
@@ -77,6 +65,8 @@ services:
   dockerfile_path: ee-fastapi/Dockerfile
   source_dir: ee-fastapi
   http_port: 8080
+  routes:
+  - path: /sar
   instance_count: 1
   instance_size_slug: basic-xxs
   envs:

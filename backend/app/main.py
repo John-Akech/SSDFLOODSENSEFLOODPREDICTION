@@ -91,8 +91,11 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
     # Hide docs in production for security
-    docs_url="/docs" if os.getenv("ENVIRONMENT") != "production" else None,
-    redoc_url="/redoc" if os.getenv("ENVIRONMENT") != "production" else None
+    docs_url="/api/v1/docs" if os.getenv(
+        "ENVIRONMENT") != "production" else None,
+    redoc_url="/api/v1/redoc" if os.getenv(
+        "ENVIRONMENT") != "production" else None,
+    openapi_url="/api/v1/openapi.json"
 )
 
 # Add middleware layers
@@ -151,12 +154,11 @@ app.add_middleware(
 
 # Include API routes
 # Order matters - more specific routes should be included first
-# Note: The /api/v1 prefix is handled by DigitalOcean ingress routing
-app.include_router(admin_router)
-app.include_router(auth_router)
-app.include_router(audit_router)  # Audit logs
-app.include_router(router)
-app.include_router(crud_router)  # CRUD routes last
+app.include_router(admin_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(audit_router, prefix="/api/v1")  # Audit logs
+app.include_router(router, prefix="/api/v1")
+app.include_router(crud_router, prefix="/api/v1")  # CRUD routes last
 
 
 @app.get("/")
