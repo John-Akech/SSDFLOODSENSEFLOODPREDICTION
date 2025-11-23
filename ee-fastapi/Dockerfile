@@ -23,14 +23,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # Copy requirements first for better caching
-COPY requirements.txt .
+COPY ee-fastapi/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
 # Copy application code (excluding sensitive files via .dockerignore)
-COPY . .
+COPY ee-fastapi/ .
 
 # Create output directory
 RUN mkdir -p output && chmod 755 output
