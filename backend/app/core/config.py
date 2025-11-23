@@ -25,8 +25,14 @@ class Settings(BaseSettings):
     FORCE_HTTPS: bool = False
 
     # Security Headers
-    ALLOWED_HOSTS: list[str] = ["localhost",
-                                "127.0.0.1", "159.203.162.85", "backend"]
+    ALLOWED_HOSTS: list[str] = [
+        "localhost",
+        "127.0.0.1",
+        "159.203.162.85",
+        "backend",
+        "floodsense-app-6a3uy.ondigitalocean.app",
+        "*.ondigitalocean.app"
+    ]
 
     @field_validator("ALLOWED_HOSTS", mode="before")
     @classmethod
@@ -60,7 +66,8 @@ class Settings(BaseSettings):
         "http://localhost",
         "http://159.203.162.85",
         "https://floodsense.org",
-        "https://www.floodsense.org"
+        "https://www.floodsense.org",
+        "https://floodsense-app-6a3uy.ondigitalocean.app"
     ]
 
     @field_validator("CORS_ORIGINS", mode="before")
