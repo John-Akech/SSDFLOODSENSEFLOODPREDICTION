@@ -18,16 +18,16 @@ describe('LanguageSwitcher', () => {
     it('opens the language menu and shows available locales', () => {
         renderWithProvider();
 
-        fireEvent.click(screen.getByRole('button', { name: /floodsense/i }));
+        fireEvent.click(screen.getByRole('button', { name: /english/i }));
 
-        expect(screen.getAllByText(/floodsense/i).length).toBeGreaterThan(1);
+        expect(screen.getAllByText(/english/i).length).toBeGreaterThan(1);
         expect(screen.getByText('العربية')).toBeInTheDocument();
     });
 
     it('updates the selected language and html lang attribute', () => {
         renderWithProvider();
 
-        fireEvent.click(screen.getByRole('button', { name: /floodsense/i }));
+        fireEvent.click(screen.getByRole('button', { name: /english/i }));
         fireEvent.click(screen.getByText(/kiswahili/i));
 
         expect(screen.getByRole('button', { name: /kiswahili/i })).toBeInTheDocument();
