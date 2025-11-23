@@ -33,15 +33,27 @@ gee_error = None
 
 # Try to initialize Earth Engine on startup
 try:
+    # Debug: Log ALL environment variables to diagnose issue
+    logger.info("[DEBUG] ===== ENVIRONMENT VARIABLES DIAGNOSTIC =====")
+    all_env_vars = dict(os.environ)
+    gee_related = {k: v[:50] + '...' if len(v) > 50 else v for k, v in all_env_vars.items() if 'GEE' in k.upper()}
+    logger.info(f"[DEBUG] GEE-related env vars: {gee_related}")
+    logger.info(f"[DEBUG] Total env vars: {len(all_env_vars)}")
+    logger.info("[DEBUG] =============================================")
+    
     project_id = os.getenv('GEE_PROJECT_ID', 'ace-connection-474712-p1')
     service_account_key_env = os.getenv('GEE_SERVICE_ACCOUNT_KEY', '')
     service_account_file = '/app/gee-service-account-key.json'
 
     # Debug: Log environment variable info
-    logger.info(f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY present: {bool(service_account_key_env)}")
+    logger.info(
+        f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY present: {bool(service_account_key_env)}")
+    logger.info(f"[DEBUG] GEE_PROJECT_ID value: {project_id}")
     if service_account_key_env:
-        logger.info(f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY length: {len(service_account_key_env)}")
-        logger.info(f"[DEBUG] Starts with '{{': {service_account_key_env.strip().startswith('{')}")
+        logger.info(
+            f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY length: {len(service_account_key_env)}")
+        logger.info(
+            f"[DEBUG] Starts with '{{': {service_account_key_env.strip().startswith('{')}")
         logger.info(f"[DEBUG] First 50 chars: {service_account_key_env[:50]}")
 
     # Check if GEE_SERVICE_ACCOUNT_KEY contains JSON content (production)
