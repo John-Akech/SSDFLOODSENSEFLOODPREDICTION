@@ -12,7 +12,6 @@ from .middleware.ip_whitelist import IPWhitelistMiddleware
 from .middleware.request_logger import RequestLoggerMiddleware
 from .middleware.security_headers import SecurityHeadersMiddleware
 from .middleware.rate_limiter import RateLimiter
-from .middleware.error_handler import database_error_handler
 from .services.model_service import ModelService
 from .core.config import settings
 from .core.database import init_db, SessionLocal
@@ -29,7 +28,6 @@ from fastapi.responses import JSONResponse
 import uvicorn
 import os
 from contextlib import asynccontextmanager
-from sqlalchemy.exc import SQLAlchemyError
 
 import sys
 sys.path.insert(0, os.path.dirname(__file__))

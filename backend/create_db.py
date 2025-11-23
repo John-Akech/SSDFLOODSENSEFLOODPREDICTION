@@ -1,10 +1,5 @@
 """Simple database creation script"""
 from sqlalchemy import inspect
-from models.audit_log import AuditLog
-from models.database_models import (
-    User, FloodEvent, Prediction, Recommendation,
-    Feedback, SARImage, RainfallRecord, Location, Shelter
-)
 from core.database import Base, engine
 import sys
 import os

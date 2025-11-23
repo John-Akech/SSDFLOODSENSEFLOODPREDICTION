@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 import logging
 from dataclasses import dataclass
 import uuid
-import os
 
 try:
     from app.core.config import settings
@@ -225,8 +224,8 @@ class AlertService:
             # In a real implementation, this would use an SMS service like Twilio
             # For now, we'll simulate the sending process
 
-            # SMS character limit
-            sms_message = f"FloodSense Alert: {alert.message[:140]}..."
+            # SMS character limit (not implemented)
+            # sms_message = f"FloodSense Alert: {alert.message[:140]}..."
 
             sent_count = 0
             for phone in phone_numbers:

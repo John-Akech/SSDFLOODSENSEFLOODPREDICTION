@@ -27,8 +27,6 @@ import sys
 
 # Add parent directory to import database models
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from app.core.database import SessionLocal, engine, Base
-from app.models.database_models import FloodEvent, GEEExtractedFeature
 
 
 class NumpyEncoder(json.JSONEncoder):
@@ -104,7 +102,7 @@ if total_missing > 0:
         print(f"    - {col}: {missing_counts[col]} ({missing_counts[col]/len(df_merged)*100:.1f}%)")
     # Fill missing values
     df_merged = df_merged.fillna(0)
-    print(f"  Filled with zeros")
+    print("  Filled with zeros")
 else:
     print("  No missing values")
 
@@ -113,14 +111,14 @@ duplicates = df_merged.duplicated().sum()
 if duplicates > 0:
     print(f"  WARNING: Duplicate rows: {duplicates}")
     df_merged = df_merged.drop_duplicates()
-    print(f"  Removed duplicates")
+    print("  Removed duplicates")
 else:
     print("  No duplicate rows")
 
 # Check target distribution
 flood_count = (df_merged['flood'] == 1).sum()
 non_flood_count = (df_merged['flood'] == 0).sum()
-print(f"\n  Target Distribution:")
+print("\n  Target Distribution:")
 print(f"  - Flood events: {flood_count} ({flood_count/len(df_merged)*100:.1f}%)")
 print(f"  - Non-flood: {non_flood_count} ({non_flood_count/len(df_merged)*100:.1f}%)")
 
@@ -181,5 +179,5 @@ print(f"Metadata: {metadata_path}")
 print("=" * 80)
 print("Next: Run 03_preprocess_data.py to prepare features for training")
 print("=" * 80)
-print(f"\nNext step: Run 02_explore_visualize.py")
+print("\nNext step: Run 02_explore_visualize.py")
 print("=" * 80)

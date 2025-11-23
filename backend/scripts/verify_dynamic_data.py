@@ -26,7 +26,7 @@ def verify_model_metadata_exists():
         print(f"   Expected: {metadata_file}")
         return False
     
-    print(f"PASS: Model metadata file exists")
+    print("PASS: Model metadata file exists")
     print(f"   Location: {metadata_file}")
     
     # Load and verify contents
@@ -75,7 +75,7 @@ def verify_no_hardcoded_values_in_backend():
         print("FAIL: Backend routes file not found!")
         return False
     
-    print(f"PASS: Backend routes file exists")
+    print("PASS: Backend routes file exists")
     
     # Read file and check for hardcoded accuracy values
     with open(crud_routes_file, 'r') as f:

@@ -75,7 +75,6 @@ def init_db():
         db_dir = os.path.dirname(db_path)
         if db_dir and not os.path.exists(db_dir):
             os.makedirs(db_dir, exist_ok=True)
-    from models import database_models
     Base.metadata.create_all(bind=engine)
 
     # Create default admin user if it doesn't exist

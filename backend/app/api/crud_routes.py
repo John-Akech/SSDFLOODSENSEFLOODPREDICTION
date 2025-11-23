@@ -1,11 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime, timezone
+from datetime import datetime
 import logging
 
 from core.database import get_db
-from schemas.schemas import *
+from schemas.schemas import (
+    User, UserUpdate,
+    FloodEvent, FloodEventCreate, FloodEventUpdate,
+    PredictionResponse,
+    Recommendation, RecommendationCreate, RecommendationUpdate,
+    Alert, AlertCreate,
+    Feedback, FeedbackCreate, FeedbackUpdate
+)
 from models.database_models import (
     User as DBUser, FloodEvent as DBFloodEvent,
     Prediction as DBPrediction, Feedback as DBFeedback,
@@ -13,7 +20,6 @@ from models.database_models import (
 )
 from services.recommendation_service import RecommendationService
 from middleware.auth_middleware import get_current_user, require_admin
-from services.alert_service import alert_service
 from fastapi import Body
 
 router = APIRouter(tags=["crud"])
@@ -318,7 +324,7 @@ async def get_alerts(skip: int = 0, limit: int = 100, active_only: bool = False,
     """Get alerts - returns in format expected by frontend"""
     query = db.query(DBAlert)
     if active_only:
-        query = query.filter(DBAlert.is_active == True)
+        query = query.filter(DBAlert.is_active)
     alerts = query.offset(skip).limit(limit).all()
     return {
         "alerts": [
@@ -425,7 +431,7 @@ async def delete_feedback(feedback_id: int, db: Session = Depends(get_db), curre
 @router.get("/stats/flood")
 async def get_flood_stats(db: Session = Depends(get_db)):
     """Get flood statistics for maps and dashboards"""
-    active_alerts = db.query(DBAlert).filter(DBAlert.is_active == True).all()
+    active_alerts = db.query(DBAlert).filter(DBAlert.is_active).all()
     high_risk_predictions = db.query(DBPrediction).filter(
         DBPrediction.risk_level.in_(["high", "critical"])
     ).all()
@@ -504,7 +510,7 @@ async def get_system_stats(db: Session = Depends(get_db)):
 
     # Calculate lead time and false alarm rate
     avg_lead_time = db.query(DBPrediction).filter(
-        DBPrediction.lead_time_hours != None).all()
+        DBPrediction.lead_time_hours.isnot(None)).all()
     avg_lead_time_hours = sum(p.lead_time_hours for p in avg_lead_time) / \
         len(avg_lead_time) if avg_lead_time else 24
 
@@ -875,10 +881,9 @@ async def get_model_stats(n: int = 500, db: Session = Depends(get_db)):
             # DYNAMIC ACCURACY: Blend baseline with actual confidence
             # If predictions are consistent and confident, accuracy approaches baseline
             # If predictions vary widely or have low confidence, accuracy is adjusted down
-            confidence_factor = avg_conf  # 0.0 to 1.0
+            # confidence_factor = avg_conf  # 0.0 to 1.0
             # Lower variance = more consistent
-            consistency_factor = 1.0 - \
-                (max_conf - min_conf) if confidences else 0.5
+            # consistency_factor = 1.0 - (max_conf - min_conf) if confidences else 0.5
 
             # Dynamic accuracy calculation
             if cnt >= 10:  # Enough data for reliable estimate

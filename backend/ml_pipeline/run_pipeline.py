@@ -31,7 +31,7 @@ print("ML Pipeline - Automated Workflow")
 print("=" * 80)
 print(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print(f"Steps: {len(scripts)}")
-print(f"Flow: GEE Extraction → Training → Deployment")
+print("Flow: GEE Extraction → Training → Deployment")
 print("=" * 80)
 
 for i, script in enumerate(scripts, 1):
@@ -67,6 +67,6 @@ print("=" * 80)
 print("All 8 steps executed successfully")
 print("Satellite data extracted from GEE")
 print("Models trained on latest observations")
-print(f"Production model deployed to models/")
+print("Production model deployed to models/")
 print("=" * 80)
 

@@ -1,10 +1,7 @@
 import folium
-import numpy as np
 from typing import List, Dict, Any, Tuple, Optional
-import json
 from geopy.distance import geodesic
 import logging
-import os
 from app.core.database import SessionLocal
 from app.models.database_models import Location, Shelter
 import requests
@@ -423,7 +420,7 @@ class GISService:
         try:
             # Get all active shelters
             shelters = db.query(Shelter).filter(
-                Shelter.is_active == True).all()
+                Shelter.is_active).all()
 
             # Find nearest shelters
             nearby_shelters = []

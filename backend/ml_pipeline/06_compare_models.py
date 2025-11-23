@@ -12,11 +12,9 @@ PRODUCTION STANDARDS:
 """
 
 import pandas as pd
-import numpy as np
 from pathlib import Path
 from datetime import datetime
 import json
-import joblib
 
 # Configuration
 PIPELINE_DIR = Path(__file__).parent
@@ -36,7 +34,7 @@ print("\n[1/3] LOADING EVALUATION RESULTS...")
 
 eval_path = OUTPUT_DIR / "05_evaluation_report.json"
 if not eval_path.exists():
-  print(f" ERROR: Run 05_evaluate_tune.py first")
+  print(" ERROR: Run 05_evaluate_tune.py first")
   exit(1)
 
 with open(eval_path, "r") as f:
@@ -135,7 +133,7 @@ if len(production_ready) > 0:
   print(f"Recall: {recommended['Recall']:.2%}")
   print(f"F1-Score: {recommended['F1_Score']:.2%}")
   print(f"ROC-AUC: {recommended['ROC_AUC']:.4f}")
-  print(f"\nProduction Ready: YES (exceeds 86% requirement)")
+  print("\nProduction Ready: YES (exceeds 86% requirement)")
   print("=" * 80)
   
   recommendation_status = "production_ready"
@@ -206,5 +204,5 @@ print("=" * 80)
 print(f" Models compared: {len(df_comparison)}")
 print(f" Recommended model: {recommended['Model']}")
 print(f" Production ready: {' YES' if recommendation_status == 'production_ready' else ' NO'}")
-print(f"\nNext step: Run 07_save_model.py")
+print("\nNext step: Run 07_save_model.py")
 print("=" * 80)

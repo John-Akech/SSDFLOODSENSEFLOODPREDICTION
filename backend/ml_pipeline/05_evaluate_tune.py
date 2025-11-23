@@ -113,7 +113,7 @@ print("\n[1/4] LOADING MODELS AND TEST DATA...")
 # Load test data
 test_data_path = OUTPUT_DIR / "04_test_data.npz"
 if not test_data_path.exists():
-    print(f" ERROR: Run 04_train_models.py first")
+    print(" ERROR: Run 04_train_models.py first")
     exit(1)
 
 test_data = np.load(test_data_path, allow_pickle=True)
@@ -153,7 +153,7 @@ if TORCH_AVAILABLE:
                 print(f" Loaded: {model_file.name}")
 
 if not models:
-    print(f" ERROR: No trained models found")
+    print(" ERROR: No trained models found")
     exit(1)
 
 # ============================================================================
@@ -191,7 +191,7 @@ for name, model in models.items():
 
     tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
 
-    print(f"PERFORMANCE:")
+    print("PERFORMANCE:")
     print(
         f"   Accuracy:  {acc:.2%} {' PASS' if acc >= 0.86 else ' FAIL (need 86%)'}")
     print(f"   Precision: {prec:.2%}")
@@ -199,12 +199,12 @@ for name, model in models.items():
     print(f"   F1-Score:  {f1:.2%}")
     print(f"   ROC-AUC:   {roc_auc:.4f}")
 
-    print(f"\n CONFUSION MATRIX:")
+    print("\n CONFUSION MATRIX:")
     print(f"   TN: {tn:3d} | FP: {fp:3d}")
     print(f"   FN: {fn:3d} | TP: {tp:3d}")
 
     if tp + fn > 0 and fp + tn > 0:
-        print(f"\n  ERRORS:")
+        print("\n  ERRORS:")
         print(f"   False Alarms: {fp} ({fp/(fp+tn)*100:.1f}% of non-floods)")
         print(f"   Missed Floods: {fn} ({fn/(fn+tp)*100:.1f}% of floods)")
 
@@ -564,5 +564,5 @@ print(f"   Test Accuracy: {best_acc:.2%}")
 print(
     f"   Production Ready: {'YES' if report['best_model']['production_ready'] else 'NO'}")
 print(f"\n View evaluation charts in: {VIZ_DIR}/")
-print(f"\nNext step: Run 06_compare_models.py")
+print("\nNext step: Run 06_compare_models.py")
 print("=" * 80)

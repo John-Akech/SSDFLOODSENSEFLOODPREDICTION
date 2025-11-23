@@ -1,11 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
 from datetime import datetime, timezone
 
 from core.database import get_db
 from middleware.auth_middleware import require_admin
-from schemas.schemas import User, UserRole
 from models.database_models import Prediction as DBPrediction, User as DBUser
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -18,7 +16,7 @@ async def get_pending_predictions(
 ):
     """Get all predictions awaiting admin approval"""
     pending = db.query(DBPrediction).filter(
-        DBPrediction.published == False
+        ~DBPrediction.published
     ).order_by(DBPrediction.created_at.desc()).all()
 
     return {"predictions": pending, "count": len(pending)}
@@ -97,9 +95,9 @@ async def get_admin_metrics(
     """Get system performance metrics for admin dashboard"""
     total_predictions = db.query(DBPrediction).count()
     approved = db.query(DBPrediction).filter(
-        DBPrediction.published == True).count()
+        DBPrediction.published).count()
     pending = db.query(DBPrediction).filter(
-        DBPrediction.published == False).count()
+        ~DBPrediction.published).count()
 
     approval_rate = (approved / total_predictions *
                      100) if total_predictions > 0 else 0

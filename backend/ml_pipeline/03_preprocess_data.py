@@ -38,7 +38,7 @@ data_path = OUTPUT_DIR / "01_merged_dataset.csv"
 analysis_path = OUTPUT_DIR / "02_analysis_report.json"
 
 if not data_path.exists():
-    print(f" ERROR: Run 01_load_merge_data.py first")
+    print(" ERROR: Run 01_load_merge_data.py first")
     exit(1)
 
 df = pd.read_csv(data_path)
@@ -188,6 +188,6 @@ print(f" Missing values handled: {missing_before} → 0")
 print(f" Categorical encoding: {len(region_dummies.columns) if region_col in df.columns else 0} columns")
 print(f" Feature scaling: {len(scale_cols)} features scaled")
 print(f" Final dataset: {len(df)} samples × {len(df.columns)} features")
-print(f" Preprocessing configuration saved")
-print(f"\nNext step: Run 04_train_models.py")
+print(" Preprocessing configuration saved")
+print("\nNext step: Run 04_train_models.py")
 print("=" * 80)

@@ -24,7 +24,6 @@ Date: November 2025
 
 import ee
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 from pathlib import Path
 import json
@@ -57,7 +56,7 @@ print("=" * 80)
 # Initialize Google Earth Engine
 try:
     ee.Initialize(project='ace-connection-474712-p1')
-    print(f"GEE initialized successfully")
+    print("GEE initialized successfully")
 except Exception as e:
     print(f"ERROR: GEE initialization failed: {e}")
     print("Please run: earthengine authenticate")
@@ -97,7 +96,7 @@ for region_name, region_data in regions.items():
 south_sudan_geometry = ee.Geometry.MultiPolygon([
     list(geometries.values())
 ])
-print(f"Combined geometry created for all 3 regions")
+print("Combined geometry created for all 3 regions")
 
 print("\n" + "=" * 80)
 print("Extracting features from satellite data...")
@@ -282,28 +281,28 @@ for region_name, geometry in geometries.items():
     
     try:
         # Rainfall patterns (most important for flooding)
-        print(f"  - Extracting rainfall features...")
+        print("  - Extracting rainfall features...")
         rainfall = extract_rainfall_features(geometry, START_DATE, END_DATE)
         region_features.update(rainfall)
-        print(f"      Rainfall features extracted")
+        print("      Rainfall features extracted")
         
         # Water presence indicators
-        print(f"  - Extracting water features...")
+        print("  - Extracting water features...")
         water = extract_water_features(geometry, START_DATE, END_DATE)
         region_features.update(water)
-        print(f"      Water features extracted")
+        print("      Water features extracted")
         
         # Topographic characteristics
-        print(f"  - Extracting topographic features...")
+        print("  - Extracting topographic features...")
         topo = extract_topographic_features(geometry)
         region_features.update(topo)
-        print(f"      Topographic features extracted")
+        print("      Topographic features extracted")
         
         # Soil moisture levels
-        print(f"  - Extracting soil moisture features...")
+        print("  - Extracting soil moisture features...")
         soil = extract_soil_moisture_features(geometry, START_DATE, END_DATE)
         region_features.update(soil)
-        print(f"      Soil moisture features extracted")
+        print("      Soil moisture features extracted")
         
         all_features.append(region_features)
         
@@ -350,13 +349,13 @@ rainfall_cols = [col for col in df.columns if 'precipitation' in col]
 for col in rainfall_cols:
     df[col] = df[col].clip(lower=0)
 
-print(f"   Data validated")
+print("   Data validated")
 
 # Save to CSV (backup)
 output_csv = OUTPUT_DIR / "00_gee_extracted_features.csv"
 df.to_csv(output_csv, index=False)
 
-print(f"\n" + "=" * 80)
+print("\n" + "=" * 80)
 print("Saving results...")
 print("=" * 80)
 print(f"Saved to CSV: {output_csv}")
@@ -411,7 +410,7 @@ try:
 except Exception as e:
     print(f"   Error saving to database: {e}")
     db.rollback()
-    print(f"   Note: Data still saved to CSV as backup")
+    print("   Note: Data still saved to CSV as backup")
 finally:
     db.close()
 
@@ -449,10 +448,10 @@ print(f"Saved metadata: {metadata_path}")
 print("\n" + "=" * 80)
 print("STEP 0 COMPLETE")
 print("=" * 80)
-print(f"GEE data extraction successful")
-print(f"\nData saved to:")
+print("GEE data extraction successful")
+print("\nData saved to:")
 print(f"  1. Database: gee_extracted_features table ({saved_count} records)")
 print(f"  2. CSV backup: {output_csv}")
 print(f"  3. Metadata: {metadata_path}")
-print(f"\nReady for Step 1: Load and merge with historical data")
+print("\nReady for Step 1: Load and merge with historical data")
 print("=" * 80)

@@ -123,7 +123,7 @@ print("\n[1/5] LOADING PREPROCESSED DATA...")
 
 data_path = OUTPUT_DIR / "03_preprocessed_data.csv"
 if not data_path.exists():
-    print(f" ERROR: Run 03_preprocess_data.py first")
+    print(" ERROR: Run 03_preprocess_data.py first")
     exit(1)
 
 df = pd.read_csv(data_path)
@@ -560,19 +560,19 @@ print("\n" + "=" * 80)
 print("STEP 4 COMPLETE")
 print("=" * 80)
 print(f" Total models trained: {model_count}")
-print(f"\n PRIMARY MODELS:")
+print("\n PRIMARY MODELS:")
 for name in models.keys():
     if training_log[name].get('category') == 'PRIMARY':
         train_time = training_log[name]['training_time_seconds']
         print(f"   - {name}: trained in {train_time:.2f}s")
 if TRAIN_OPTIONAL_MODELS:
-    print(f"\n OPTIONAL MODELS:")
+    print("\n OPTIONAL MODELS:")
     for name in models.keys():
         if training_log[name].get('category') == 'OPTIONAL':
             train_time = training_log[name]['training_time_seconds']
             purpose = training_log[name].get('purpose', '')
             print(f"   - {name}: trained in {train_time:.2f}s ({purpose})")
-print(f"\n Test data saved for evaluation")
-print(f" Training configuration logged")
-print(f"\nNext step: Run 05_evaluate_tune.py")
+print("\n Test data saved for evaluation")
+print(" Training configuration logged")
+print("\nNext step: Run 05_evaluate_tune.py")
 print("=" * 80)

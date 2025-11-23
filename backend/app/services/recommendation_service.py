@@ -1,5 +1,4 @@
 from typing import List
-from math import isfinite
 from sqlalchemy.orm import Session
 
 from models.database_models import Prediction as DBPrediction, Recommendation as DBRecommendation

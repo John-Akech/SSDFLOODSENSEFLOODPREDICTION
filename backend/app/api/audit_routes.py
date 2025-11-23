@@ -7,7 +7,7 @@ from typing import Optional, List
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, and_, or_
+from sqlalchemy import desc, and_
 
 from app.core.database import get_db
 from app.middleware.auth_middleware import get_current_user
@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict
 # Use TYPE_CHECKING for type hints only
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from app.models.database_models import User
+    pass
 
 router = APIRouter()
 
@@ -102,7 +102,6 @@ async def get_audit_logs(
     query = query.order_by(desc(AuditLog.timestamp))
 
     # Pagination
-    total = query.count()
     logs = query.offset(offset).limit(limit).all()
 
     return logs

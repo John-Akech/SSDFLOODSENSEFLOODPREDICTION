@@ -50,7 +50,7 @@ print("\n[1/5] LOADING MERGED DATASET...")
 
 data_path = OUTPUT_DIR / "01_merged_dataset.csv"
 if not data_path.exists():
-    print(f" ERROR: Run 01_load_merge_data.py first")
+    print(" ERROR: Run 01_load_merge_data.py first")
     exit(1)
 
 df = pd.read_csv(data_path)
@@ -482,17 +482,17 @@ print("\n" + "=" * 80)
 print("STEP 2 COMPLETE")
 print("=" * 80)
 print(f" Statistical summary: {len(feature_cols)} features analyzed")
-print(f" Distribution analysis: Top 10 discriminative features identified")
+print(" Distribution analysis: Top 10 discriminative features identified")
 print(
     f" Correlation analysis: {len(high_corr_pairs)} highly correlated pairs found")
 print(f" Visualizations: {viz_count} charts created in {VIZ_DIR.name}/")
-print(f" Analysis report saved")
-print(f"\nKey Insights:")
+print(" Analysis report saved")
+print("\nKey Insights:")
 print(f"  - Most discriminative feature: {discriminative_features[0][0]}")
 print(
     f"  - Strongest correlation: {sorted_correlations[0][0]} (r={sorted_correlations[0][1]:.3f})")
 print(
     f"  - Class imbalance: {'Yes' if report['recommendations']['class_imbalance'] else 'No'}")
 print(f"\nView visualizations in: {VIZ_DIR}/")
-print(f"\nNext step: Run 03_preprocess_data.py")
+print("\nNext step: Run 03_preprocess_data.py")
 print("=" * 80)

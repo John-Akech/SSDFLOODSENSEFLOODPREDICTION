@@ -13,11 +13,6 @@ Author: John Angou
 Last Updated: November 2025
 """
 
-try:
-    # Prefer absolute import when app is installed as a package (pytest, uvicorn)
-    from app.core.config import settings
-except ImportError:  # pragma: no cover - fallback for relative execution
-    from ..core.config import settings
 import joblib  # type: ignore
 import numpy as np
 import pandas as pd
@@ -27,13 +22,11 @@ from pathlib import Path
 import sys
 import os
 import time
-from datetime import datetime
 from sklearn.metrics import (  # type: ignore
     roc_auc_score,
     f1_score,
     precision_score,
-    recall_score,
-    average_precision_score
+    recall_score
 )
 
 logger = logging.getLogger(__name__)
@@ -41,9 +34,6 @@ logger = logging.getLogger(__name__)
 # Try to import PyTorch (optional)
 try:
     import torch
-    import torch.nn as nn
-    import torch.optim as optim
-    from torch.utils.data import TensorDataset, DataLoader
     torch_available = True
 except ImportError:
     torch_available = False

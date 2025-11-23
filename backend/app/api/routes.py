@@ -9,7 +9,12 @@ from models.database_models import (
     PushSubscription as DBPush,
     User as DBUser,
 )
-from schemas.schemas import *
+from schemas.schemas import (
+    PredictionRequest, PredictionResponse,
+    BatchPredictionRequest, BatchPredictionResponse,
+    DykePlacementRequest, DykePlacementResponse,
+    ModelType
+)
 from core.database import get_db
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -884,10 +889,10 @@ async def get_system_status(db: Session = Depends(get_db)):
     """Get system status for real-time monitoring"""
     try:
         total_alerts = db.query(DBAlert).filter(
-            DBAlert.is_active == True).count()
+            DBAlert.is_active).count()
         total_predictions = db.query(DBPrediction).count()
         critical_alerts = db.query(DBAlert).filter(
-            DBAlert.is_active == True,
+            DBAlert.is_active,
             DBAlert.severity == "critical"
         ).count()
 
@@ -910,7 +915,7 @@ async def get_flood_status(db: Session = Depends(get_db)):
     try:
         # Get active alerts
         active_alerts = db.query(DBAlert).filter(
-            DBAlert.is_active == True).all()
+            DBAlert.is_active).all()
 
         # Get high-risk predictions (probability > 0.65 = 65%)
         # Note: Threshold set to 65% to include "high" risk level predictions
@@ -996,7 +1001,7 @@ async def analyze_location(
 
     # Fetch nearby alerts and predictions
     # In a real scenario, use PostGIS ST_DWithin
-    alerts = db.query(DBAlert).filter(DBAlert.is_active == True).all()
+    alerts = db.query(DBAlert).filter(DBAlert.is_active).all()
     predictions = db.query(DBPrediction).order_by(
         DBPrediction.created_at.desc()).limit(100).all()
 

@@ -3,8 +3,6 @@ from app.core.security import get_password_hash
 from app.core.database import SessionLocal, Base, engine
 import os
 import sys
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 # Add the 'backend' directory to sys.path to allow imports from 'app'
 # This makes the script runnable from the project root.

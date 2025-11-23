@@ -11,12 +11,9 @@ PRODUCTION STANDARDS:
 - Provide deployment instructions
 """
 
-import pandas as pd
-import numpy as np
 from pathlib import Path
 from datetime import datetime
 import json
-import joblib
 import shutil
 
 # Configuration
@@ -38,7 +35,7 @@ print("\n[1/4] LOADING COMPARISON RESULTS...")
 
 comparison_path = OUTPUT_DIR / "06_model_comparison.json"
 if not comparison_path.exists():
-    print(f" ERROR: Run 06_compare_models.py first")
+    print(" ERROR: Run 06_compare_models.py first")
     exit(1)
 
 with open(comparison_path, "r") as f:
@@ -318,7 +315,7 @@ print(f"   Test Accuracy: {recommendation['test_accuracy']:.2%}")
 print(f"   CV Accuracy: {recommendation['cv_accuracy']:.2%}")
 print(f"   Production Ready: {' YES' if recommendation['production_ready'] else ' NEEDS REVIEW'}")
 
-print(f"\nPRODUCTION FILES:")
+print("\nPRODUCTION FILES:")
 print(f"   Model: {dest_model.name}")
 print(f"   Scaler: {dest_scaler.name}")
 print(f"   Metadata: {metadata_path.name}")
@@ -326,5 +323,5 @@ print(f"   Guide: {guide_path.name}")
 
 print(f"\nLocation: {PRODUCTION_DIR}")
 
-print(f"\n All 7 pipeline steps completed successfully!")
+print("\n All 7 pipeline steps completed successfully!")
 print("=" * 80)

@@ -4,7 +4,7 @@ Sends web push notifications to subscribed users when predictions or alerts are 
 """
 import json
 import logging
-from typing import List, Dict, Any
+from typing import Dict, Any
 from pywebpush import webpush, WebPushException
 from sqlalchemy.orm import Session
 
@@ -141,14 +141,16 @@ class PushNotificationService:
                 try:
                     # If endpoint is no longer valid, mark for removal
                     expired_subscriptions.append(sub)
-                except:
+                except Exception as e:
+                    logger.debug(f"Notification send error: {e}")
                     pass
 
         # Clean up expired subscriptions
         for expired in expired_subscriptions:
             try:
                 db.delete(expired)
-            except:
+            except Exception as e:
+                logger.debug(f"Failed to delete expired subscription: {e}")
                 pass
 
         if expired_subscriptions:

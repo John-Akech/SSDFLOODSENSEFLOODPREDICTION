@@ -3,7 +3,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 import logging
 import time
 import os
-from datetime import datetime
 
 # Ensure logs directory exists
 os.makedirs('logs', exist_ok=True)

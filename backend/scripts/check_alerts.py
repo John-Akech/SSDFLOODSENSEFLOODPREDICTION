@@ -2,7 +2,6 @@ from models.database_models import Alert
 from core.database import SessionLocal
 import sys
 import os
-from datetime import datetime
 
 # Add app to path
 sys.path.insert(0, os.path.join(
