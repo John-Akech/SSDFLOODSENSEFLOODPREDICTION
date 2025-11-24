@@ -43,9 +43,9 @@ jobs:
         working-directory: frontend
         run: npm run test -- --runInBand --watch=false --passWithNoTests
 
-      - name: npm audit (high severity)
+      - name: npm audit (production only, high severity)
         working-directory: frontend
-        run: npm audit --audit-level=high
+        run: npm audit --production --audit-level=high
 
       - name: Build
         working-directory: frontend

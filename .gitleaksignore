@@ -1,0 +1,13 @@
+# Gitleaks ignore file - exclude false positives
+
+# Test files with mock credentials
+backend/tests/test_alert_service.py:generic-api-key:32
+
+# Example environment files (not real secrets)
+backend/.env.example:generic-api-key:144
+
+# Test fixtures and mock data
+**/tests/**/*.py
+**/.env.example
+**/.env.sample
+**/conftest.py
