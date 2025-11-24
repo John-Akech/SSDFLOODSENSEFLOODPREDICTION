@@ -6,60 +6,14 @@ on:
       - master
 
 jobs:
-  build-and-push:
+  notify-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Install doctl
-        uses: digitalocean/action-doctl@v2
-        with:
-          token: ${{ secrets.DO_ACCESS_TOKEN }}
-
-      - name: Log in to DigitalOcean Container Registry
-        run: doctl registry login --expiry-seconds 600
-
-      - name: Build and push backend image
+      
+      - name: Deployment notification
         run: |
-          docker build -t ${{ secrets.DO_REGISTRY }}/floodsense-backend:${{ github.sha }} -f backend/Dockerfile .
-          docker push ${{ secrets.DO_REGISTRY }}/floodsense-backend:${{ github.sha }}
-
-      - name: Build and push sar-detection image
-        run: |
-          docker build -t ${{ secrets.DO_REGISTRY }}/floodsense-sar:${{ github.sha }} -f ee-fastapi/Dockerfile ./ee-fastapi
-          docker push ${{ secrets.DO_REGISTRY }}/floodsense-sar:${{ github.sha }}
-
-      - name: Build and push frontend image
-        run: |
-          docker build -t ${{ secrets.DO_REGISTRY }}/floodsense-frontend:${{ github.sha }} -f frontend/Dockerfile ./frontend
-          docker push ${{ secrets.DO_REGISTRY }}/floodsense-frontend:${{ github.sha }}
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build-and-push
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Deploy to Droplet
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.DROPLET_IP }}
-          username: ${{ secrets.DROPLET_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            if [ ! -d "SSDFLOODSENSEFLOODPREDICTION" ]; then
-              git clone https://github.com/John-Akech/SSDFLOODSENSEFLOODPREDICTION.git
-            fi
-            cd SSDFLOODSENSEFLOODPREDICTION
-            git pull origin master
-            export TAG=${{ github.sha }}
-            export DATABASE_URL=${{ secrets.DATABASE_URL }}
-            export SECRET_KEY=${{ secrets.SECRET_KEY }}
-            export VAPID_PUBLIC_KEY=${{ secrets.VAPID_PUBLIC_KEY }}
-            export VAPID_PRIVATE_KEY=${{ secrets.VAPID_PRIVATE_KEY }}
-            export DROPLET_IP=${{ secrets.DROPLET_IP }}
-            echo ${{ secrets.DO_PAT }} | docker login registry.digitalocean.com -u ${{ secrets.DO_PAT }} --password-stdin
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
+          echo "✅ Code pushed to master"
+          echo "DigitalOcean App Platform will auto-deploy from app-spec.yaml"
+          echo "Monitor deployment at: https://cloud.digitalocean.com/apps"
