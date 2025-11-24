@@ -126,16 +126,24 @@ def ensure_gee_initialized():
             try:
                 logger.info(
                     "[INFO] Decoding base64-encoded service account key")
-                
-                # Clean up and fix padding
-                service_account_key_base64 = service_account_key_base64.strip()
+
+                # Clean up and fix padding - remove ALL whitespace
+                service_account_key_base64 = "".join(
+                    service_account_key_base64.split())
+
                 missing_padding = len(service_account_key_base64) % 4
                 if missing_padding:
                     service_account_key_base64 += '=' * (4 - missing_padding)
-                
-                decoded_json = base64.b64decode(
-                    service_account_key_base64).decode('utf-8')
+
+                decoded_bytes = base64.b64decode(service_account_key_base64)
+                decoded_json = decoded_bytes.decode('utf-8')
+
                 logger.info(f"[INFO] Decoded JSON length: {len(decoded_json)}")
+
+                # Validate it's actually JSON
+                import json
+                json.loads(decoded_json)
+
                 with open(service_account_file, 'w') as f:
                     f.write(decoded_json)
                 logger.info(
@@ -143,6 +151,7 @@ def ensure_gee_initialized():
                 service_account_key_env = decoded_json  # Use decoded version
             except Exception as e:
                 logger.error(f"[ERROR] Failed to decode base64: {e}")
+                # Don't fail yet, maybe other methods work
 
         if service_account_key_env:
             logger.info(
