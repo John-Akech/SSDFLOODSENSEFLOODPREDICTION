@@ -1,6 +1,7 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.database import get_db
@@ -26,7 +27,7 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
             raise HTTPException(
                 status_code=401, detail="User not found or inactive")
         return user
-    except JWTError:
+    except PyJWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
