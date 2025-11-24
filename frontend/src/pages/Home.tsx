@@ -105,7 +105,7 @@ const Home: React.FC = () => {
     color: getFloodLevelColor(severity)
   }));
 
-  const COLORS = pieData.map(item => item.color);
+  const COLORS = pieData.map((item: { name: string; value: number; color: string }) => item.color);
 
   // Simplified for performance - skip state chart data
   const stateChartData: any[] = [];
