@@ -69,7 +69,7 @@ const Home: React.FC = () => {
       // Get location names asynchronously (non-blocking) - only for top 5 alerts
       const topLocations = alertList.slice(0, 5);
       setTimeout(() => {
-        topLocations.forEach(async (item) => {
+        topLocations.forEach(async (item: Alert) => {
           const key = `${item.latitude},${item.longitude}`;
           if (!locationNames[key]) {
             try {
