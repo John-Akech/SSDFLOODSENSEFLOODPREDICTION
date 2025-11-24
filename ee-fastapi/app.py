@@ -69,7 +69,8 @@ def ensure_gee_initialized():
         # Try base64-encoded version first
         if service_account_key_base64:
             try:
-                logger.info("[INFO] Decoding base64-encoded service account key")
+                logger.info(
+                    "[INFO] Decoding base64-encoded service account key")
                 decoded_json = base64.b64decode(
                     service_account_key_base64).decode('utf-8')
                 logger.info(f"[INFO] Decoded JSON length: {len(decoded_json)}")
@@ -86,7 +87,8 @@ def ensure_gee_initialized():
                 f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY length: {len(service_account_key_env)}")
             logger.info(
                 f"[DEBUG] Starts with '{{': {service_account_key_env.strip().startswith('{')}")
-            logger.info(f"[DEBUG] First 50 chars: {service_account_key_env[:50]}")
+            logger.info(
+                f"[DEBUG] First 50 chars: {service_account_key_env[:50]}")
 
         # Check if GEE_SERVICE_ACCOUNT_KEY contains JSON content (production)
         if service_account_key_env and (service_account_key_env.strip().startswith('{') or len(service_account_key_env) > 200):
@@ -111,7 +113,8 @@ def ensure_gee_initialized():
                 service_account_email = service_account_info.get(
                     'client_email', 'unknown')
 
-            logger.info(f"[INFO] Service account email: {service_account_email}")
+            logger.info(
+                f"[INFO] Service account email: {service_account_email}")
 
             # Initialize with service account
             credentials = ee.ServiceAccountCredentials(
@@ -150,8 +153,9 @@ def ensure_gee_initialized():
         logger.error("  2. Service account has Earth Engine access enabled")
         logger.error("  3. Project ID is correct: ace-connection-474712-p1")
         gee_initialized = False
-    
+
     return gee_initialized
+
 
 app = FastAPI(
     title="FloodSense SAR Detection API",
@@ -166,12 +170,23 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    """Initialize database tables on startup."""
+    """Initialize database tables and GEE on startup."""
     try:
         init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
+    
+    # Initialize Google Earth Engine
+    try:
+        logger.info("Initializing Google Earth Engine...")
+        ensure_gee_initialized()
+        if gee_initialized:
+            logger.info("✅ Google Earth Engine initialized successfully")
+        else:
+            logger.error("❌ Google Earth Engine initialization failed")
+    except Exception as e:
+        logger.error(f"GEE initialization error: {e}")
 
 app.add_middleware(
     CORSMiddleware,

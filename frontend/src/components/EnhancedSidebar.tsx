@@ -82,8 +82,8 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
       gradient: 'from-emerald-500 to-teal-500',
       submenu: [
         {
-          path: (import.meta.env.VITE_SAR_URL && import.meta.env.VITE_SAR_URL.startsWith('/')) 
-            ? `${window.location.origin}${import.meta.env.VITE_SAR_URL}` 
+          path: (import.meta.env.VITE_SAR_URL && import.meta.env.VITE_SAR_URL.startsWith('/'))
+            ? `${window.location.origin}${import.meta.env.VITE_SAR_URL}?t=${Date.now()}`
             : (import.meta.env.VITE_SAR_URL || 'http://localhost:8080'),
           label: 'SAR Detection',
           description: t('geospatialVis'),
