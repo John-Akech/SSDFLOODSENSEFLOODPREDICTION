@@ -2,6 +2,7 @@ import axios from 'axios';
 import DOMPurify from 'dompurify';
 
 // Use environment variable or fallback to localhost for development
+// VITE_API_URL should be '/api/v1' in production (set in app.yaml)
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const api = axios.create({
