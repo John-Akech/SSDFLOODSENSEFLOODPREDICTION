@@ -50,10 +50,10 @@ services:
   envs:
   - key: VITE_API_URL
     scope: BUILD_TIME
-    value: ${backend.PUBLIC_URL}/api/v1
+    value: /api/v1
   - key: VITE_SAR_URL
     scope: BUILD_TIME
-    value: ${sar-detection.PUBLIC_URL}
+    value: /sar
   - key: VITE_VAPID_PUBLIC_KEY
     scope: BUILD_TIME
     value: ${backend.VAPID_PUBLIC_KEY}
