@@ -75,7 +75,7 @@ services:
     success_threshold: 1
     failure_threshold: 3
   instance_count: 1
-  instance_size_slug: basic-xxs
+  instance_size_slug: basic-xs
   envs:
   - key: GEE_PROJECT_ID
     scope: RUN_TIME
