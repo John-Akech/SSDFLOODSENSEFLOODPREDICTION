@@ -33,7 +33,7 @@ const Home: React.FC = () => {
       setError(null);
       const [alertData, predData, systemStats] = await Promise.all([
         apiService.getActiveAlerts(),
-        apiService.getPredictions(),
+        apiService.getPredictions({ limit: 10 }), // Limit predictions for faster load
         apiService.getSystemStats()
       ]);
 
@@ -66,25 +66,22 @@ const Home: React.FC = () => {
         population: totalPopulation
       });
 
-      // Get location names for all alerts and predictions
-      const allLocations = [...alertList, ...predList];
-      const locationPromises = allLocations.map(async (item) => {
-        try {
-          const name = await reverseGeocode(item.latitude, item.longitude);
-          return { key: `${item.latitude},${item.longitude}`, name };
-        } catch (error) {
-          console.warn('Failed to get location name:', error);
-          return { key: `${item.latitude},${item.longitude}`, name: t('unknownLocation') };
-        }
-      });
+      // Get location names asynchronously (non-blocking) - only for top 5 alerts
+      const topLocations = alertList.slice(0, 5);
+      setTimeout(() => {
+        topLocations.forEach(async (item) => {
+          const key = `${item.latitude},${item.longitude}`;
+          if (!locationNames[key]) {
+            try {
+              const name = await reverseGeocode(item.latitude, item.longitude);
+              setLocationNames(prev => ({ ...prev, [key]: name }));
+            } catch (error) {
+              console.warn('Failed to get location name:', error);
+            }
+          }
+        });
+      }, 100); // Defer geocoding to not block initial render
 
-      const locationResults = await Promise.all(locationPromises);
-      const newLocationNames = locationResults.reduce((acc, { key, name }) => {
-        acc[key] = name;
-        return acc;
-      }, {} as Record<string, string>);
-
-      setLocationNames(prev => ({ ...prev, ...newLocationNames }));
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -92,11 +89,11 @@ const Home: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [locationNames]);
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    const interval = setInterval(fetchData, 60000); // Refresh every 60 seconds (reduced from 30)
     return () => clearInterval(interval);
   }, [fetchData]);
 
