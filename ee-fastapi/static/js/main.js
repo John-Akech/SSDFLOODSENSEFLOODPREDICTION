@@ -1,4 +1,27 @@
-var baseUrl = window.location.origin;
+function resolveBaseUrl() {
+    var injectedPath = (window.__SAR_PUBLIC_PATH || "").trim();
+    if (injectedPath === "/") {
+        injectedPath = "";
+    }
+
+    if (injectedPath) {
+        if (!injectedPath.startsWith("/")) {
+            injectedPath = "/" + injectedPath;
+        }
+        injectedPath = injectedPath.replace(/\/+$/g, "");
+    } else {
+        var segments = window.location.pathname.split("/").filter(Boolean);
+        var firstSegment = segments.length ? segments[0] : "";
+        var knownPrefixes = ["sar", "sar-detection"];
+        if (firstSegment && knownPrefixes.includes(firstSegment)) {
+            injectedPath = "/" + firstSegment;
+        }
+    }
+
+    return window.location.origin + (injectedPath || "");
+}
+
+var baseUrl = resolveBaseUrl();
 var isAuthenticated = false;
 var processingStartTime = 0;
 var currentStep = 0;

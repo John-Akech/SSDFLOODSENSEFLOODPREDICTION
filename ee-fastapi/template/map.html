@@ -1189,7 +1189,7 @@
     </style>
 </head>
 
-<body>
+<body data-public-path="{{ public_path }}">
     <div id="map"></div>
 
     <!-- Floating Legend Overlay -->
@@ -1744,7 +1744,10 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ol@v7.5.2/dist/ol.js"></script>
-    <script src="/sar/static/js/main.js?v=20251114-5"></script>
+    <script>
+        window.__SAR_PUBLIC_PATH = "{{ public_path }}";
+    </script>
+    <script src="{{ public_path if public_path else '' }}/static/js/main.js?v=20251114-5"></script>
 </body>
 
 </html>

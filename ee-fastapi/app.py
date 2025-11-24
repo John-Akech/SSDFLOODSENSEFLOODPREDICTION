@@ -32,6 +32,20 @@ gee_initialized = False
 gee_error = None
 gee_init_attempted = False
 
+
+def _normalize_public_path(path: Optional[str]) -> str:
+    if not path:
+        return ""
+    normalized = path.strip()
+    if not normalized:
+        return ""
+    if not normalized.startswith("/"):
+        normalized = f"/{normalized}"
+    return normalized.rstrip("/")
+
+
+PUBLIC_BASE_PATH = _normalize_public_path(settings.PUBLIC_PATH)
+
 # Defer GEE initialization - will initialize on first use
 
 
@@ -298,6 +312,18 @@ output_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/output", StaticFiles(directory=str(output_dir)), name="output")
 
+if PUBLIC_BASE_PATH:
+    app.mount(
+        f"{PUBLIC_BASE_PATH}/static",
+        StaticFiles(directory="static"),
+        name="static-prefixed",
+    )
+    app.mount(
+        f"{PUBLIC_BASE_PATH}/output",
+        StaticFiles(directory=str(output_dir)),
+        name="output-prefixed",
+    )
+
 # Load templates
 templates = Jinja2Templates(directory="template")
 
@@ -305,7 +331,13 @@ templates = Jinja2Templates(directory="template")
 @app.get("/", tags=["UI"])
 async def map_view(request: Request):
     """Render interactive flood detection map."""
-    return templates.TemplateResponse("map.html", {"request": request})
+    return templates.TemplateResponse(
+        "map.html",
+        {
+            "request": request,
+            "public_path": PUBLIC_BASE_PATH,
+        }
+    )
 
 
 @app.get("/health", tags=["System"])
