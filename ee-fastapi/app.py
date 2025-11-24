@@ -171,22 +171,26 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event():
     """Initialize database tables and GEE on startup."""
+    global gee_initialized, gee_error
+    
     try:
         init_db()
         logger.info("Database initialized successfully")
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
-    
+
     # Initialize Google Earth Engine
     try:
         logger.info("Initializing Google Earth Engine...")
-        ensure_gee_initialized()
-        if gee_initialized:
+        result = ensure_gee_initialized()
+        if result:
             logger.info("✅ Google Earth Engine initialized successfully")
         else:
-            logger.error("❌ Google Earth Engine initialization failed")
+            logger.error(f"❌ Google Earth Engine initialization failed: {gee_error}")
     except Exception as e:
         logger.error(f"GEE initialization error: {e}")
+        import traceback
+        traceback.print_exc()
 
 app.add_middleware(
     CORSMiddleware,
