@@ -45,9 +45,9 @@ services:
   http_port: 8080
   routes:
   - path: /sar
-    preserve_path_prefix: false
+    preserve_path_prefix: true
   health_check:
-    http_path: /health
+    http_path: /sar/health
     initial_delay_seconds: 60
     period_seconds: 10
     timeout_seconds: 5
