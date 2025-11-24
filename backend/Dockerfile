@@ -3,6 +3,9 @@ FROM python:3.11-slim
 LABEL maintainer="John Akech <j.akech@alustudent.com>"
 LABEL description="FloodSense Backend API - ML Predictions & Alerts"
 
+# Cache buster for forcing rebuilds
+ARG CACHE_BUST=2025-11-24-v2
+
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_DEFAULT_TIMEOUT=300 \
