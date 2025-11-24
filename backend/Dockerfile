@@ -4,7 +4,7 @@ LABEL maintainer="John Akech <j.akech@alustudent.com>"
 LABEL description="FloodSense Backend API - ML Predictions & Alerts"
 
 # Cache buster for forcing rebuilds - This forces Docker to rebuild from this point
-ARG CACHE_BUST=2025-11-24-v3
+ARG CACHE_BUST=2025-11-24-v4
 RUN echo "Cache bust: $CACHE_BUST"
 
 ENV PYTHONUNBUFFERED=1 \
@@ -32,7 +32,7 @@ RUN pip install --no-cache-dir --timeout=300 torch==2.5.1 --index-url https://do
 
 # Install remaining dependencies in chunks to avoid timeout
 RUN pip install --no-cache-dir --timeout=300 \
-    fastapi==0.110.0 \
+    fastapi==0.109.2 \
     uvicorn[standard]==0.27.1 \
     sqlalchemy==2.0.28 \
     pydantic>=2.6.0 \
