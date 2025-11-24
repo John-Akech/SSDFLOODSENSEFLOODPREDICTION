@@ -4,7 +4,7 @@ LABEL maintainer="John Akech <j.akech@alustudent.com>"
 LABEL description="FloodSense Backend API - ML Predictions & Alerts"
 
 # Cache buster for forcing rebuilds - This forces Docker to rebuild from this point
-ARG CACHE_BUST=2025-11-24-v4
+ARG CACHE_BUST=2025-11-24-v5
 RUN echo "Cache bust: $CACHE_BUST"
 
 ENV PYTHONUNBUFFERED=1 \

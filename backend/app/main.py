@@ -24,7 +24,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, HTMLResponse
+from fastapi.openapi.docs import get_swagger_ui_html
 import uvicorn
 import os
 from contextlib import asynccontextmanager
@@ -92,12 +93,25 @@ app = FastAPI(
     lifespan=lifespan,
     openapi_version="3.0.0",  # OpenAPI 3.0.0 for Swagger UI compatibility
     # Don't set servers - let DigitalOcean handle routing with /api/v1 prefix
-    # Hide docs in production for security
-    docs_url="/docs" if os.getenv(
-        "ENVIRONMENT") != "production" else None,
+    # Disable default docs - we'll create custom ones with latest Swagger UI
+    docs_url=None,
     redoc_url="/redoc" if os.getenv(
         "ENVIRONMENT") != "production" else None
 )
+
+# Custom Swagger UI with latest version that supports OpenAPI 3.1.0
+
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    """Custom Swagger UI with v5.x that fully supports OpenAPI 3.1.0"""
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=f"{app.title} - Swagger UI",
+        swagger_ui_parameters={"syntaxHighlight": {"theme": "monokai"}},
+        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-bundle.js",
+        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui.css",
+    )
 
 # Add middleware layers
 # Important: Middleware executes in REVERSE ORDER (last added runs first)
