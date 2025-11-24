@@ -90,6 +90,11 @@ app = FastAPI(
     description="Community-Based Predictive Flood Forecasting and Early Warning System for South Sudan",
     version="2.0.0",
     lifespan=lifespan,
+    openapi_version="3.1.0",
+    servers=[
+        {"url": "/api/v1", "description": "Production API"},
+        {"url": "http://localhost:8000", "description": "Local development"}
+    ],
     # Hide docs in production for security
     docs_url="/docs" if os.getenv(
         "ENVIRONMENT") != "production" else None,
