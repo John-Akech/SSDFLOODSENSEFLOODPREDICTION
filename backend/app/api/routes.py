@@ -737,7 +737,7 @@ async def features_from_gee(lat: float, lon: float):
         # Call GEE service to extract features
         import requests
         gee_service_url = os.getenv(
-            "GEE_SERVICE_URL", "http://ee-fastapi:8001")
+            "SAR_SERVICE_URL", "http://sar-detection:8080")
 
         try:
             response = requests.get(
@@ -849,7 +849,7 @@ async def api_health_check(db: Session = Depends(get_db)):
     try:
         import requests
         gee_service_url = os.getenv(
-            "GEE_SERVICE_URL", "http://ee-fastapi:8001")
+            "SAR_SERVICE_URL", "http://sar-detection:8080")
         response = requests.get(f"{gee_service_url}/health", timeout=5)
         if response.status_code == 200:
             health_status["checks"]["gee_service"] = {
