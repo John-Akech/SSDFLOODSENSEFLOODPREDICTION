@@ -16,22 +16,6 @@ ENV PYTHONFAULTHANDLER=1 \
     PIP_DEFAULT_TIMEOUT=100 \
     DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies in ONE step with proper error handling
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-    curl \
-    ca-certificates \
-    build-essential \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-# Skip GDAL completely - not critical for basic functionality
-# If GDAL is needed, install it manually after deployment
-RUN echo "GDAL installation skipped for build reliability"
-
 # Create app directory
 WORKDIR /app
 
@@ -55,8 +39,5 @@ RUN useradd -m -u 1000 appuser && \
 USER appuser
 
 EXPOSE 8080
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
 
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "4"]
