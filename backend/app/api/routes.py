@@ -56,7 +56,7 @@ def _get_location_hash(latitude: float, longitude: float, lead_time: int) -> str
     lat_rounded = round(latitude, 4)
     lon_rounded = round(longitude, 4)
     key = f"{lat_rounded},{lon_rounded},{lead_time}"
-    return hashlib.md5(key.encode()).hexdigest()
+    return hashlib.md5(key.encode(), usedforsecurity=False).hexdigest()  # nosec B324
 
 
 def _clean_cache():
