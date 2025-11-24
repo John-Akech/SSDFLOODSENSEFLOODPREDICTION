@@ -16,7 +16,7 @@ Last Updated: November 2025
 import joblib  # type: ignore
 import numpy as np
 import pandas as pd
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, Set
 import logging
 from pathlib import Path
 import sys
@@ -171,6 +171,44 @@ class ModelService:
     ]
 
     @classmethod
+    def _find_scaler_path(cls, models_dir: Optional[Path]) -> Optional[Path]:
+        """Locate the most recent feature scaler artifact across known directories."""
+        search_dirs: List[Path] = []
+        if models_dir is not None:
+            search_dirs.extend([models_dir.parent, models_dir])
+
+        search_dirs.extend([
+            Path("/app/backend/ml_pipeline/outputs"),
+            Path(__file__).parent.parent.parent / "ml_pipeline" / "outputs",
+            Path.cwd() / "backend" / "ml_pipeline" / "outputs",
+        ])
+
+        seen: Set[Path] = set()
+        for dir_path in search_dirs:
+            if dir_path is None or not dir_path.exists():
+                continue
+            try:
+                resolved = dir_path.resolve()
+            except Exception:
+                resolved = dir_path
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+
+            candidates = []
+            default_scaler = dir_path / "03_feature_scaler.pkl"
+            if default_scaler.exists():
+                candidates.append(default_scaler)
+            candidates.extend(dir_path.glob("feature_scaler*.pkl"))
+            candidates = [p for p in candidates if p.is_file()]
+            if candidates:
+                try:
+                    return max(candidates, key=lambda p: p.stat().st_mtime)
+                except Exception:
+                    return candidates[0]
+        return None
+
+    @classmethod
     async def load_models(cls):
         """
         Load ML models directly from training pipeline output.
@@ -206,13 +244,14 @@ class ModelService:
                 return
 
             # Load feature scaler (from preprocessing step)
-            scaler_path = models_dir.parent / "03_feature_scaler.pkl"
-            if scaler_path.exists():
+            scaler_path = cls._find_scaler_path(models_dir)
+            if scaler_path:
                 cls.scaler = joblib.load(scaler_path)
-                logger.info("Feature scaler loaded")
+                logger.info(
+                    f"Feature scaler loaded from {scaler_path}")
             else:
                 logger.warning(
-                    "Feature scaler not found - predictions may fail")
+                    "Feature scaler not found in expected directories - predictions may fail")
 
             # PRIMARY MODEL 1: Random Forest
             rf_path = models_dir / "random_forest.pkl"
@@ -935,7 +974,11 @@ class ModelService:
         from fastapi import HTTPException
 
         # Call GEE service to extract real satellite features
-        gee_service_url = os.getenv("GEE_SERVICE_URL", "http://localhost:8080")
+        gee_service_url = (
+            os.getenv("GEE_SERVICE_URL")
+            or os.getenv("SAR_SERVICE_URL")
+            or "http://localhost:8080"
+        )
 
         try:
             response = requests.get(

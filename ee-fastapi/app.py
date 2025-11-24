@@ -59,6 +59,42 @@ def ensure_gee_initialized():
             'GEE_SERVICE_ACCOUNT_KEY_BASE64', '')
         service_account_file = '/app/gee-service-account-key.json'
 
+        def _resolve_secret_path(relative_path: str) -> Path:
+            candidate = Path(relative_path)
+            if not candidate.is_absolute():
+                candidate = Path(__file__).parent / candidate
+            return candidate
+
+        base64_file_setting = os.getenv(
+            "GEE_SERVICE_ACCOUNT_KEY_BASE64_FILE",
+            "credentials/gee_service_account_base64.txt"
+        )
+        if not service_account_key_base64 and base64_file_setting:
+            base64_file_path = _resolve_secret_path(base64_file_setting)
+            if base64_file_path.exists():
+                try:
+                    service_account_key_base64 = base64_file_path.read_text().strip()
+                    logger.info(
+                        f"[INFO] Loaded base64 service account key from file: {base64_file_path}")
+                except Exception as file_err:
+                    logger.error(
+                        f"[ERROR] Failed to read base64 key from {base64_file_path}: {file_err}")
+
+        raw_key_file_setting = os.getenv(
+            "GEE_SERVICE_ACCOUNT_KEY_FILE",
+            "credentials/gee-service-account-key.json"
+        )
+        if not service_account_key_env and raw_key_file_setting:
+            raw_key_file = _resolve_secret_path(raw_key_file_setting)
+            if raw_key_file.exists():
+                try:
+                    service_account_key_env = raw_key_file.read_text().strip()
+                    logger.info(
+                        f"[INFO] Loaded JSON service account key from file: {raw_key_file}")
+                except Exception as file_err:
+                    logger.error(
+                        f"[ERROR] Failed to read JSON key from {raw_key_file}: {file_err}")
+
         # Debug: Log environment variable info
         logger.info(
             f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY present: {bool(service_account_key_env)}")

@@ -268,6 +268,31 @@ The ML pipeline is fully automated and can be triggered:
    - **API Docs:** `http://localhost:8000/docs`
    - **Health Check:** `http://localhost:8000/api/v1/health`
 
+### Production Deployment Checklist
+
+1. **Google Earth Engine Credentials**
+   - Prefer injecting `GEE_SERVICE_ACCOUNT_KEY_BASE64` (base64 JSON) or `GEE_SERVICE_ACCOUNT_KEY` (plain JSON) via secrets.
+   - When environment secrets are not available, mount the repo-level helper files used in development:
+     - `ee-fastapi/credentials/gee_service_account_base64.txt`
+     - `ee-fastapi/credentials/gee-service-account-key.json`
+   - The SAR service now auto-detects these files through `GEE_SERVICE_ACCOUNT_KEY_BASE64_FILE` and `GEE_SERVICE_ACCOUNT_KEY_FILE`, so no image rebuild is needed.
+
+2. **Internal Service URLs**
+   - Back-end calls to the SAR microservice fall back in this order: `GEE_SERVICE_URL` → `SAR_SERVICE_URL` → `http://sar-detection:8080`.
+   - Set `SAR_SERVICE_URL=http://sar-detection:8080` in DigitalOcean App Spec (already present) and optionally expose `GEE_SERVICE_URL` for clarity when running locally.
+
+3. **Model Artifacts & Scaler**
+   - Mount `/app/models` with the contents of `models/` from this repo, or copy `backend/ml_pipeline/outputs/04_trained_models/` after running the training pipeline.
+   - The API now auto-discovers scaler files such as `feature_scaler_pipeline_<timestamp>.pkl`, so no renaming is required.
+
+4. **Post-Deploy Smoke Tests**
+   - `GET /api/v1/health` → should return `status=healthy` (models, DB, SAR service checks bundled).
+   - `GET /sar/health` (SAR service) → verifies Google Earth Engine authentication succeeded.
+   - `GET /docs` → ensure Swagger UI renders behind any reverse-proxy prefix set via `API_PUBLIC_PATH`.
+
+5. **CI/CD Sanity Test**
+   - Locally run `python -m pytest backend/tests/test_api.py -k health` before pushing to confirm the prefixed health route stays wired.
+
 ---
 
 ## Project Structure

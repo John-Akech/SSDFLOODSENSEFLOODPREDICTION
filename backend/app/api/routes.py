@@ -36,8 +36,12 @@ def _in_test_mode() -> bool:
     return os.getenv("PYTEST_CURRENT_TEST") is not None
 
 
-# SAR service configuration
-SAR_SERVICE_URL = os.getenv("SAR_SERVICE_URL", "http://localhost:8080")
+# SAR service configuration (prefer explicit GEE_SERVICE_URL when provided)
+SAR_SERVICE_URL = (
+    os.getenv("GEE_SERVICE_URL")
+    or os.getenv("SAR_SERVICE_URL")
+    or "http://localhost:8080"
+)
 
 # Feature cache to ensure consistency for same location within time window
 # Cache format: {location_hash: {"features": dict, "timestamp": datetime}}
@@ -736,8 +740,11 @@ async def features_from_gee(lat: float, lon: float):
     try:
         # Call GEE service to extract features
         import requests
-        gee_service_url = os.getenv(
-            "SAR_SERVICE_URL", "http://sar-detection:8080")
+        gee_service_url = (
+            os.getenv("GEE_SERVICE_URL")
+            or os.getenv("SAR_SERVICE_URL")
+            or "http://sar-detection:8080"
+        )
 
         try:
             response = requests.get(
@@ -848,8 +855,11 @@ async def api_health_check(db: Session = Depends(get_db)):
     # Check 3: GEE service (warning only, not critical)
     try:
         import requests
-        gee_service_url = os.getenv(
-            "SAR_SERVICE_URL", "http://sar-detection:8080")
+        gee_service_url = (
+            os.getenv("GEE_SERVICE_URL")
+            or os.getenv("SAR_SERVICE_URL")
+            or "http://sar-detection:8080"
+        )
         response = requests.get(f"{gee_service_url}/health", timeout=5)
         if response.status_code == 200:
             health_status["checks"]["gee_service"] = {
@@ -884,6 +894,16 @@ async def api_health_check(db: Session = Depends(get_db)):
         health_status["status"] = "degraded"
 
     return health_status
+
+
+# Compatibility route for local tests expecting /api/v1 prefix directly
+router.add_api_route(
+    "/api/v1/health",
+    api_health_check,
+    methods=["GET"],
+    include_in_schema=False,
+    name="api_v1_health_compat",
+)
 
 
 @router.get("/status")
