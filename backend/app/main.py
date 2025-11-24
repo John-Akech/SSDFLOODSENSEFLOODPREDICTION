@@ -90,7 +90,7 @@ app = FastAPI(
     description="Community-Based Predictive Flood Forecasting and Early Warning System for South Sudan",
     version="2.0.0",
     lifespan=lifespan,
-    openapi_version="3.0.0",  # Using 3.0.0 for better Swagger UI compatibility
+    openapi_version="3.0.0",  # OpenAPI 3.0.0 for Swagger UI compatibility
     # Don't set servers - let DigitalOcean handle routing with /api/v1 prefix
     # Hide docs in production for security
     docs_url="/docs" if os.getenv(
