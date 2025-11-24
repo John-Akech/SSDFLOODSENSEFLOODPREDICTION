@@ -31,27 +31,25 @@ const Home: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const [alertData, predData, systemStats] = await Promise.all([
-        apiService.getActiveAlerts(),
-        apiService.getPredictions({ limit: 10 }), // Limit predictions for faster load
-        apiService.getSystemStats()
+      // Only fetch essential data - alerts limited to 10 for speed
+      const [alertData, predData] = await Promise.all([
+        apiService.getActiveAlerts({ limit: 10 }),
+        apiService.getPredictions({ limit: 5 })
       ]);
 
       const alertList = alertData.alerts || [];
       const predList = predData.predictions || [];
 
       setAlerts(alertList);
-      setPopulationByState(systemStats.population_by_state || {});
+      // Skip population data for faster load
 
       // Calculate high risk areas
       const highRiskCount = alertList.filter((a: Alert) =>
         a.severity === 'high' || a.severity === 'critical'
       ).length;
 
-      // Calculate total population at risk
-      const totalPopulation = Object.values(systemStats.population_by_state || {}).reduce<number>(
-        (sum, pop) => sum + ((pop as number) || 0), 0
-      );
+      // Skip population calculation for faster load
+      const totalPopulation = 0;
 
       // Calculate zones from unique coordinate pairs (rounded to 1 decimal place)
       const uniqueZones = new Set(alertList.map((a: Alert) =>
@@ -66,21 +64,7 @@ const Home: React.FC = () => {
         population: totalPopulation
       });
 
-      // Get location names asynchronously (non-blocking) - only for top 5 alerts
-      const topLocations = alertList.slice(0, 5);
-      setTimeout(() => {
-        topLocations.forEach(async (item: Alert) => {
-          const key = `${item.latitude},${item.longitude}`;
-          if (!locationNames[key]) {
-            try {
-              const name = await reverseGeocode(item.latitude, item.longitude);
-              setLocationNames(prev => ({ ...prev, [key]: name }));
-            } catch (error) {
-              console.warn('Failed to get location name:', error);
-            }
-          }
-        });
-      }, 100); // Defer geocoding to not block initial render
+      // Skip geocoding completely for maximum speed
 
       setLastUpdate(new Date());
     } catch (error) {
@@ -89,11 +73,11 @@ const Home: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [locationNames]);
+  }, []);
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Refresh every 60 seconds (reduced from 30)
+    const interval = setInterval(fetchData, 120000); // Refresh every 2 minutes
     return () => clearInterval(interval);
   }, [fetchData]);
 
