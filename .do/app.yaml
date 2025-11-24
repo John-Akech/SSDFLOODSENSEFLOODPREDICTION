@@ -76,6 +76,9 @@ services:
   - key: GEE_SERVICE_ACCOUNT_KEY
     scope: RUN_TIME
     type: SECRET
+  - key: GEE_SERVICE_ACCOUNT_KEY_BASE64
+    scope: RUN_TIME
+    type: SECRET
 databases:
 - name: db
   engine: PG
