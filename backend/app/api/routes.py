@@ -791,7 +791,7 @@ async def features_from_gee(lat: float, lon: float):
 
 
 @router.get("/health")
-async def health_check(db: Session = Depends(get_db)):
+async def api_health_check(db: Session = Depends(get_db)):
     """Production health check - validates all critical systems
 
     Returns HTTP 200 only if ALL systems operational.
