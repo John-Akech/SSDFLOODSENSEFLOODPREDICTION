@@ -4,7 +4,7 @@ LABEL maintainer="South Sudan Flood Prediction System"
 LABEL description="SAR-based flood detection using Google Earth Engine"
 
 # Cache buster for force rebuild
-ARG CACHE_BUST=2025-11-24-sar-v2
+ARG CACHE_BUST=2025-11-24-sar-v3
 RUN echo "Cache bust: $CACHE_BUST"
 
 # Environment variables
@@ -16,25 +16,21 @@ ENV PYTHONFAULTHANDLER=1 \
     PIP_DEFAULT_TIMEOUT=100 \
     DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies including curl for healthcheck
-# Split into multiple RUN commands to isolate failures
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies in ONE step with proper error handling
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
     curl \
     ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     gcc \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Install GDAL dependencies separately (these can be problematic)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gdal-bin \
-    libgdal-dev \
-    python3-gdal \
-    && rm -rf /var/lib/apt/lists/* || echo "GDAL installation skipped"
+# Skip GDAL completely - not critical for basic functionality
+# If GDAL is needed, install it manually after deployment
+RUN echo "GDAL installation skipped for build reliability"
 
 # Create app directory
 WORKDIR /app
