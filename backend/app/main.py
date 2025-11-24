@@ -91,7 +91,7 @@ app = FastAPI(
     description="Community-Based Predictive Flood Forecasting and Early Warning System for South Sudan",
     version="2.0.0",
     lifespan=lifespan,
-    openapi_version="3.1.0",
+    openapi_version="3.0.3",
     docs_url=None,
     redoc_url=None
 )
@@ -159,10 +159,28 @@ app.include_router(router)
 app.include_router(crud_router)  # CRUD routes last
 
 
+# Override the default openapi method to force OpenAPI 3.0.3
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    from fastapi.openapi.utils import get_openapi
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        openapi_version="3.0.3"
+    )
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
+
 # Custom Swagger UI endpoints (must be after router includes)
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
-    """Custom Swagger UI with v5.x that fully supports OpenAPI 3.1.0"""
+    """Custom Swagger UI with v5.x for OpenAPI 3.0.3 compatibility"""
     return get_swagger_ui_html(
         openapi_url="/openapi.json",
         title=f"{app.title} - Swagger UI",
@@ -175,14 +193,7 @@ async def custom_swagger_ui_html():
 @app.get("/openapi.json", include_in_schema=False)
 async def get_openapi_schema():
     """Serve OpenAPI schema at /openapi.json"""
-    from fastapi.openapi.utils import get_openapi
-    return get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-        openapi_version="3.1.0"
-    )
+    return app.openapi()
 
 
 @app.get("/")
