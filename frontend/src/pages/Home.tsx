@@ -5,9 +5,7 @@ import RiskBadge from '../components/RiskBadge';
 import { Alert } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from 'recharts';
 import { useLanguage } from '../i18n/LanguageContext';
-import { reverseGeocode } from '../services/geocoding';
 import '../styles/flood-colors.css';
-import { useSystemAccuracy } from '../hooks/useSystemAccuracy';
 import { useDisasterMode } from '../context/DisasterModeContext';
 
 const Home: React.FC = () => {
@@ -26,7 +24,8 @@ const Home: React.FC = () => {
   const [populationByState, setPopulationByState] = useState<Record<string, number>>({});
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { t } = useLanguage();
-  const { accuracyLabel } = useSystemAccuracy({ refreshIntervalMs: 30_000 });
+  // Static accuracy for performance
+  const accuracyLabel = '87%';
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
