@@ -89,7 +89,7 @@ const GISAnalysis: React.FC = () => {
 
     // WebSocket connection for real-time updates
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${wsProtocol}//${window.location.hostname}:8000/api/v1/ws/alerts`;
+    const wsUrl = `${wsProtocol}//${window.location.host}/api/v1/ws/alerts`;
     const ws = new WebSocket(wsUrl);
 
     ws.onmessage = () => {

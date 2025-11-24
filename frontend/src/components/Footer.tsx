@@ -62,7 +62,7 @@ const Footer: React.FC = () => {
               <li><a href="https://github.com/John-Akech/SouthSudanFLoodSense" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-green-400 transition-colors flex items-center gap-2 group">
                 Documentation
               </a></li>
-              <li><a href="http://localhost:8000/docs" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-green-400 transition-colors flex items-center gap-2 group">
+              <li><a href="/api/v1/docs" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-green-400 transition-colors flex items-center gap-2 group">
                 API Reference
               </a></li>
               <li><a href="https://github.com/John-Akech/SouthSudanFLoodSense/discussions" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-green-400 transition-colors flex items-center gap-2 group">
