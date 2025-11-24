@@ -34,39 +34,44 @@ gee_error = None
 # Try to initialize Earth Engine on startup
 try:
     import base64
-    
+
     # Debug: Log ALL environment variables to diagnose issue
     logger.info("[DEBUG] ===== ENVIRONMENT VARIABLES DIAGNOSTIC =====")
     all_env_vars = dict(os.environ)
-    gee_related = {k: v[:50] + '...' if len(v) > 50 else v for k, v in all_env_vars.items() if 'GEE' in k.upper()}
+    gee_related = {
+        k: v[:50] + '...' if len(v) > 50 else v for k, v in all_env_vars.items() if 'GEE' in k.upper()}
     logger.info(f"[DEBUG] GEE-related env vars: {gee_related}")
     logger.info(f"[DEBUG] Total env vars: {len(all_env_vars)}")
     logger.info("[DEBUG] =============================================")
-    
+
     project_id = os.getenv('GEE_PROJECT_ID', 'ace-connection-474712-p1')
     service_account_key_env = os.getenv('GEE_SERVICE_ACCOUNT_KEY', '')
-    service_account_key_base64 = os.getenv('GEE_SERVICE_ACCOUNT_KEY_BASE64', '')
+    service_account_key_base64 = os.getenv(
+        'GEE_SERVICE_ACCOUNT_KEY_BASE64', '')
     service_account_file = '/app/gee-service-account-key.json'
 
     # Debug: Log environment variable info
     logger.info(
         f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY present: {bool(service_account_key_env)}")
-    logger.info(f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY_BASE64 present: {bool(service_account_key_base64)}")
+    logger.info(
+        f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY_BASE64 present: {bool(service_account_key_base64)}")
     logger.info(f"[DEBUG] GEE_PROJECT_ID value: {project_id}")
-    
+
     # Try base64-encoded version first
     if service_account_key_base64:
         try:
             logger.info("[INFO] Decoding base64-encoded service account key")
-            decoded_json = base64.b64decode(service_account_key_base64).decode('utf-8')
+            decoded_json = base64.b64decode(
+                service_account_key_base64).decode('utf-8')
             logger.info(f"[INFO] Decoded JSON length: {len(decoded_json)}")
             with open(service_account_file, 'w') as f:
                 f.write(decoded_json)
-            logger.info(f"[INFO] Service account key written from base64 to: {service_account_file}")
+            logger.info(
+                f"[INFO] Service account key written from base64 to: {service_account_file}")
             service_account_key_env = decoded_json  # Use decoded version
         except Exception as e:
             logger.error(f"[ERROR] Failed to decode base64: {e}")
-    
+
     if service_account_key_env:
         logger.info(
             f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY length: {len(service_account_key_env)}")

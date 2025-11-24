@@ -30,6 +30,17 @@ COPY requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
+# Add a build argument for the base64 encoded service account key
+ARG GEE_SERVICE_ACCOUNT_KEY_BASE64
+
+# Create the service account key file from the build argument
+RUN if [ -n "$GEE_SERVICE_ACCOUNT_KEY_BASE64" ]; then \
+    echo "Creating gee-service-account-key.json from base64 build argument" && \
+    echo "$GEE_SERVICE_ACCOUNT_KEY_BASE64" | base64 -d > /app/gee-service-account-key.json; \
+    else \
+    echo "Build argument GEE_SERVICE_ACCOUNT_KEY_BASE64 not provided, skipping file creation"; \
+    fi
+
 # Copy application code (excluding sensitive files via .dockerignore)
 COPY . .
 
