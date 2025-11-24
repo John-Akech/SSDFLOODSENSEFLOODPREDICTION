@@ -10,7 +10,6 @@ services:
   http_port: 8000
   routes:
   - path: /api/v1
-    preserve_path_prefix: true
   instance_count: 1
   instance_size_slug: basic-xxs
   envs:
