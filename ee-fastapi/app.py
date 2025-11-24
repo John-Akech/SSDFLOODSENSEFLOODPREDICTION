@@ -30,117 +30,128 @@ logger = logging.getLogger(__name__)
 # Global state for GEE initialization
 gee_initialized = False
 gee_error = None
+gee_init_attempted = False
 
-# Try to initialize Earth Engine on startup
-try:
-    import base64
+# Defer GEE initialization - will initialize on first use
 
-    # Debug: Log ALL environment variables to diagnose issue
-    logger.info("[DEBUG] ===== ENVIRONMENT VARIABLES DIAGNOSTIC =====")
-    all_env_vars = dict(os.environ)
-    gee_related = {
-        k: v[:50] + '...' if len(v) > 50 else v for k, v in all_env_vars.items() if 'GEE' in k.upper()}
-    logger.info(f"[DEBUG] GEE-related env vars: {gee_related}")
-    logger.info(f"[DEBUG] Total env vars: {len(all_env_vars)}")
-    logger.info("[DEBUG] =============================================")
 
-    project_id = os.getenv('GEE_PROJECT_ID', 'ace-connection-474712-p1')
-    service_account_key_env = os.getenv('GEE_SERVICE_ACCOUNT_KEY', '')
-    service_account_key_base64 = os.getenv(
-        'GEE_SERVICE_ACCOUNT_KEY_BASE64', '')
-    service_account_file = '/app/gee-service-account-key.json'
+def ensure_gee_initialized():
+    global gee_initialized, gee_error, gee_init_attempted
+    if gee_init_attempted:
+        return gee_initialized
 
-    # Debug: Log environment variable info
-    logger.info(
-        f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY present: {bool(service_account_key_env)}")
-    logger.info(
-        f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY_BASE64 present: {bool(service_account_key_base64)}")
-    logger.info(f"[DEBUG] GEE_PROJECT_ID value: {project_id}")
+    gee_init_attempted = True
+    try:
+        import base64
 
-    # Try base64-encoded version first
-    if service_account_key_base64:
-        try:
-            logger.info("[INFO] Decoding base64-encoded service account key")
-            decoded_json = base64.b64decode(
-                service_account_key_base64).decode('utf-8')
-            logger.info(f"[INFO] Decoded JSON length: {len(decoded_json)}")
+        # Debug: Log ALL environment variables to diagnose issue
+        logger.info("[DEBUG] ===== ENVIRONMENT VARIABLES DIAGNOSTIC =====")
+        all_env_vars = dict(os.environ)
+        gee_related = {
+            k: v[:50] + '...' if len(v) > 50 else v for k, v in all_env_vars.items() if 'GEE' in k.upper()}
+        logger.info(f"[DEBUG] GEE-related env vars: {gee_related}")
+        logger.info(f"[DEBUG] Total env vars: {len(all_env_vars)}")
+        logger.info("[DEBUG] =============================================")
+
+        project_id = os.getenv('GEE_PROJECT_ID', 'ace-connection-474712-p1')
+        service_account_key_env = os.getenv('GEE_SERVICE_ACCOUNT_KEY', '')
+        service_account_key_base64 = os.getenv(
+            'GEE_SERVICE_ACCOUNT_KEY_BASE64', '')
+        service_account_file = '/app/gee-service-account-key.json'
+
+        # Debug: Log environment variable info
+        logger.info(
+            f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY present: {bool(service_account_key_env)}")
+        logger.info(
+            f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY_BASE64 present: {bool(service_account_key_base64)}")
+        logger.info(f"[DEBUG] GEE_PROJECT_ID value: {project_id}")
+
+        # Try base64-encoded version first
+        if service_account_key_base64:
+            try:
+                logger.info("[INFO] Decoding base64-encoded service account key")
+                decoded_json = base64.b64decode(
+                    service_account_key_base64).decode('utf-8')
+                logger.info(f"[INFO] Decoded JSON length: {len(decoded_json)}")
+                with open(service_account_file, 'w') as f:
+                    f.write(decoded_json)
+                logger.info(
+                    f"[INFO] Service account key written from base64 to: {service_account_file}")
+                service_account_key_env = decoded_json  # Use decoded version
+            except Exception as e:
+                logger.error(f"[ERROR] Failed to decode base64: {e}")
+
+        if service_account_key_env:
+            logger.info(
+                f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY length: {len(service_account_key_env)}")
+            logger.info(
+                f"[DEBUG] Starts with '{{': {service_account_key_env.strip().startswith('{')}")
+            logger.info(f"[DEBUG] First 50 chars: {service_account_key_env[:50]}")
+
+        # Check if GEE_SERVICE_ACCOUNT_KEY contains JSON content (production)
+        if service_account_key_env and (service_account_key_env.strip().startswith('{') or len(service_account_key_env) > 200):
+            logger.info(
+                "[INFO] Writing service account key from environment variable")
+            # Write the JSON content to file
             with open(service_account_file, 'w') as f:
-                f.write(decoded_json)
+                f.write(service_account_key_env)
             logger.info(
-                f"[INFO] Service account key written from base64 to: {service_account_file}")
-            service_account_key_env = decoded_json  # Use decoded version
-        except Exception as e:
-            logger.error(f"[ERROR] Failed to decode base64: {e}")
+                f"[INFO] Service account key written to: {service_account_file}")
 
-    if service_account_key_env:
-        logger.info(
-            f"[DEBUG] GEE_SERVICE_ACCOUNT_KEY length: {len(service_account_key_env)}")
-        logger.info(
-            f"[DEBUG] Starts with '{{': {service_account_key_env.strip().startswith('{')}")
-        logger.info(f"[DEBUG] First 50 chars: {service_account_key_env[:50]}")
-
-    # Check if GEE_SERVICE_ACCOUNT_KEY contains JSON content (production)
-    if service_account_key_env and (service_account_key_env.strip().startswith('{') or len(service_account_key_env) > 200):
-        logger.info(
-            "[INFO] Writing service account key from environment variable")
-        # Write the JSON content to file
-        with open(service_account_file, 'w') as f:
-            f.write(service_account_key_env)
-        logger.info(
-            f"[INFO] Service account key written to: {service_account_file}")
-
-    # Check if service account key file exists
-    if os.path.exists(service_account_file):
-        logger.info(
-            f"[INFO] Using service account authentication: {service_account_file}")
-        logger.info(f"[INFO] Project ID: {project_id}")
-
-        # Read service account credentials
-        with open(service_account_file, 'r') as f:
-            import json
-            service_account_info = json.load(f)
-            service_account_email = service_account_info.get(
-                'client_email', 'unknown')
-
-        logger.info(f"[INFO] Service account email: {service_account_email}")
-
-        # Initialize with service account
-        credentials = ee.ServiceAccountCredentials(
-            service_account_email, service_account_file)
-        ee.Initialize(credentials, project=project_id)
-
-        logger.info(
-            f"[OK] Earth Engine initialized successfully with service account")
-        logger.info(f"[OK] Project: {project_id}")
-        gee_initialized = True
-
-    else:
-        # Fallback to default credentials (for local development)
-        logger.warning(
-            f"[WARN] Service account key not found at: {service_account_file}")
-        logger.info(
-            "[INFO] Attempting Earth Engine initialization with default credentials...")
-
-        if project_id:
-            ee.Initialize(project=project_id)
+        # Check if service account key file exists
+        if os.path.exists(service_account_file):
             logger.info(
-                f"[OK] Earth Engine initialized with default credentials and project: {project_id}")
+                f"[INFO] Using service account authentication: {service_account_file}")
+            logger.info(f"[INFO] Project ID: {project_id}")
+
+            # Read service account credentials
+            with open(service_account_file, 'r') as f:
+                import json
+                service_account_info = json.load(f)
+                service_account_email = service_account_info.get(
+                    'client_email', 'unknown')
+
+            logger.info(f"[INFO] Service account email: {service_account_email}")
+
+            # Initialize with service account
+            credentials = ee.ServiceAccountCredentials(
+                service_account_email, service_account_file)
+            ee.Initialize(credentials, project=project_id)
+
+            logger.info(
+                f"[OK] Earth Engine initialized successfully with service account")
+            logger.info(f"[OK] Project: {project_id}")
+            gee_initialized = True
+
         else:
-            ee.Initialize()
+            # Fallback to default credentials (for local development)
+            logger.warning(
+                f"[WARN] Service account key not found at: {service_account_file}")
             logger.info(
-                "[OK] Earth Engine initialized with default credentials (no project)")
+                "[INFO] Attempting Earth Engine initialization with default credentials...")
 
-        gee_initialized = True
+            if project_id:
+                ee.Initialize(project=project_id)
+                logger.info(
+                    f"[OK] Earth Engine initialized with default credentials and project: {project_id}")
+            else:
+                ee.Initialize()
+                logger.info(
+                    "[OK] Earth Engine initialized with default credentials (no project)")
 
-except Exception as e:
-    gee_error = str(e)
-    logger.error(f"[ERROR] Earth Engine initialization failed: {e}")
-    logger.error("[ERROR] Please ensure:")
-    logger.error(
-        "  1. Service account key file exists at /app/gee-service-account-key.json")
-    logger.error("  2. Service account has Earth Engine access enabled")
-    logger.error("  3. Project ID is correct: ace-connection-474712-p1")
-    gee_initialized = False
+            gee_initialized = True
+
+    except Exception as e:
+        gee_error = str(e)
+        logger.error(f"[ERROR] Earth Engine initialization failed: {e}")
+        logger.error("[ERROR] Please ensure:")
+        logger.error(
+            "  1. Service account key file exists at /app/gee-service-account-key.json")
+        logger.error("  2. Service account has Earth Engine access enabled")
+        logger.error("  3. Project ID is correct: ace-connection-474712-p1")
+        gee_initialized = False
+    
+    return gee_initialized
 
 app = FastAPI(
     title="FloodSense SAR Detection API",

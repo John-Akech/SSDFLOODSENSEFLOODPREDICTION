@@ -90,7 +90,6 @@ app = FastAPI(
     description="Community-Based Predictive Flood Forecasting and Early Warning System for South Sudan",
     version="2.0.0",
     lifespan=lifespan,
-    root_path="/api/v1",  # This makes OpenAPI docs show correct external URLs
     # Hide docs in production for security
     docs_url="/docs" if os.getenv(
         "ENVIRONMENT") != "production" else None,
