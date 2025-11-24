@@ -126,6 +126,13 @@ def ensure_gee_initialized():
             try:
                 logger.info(
                     "[INFO] Decoding base64-encoded service account key")
+                
+                # Clean up and fix padding
+                service_account_key_base64 = service_account_key_base64.strip()
+                missing_padding = len(service_account_key_base64) % 4
+                if missing_padding:
+                    service_account_key_base64 += '=' * (4 - missing_padding)
+                
                 decoded_json = base64.b64decode(
                     service_account_key_base64).decode('utf-8')
                 logger.info(f"[INFO] Decoded JSON length: {len(decoded_json)}")
@@ -174,13 +181,14 @@ def ensure_gee_initialized():
             # Initialize with service account using modern google-auth library
             # ee.ServiceAccountCredentials is deprecated and unreliable in newer versions
             from google.oauth2 import service_account
-            
-            credentials = service_account.Credentials.from_service_account_info(service_account_info)
+
+            credentials = service_account.Credentials.from_service_account_info(
+                service_account_info)
             scoped_credentials = credentials.with_scopes([
                 'https://www.googleapis.com/auth/earthengine',
                 'https://www.googleapis.com/auth/cloud-platform'
             ])
-            
+
             ee.Initialize(credentials=scoped_credentials, project=project_id)
 
             logger.info(
