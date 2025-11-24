@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1")
+router = APIRouter()
 
 
 def _in_test_mode() -> bool:

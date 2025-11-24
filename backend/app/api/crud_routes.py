@@ -22,7 +22,7 @@ from services.recommendation_service import RecommendationService
 from middleware.auth_middleware import get_current_user, require_admin
 from fastapi import Body
 
-router = APIRouter(prefix="/api/v1", tags=["crud"])
+router = APIRouter(tags=["crud"])
 logger = logging.getLogger(__name__)
 
 # User CRUD
