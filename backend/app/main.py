@@ -91,10 +91,7 @@ app = FastAPI(
     version="2.0.0",
     lifespan=lifespan,
     openapi_version="3.1.0",
-    servers=[
-        {"url": "/api/v1", "description": "Production API"},
-        {"url": "http://localhost:8000", "description": "Local development"}
-    ],
+    # Don't set servers - let DigitalOcean handle routing with /api/v1 prefix
     # Hide docs in production for security
     docs_url="/docs" if os.getenv(
         "ENVIRONMENT") != "production" else None,

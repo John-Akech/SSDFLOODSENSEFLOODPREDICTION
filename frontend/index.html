@@ -1,52 +1,61 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
-    
-    <!-- Primary Meta Tags -->
-    <title>FloodSense - AI-Powered Flood Prediction for South Sudan</title>
-    <meta name="title" content="FloodSense - AI-Powered Flood Prediction for South Sudan" />
-    <meta name="description" content="Award-winning AI flood prediction system protecting 500+ communities across South Sudan. Real-time satellite monitoring, 87% accuracy, 1-168 hour advance warnings. Save lives with technology." />
-    <meta name="keywords" content="flood prediction, South Sudan, AI, machine learning, early warning system, disaster management, satellite data, humanitarian technology" />
-    <meta name="author" content="John Akech" />
-    <meta name="robots" content="index, follow" />
-    
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://floodsense.org/" />
-    <meta property="og:title" content="FloodSense - AI-Powered Flood Prediction for South Sudan" />
-    <meta property="og:description" content="Award-winning AI flood prediction system protecting 500+ communities. Real-time monitoring with 87% accuracy." />
-    <meta property="og:image" content="/images/FloodSenseLogo.png" />
-    
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content="https://floodsense.org/" />
-    <meta property="twitter:title" content="FloodSense - AI-Powered Flood Prediction for South Sudan" />
-    <meta property="twitter:description" content="Award-winning AI flood prediction system protecting 500+ communities. Real-time monitoring with 87% accuracy." />
-    <meta property="twitter:image" content="/images/FloodSenseLogo.png" />
-    
-    <!-- PWA -->
-    <meta name="theme-color" content="#0891b2" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="FloodSense" />
-    <link rel="apple-touch-icon" href="/images/FloodSenseLogo.png" />
-    <link rel="manifest" href="/manifest.json" />
-    
-    <!-- Preconnect for Performance -->
-    <link rel="dns-prefetch" href="https://floodsense-app-6a3uy.ondigitalocean.app" />
-    <link rel="preconnect" href="https://floodsense-app-6a3uy.ondigitalocean.app" crossorigin />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://rsms.me" />
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+
+  <!-- Primary Meta Tags -->
+  <title>FloodSense - AI-Powered Flood Prediction for South Sudan</title>
+  <meta name="title" content="FloodSense - AI-Powered Flood Prediction for South Sudan" />
+  <meta name="description"
+    content="Award-winning AI flood prediction system protecting 500+ communities across South Sudan. Real-time satellite monitoring, 87% accuracy, 1-168 hour advance warnings. Save lives with technology." />
+  <meta name="keywords"
+    content="flood prediction, South Sudan, AI, machine learning, early warning system, disaster management, satellite data, humanitarian technology" />
+  <meta name="author" content="John Akech" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://floodsense.org/" />
+  <meta property="og:title" content="FloodSense - AI-Powered Flood Prediction for South Sudan" />
+  <meta property="og:description"
+    content="Award-winning AI flood prediction system protecting 500+ communities. Real-time monitoring with 87% accuracy." />
+  <meta property="og:image" content="/images/FloodSenseLogo.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://floodsense.org/" />
+  <meta property="twitter:title" content="FloodSense - AI-Powered Flood Prediction for South Sudan" />
+  <meta property="twitter:description"
+    content="Award-winning AI flood prediction system protecting 500+ communities. Real-time monitoring with 87% accuracy." />
+  <meta property="twitter:image" content="/images/FloodSenseLogo.png" />
+
+  <!-- PWA -->
+  <meta name="theme-color" content="#0891b2" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="FloodSense" />
+  <link rel="apple-touch-icon" href="/images/FloodSenseLogo.png" />
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- Preconnect for Performance -->
+  <link rel="dns-prefetch" href="https://floodsense-app-6a3uy.ondigitalocean.app" />
+  <link rel="preconnect" href="https://floodsense-app-6a3uy.ondigitalocean.app" crossorigin />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://rsms.me" />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

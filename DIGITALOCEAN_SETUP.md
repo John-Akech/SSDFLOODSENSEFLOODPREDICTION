@@ -1,4 +1,4 @@
-# DigitalOcean Deployment Setup
+Nov 24 07:43:56  [WARNING] VAPID keys not configured - push notifications disabled# DigitalOcean Deployment Setup
 
 ## Required Environment Variables/Secrets
 

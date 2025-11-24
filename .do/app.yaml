@@ -35,28 +35,6 @@ services:
   - key: CORS_ORIGINS
     scope: RUN_AND_BUILD_TIME
     value: https://floodsense-app-6a3uy.ondigitalocean.app,https://floodsense.org,http://localhost:3000,http://localhost:5173,http://localhost:80,http://localhost
-- name: frontend
-  github:
-    branch: master
-    deploy_on_push: true
-    repo: John-Akech/SSDFLOODSENSEFLOODPREDICTION
-  dockerfile_path: frontend/Dockerfile
-  source_dir: frontend
-  http_port: 80
-  routes:
-  - path: /
-  instance_count: 1
-  instance_size_slug: basic-xxs
-  envs:
-  - key: VITE_API_URL
-    scope: BUILD_TIME
-    value: /api/v1
-  - key: VITE_SAR_URL
-    scope: BUILD_TIME
-    value: /sar
-  - key: VITE_VAPID_PUBLIC_KEY
-    scope: BUILD_TIME
-    value: ${backend.VAPID_PUBLIC_KEY}
 - name: sar-detection
   github:
     branch: master
@@ -90,6 +68,28 @@ services:
   - key: DATABASE_URL
     scope: RUN_TIME
     value: ${db.DATABASE_URL}
+- name: frontend
+  github:
+    branch: master
+    deploy_on_push: true
+    repo: John-Akech/SSDFLOODSENSEFLOODPREDICTION
+  dockerfile_path: frontend/Dockerfile
+  source_dir: frontend
+  http_port: 80
+  routes:
+  - path: /
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  envs:
+  - key: VITE_API_URL
+    scope: BUILD_TIME
+    value: /api/v1
+  - key: VITE_SAR_URL
+    scope: BUILD_TIME
+    value: /sar
+  - key: VITE_VAPID_PUBLIC_KEY
+    scope: BUILD_TIME
+    value: ${backend.VAPID_PUBLIC_KEY}
 databases:
 - name: db
   engine: PG
