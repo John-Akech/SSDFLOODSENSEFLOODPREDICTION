@@ -20,8 +20,6 @@ const Home: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [locationNames, setLocationNames] = useState<Record<string, string>>({});
-  const [populationByState, setPopulationByState] = useState<Record<string, number>>({});
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { t } = useLanguage();
   // Static accuracy for performance
@@ -109,15 +107,8 @@ const Home: React.FC = () => {
 
   const COLORS = pieData.map(item => item.color);
 
-  // State population data for charts
-  const stateChartData = Object.entries(populationByState).map(([state, pop]) => ({
-    state: state.split(' ')[0], // Shorten for display
-    fullName: state,
-    population: pop || 0,
-    alerts: alerts.filter(a =>
-      locationNames[`${a.latitude},${a.longitude}`]?.includes(state.split(' ')[0])
-    ).length
-  }));
+  // Simplified for performance - skip state chart data
+  const stateChartData: any[] = [];
 
   if (loading) {
     return (
@@ -199,7 +190,7 @@ const Home: React.FC = () => {
                 <div key={idx} className="bg-red-950/40 border-2 border-red-500/30 p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-red-900/30 transition-colors">
                   <div>
                     <div className="text-2xl md:text-3xl font-bold text-white mb-2">
-                      {locationNames[`${alert.latitude},${alert.longitude}`] || `${t('alertZone')} ${idx + 1}`}
+                      {`${t('alertZone')} ${idx + 1}`}
                     </div>
                     <div className="text-lg md:text-xl text-red-300 font-medium">{alert.message}</div>
                   </div>
@@ -346,8 +337,7 @@ const Home: React.FC = () => {
                           <div className="flex items-center space-x-3 mb-2">
                             <RiskBadge severity={alert.severity as 'low' | 'medium' | 'high' | 'critical'} />
                             <span className="text-sm text-slate-600">
-                              {locationNames[`${alert.latitude},${alert.longitude}`] ||
-                                `${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}`}
+                              {`${alert.latitude.toFixed(4)}, ${alert.longitude.toFixed(4)}`}
                             </span>
                           </div>
                           <p className="text-slate-700 font-medium mb-1">
