@@ -292,6 +292,32 @@ async def gee_status():
     }
 
 
+@app.post("/gee/authenticate", tags=["Authentication"])
+async def gee_authenticate(project_id: Optional[str] = None):
+    """Authenticate with Google Earth Engine.
+
+    This endpoint attempts to initialize GEE with the service account.
+    Note: The actual initialization happens in ensure_gee_initialized().
+    """
+    global gee_initialized, gee_error, gee_init_attempted
+
+    # Reset initialization state to retry
+    gee_init_attempted = False
+
+    # Try to initialize GEE
+    if ensure_gee_initialized():
+        return {
+            "success": True,
+            "message": "Google Earth Engine authenticated successfully",
+            "initialized": True
+        }
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=gee_error or "Google Earth Engine authentication failed"
+        )
+
+
 @app.get("/sentinel1/availability", tags=["Data Availability"])
 async def check_sentinel1_availability(lat: float, lon: float, start_date: str = None, end_date: str = None):
     """Check latest available Sentinel-1 data for a location.

@@ -3,6 +3,10 @@ FROM python:3.11-slim-bookworm AS base
 LABEL maintainer="South Sudan Flood Prediction System"
 LABEL description="SAR-based flood detection using Google Earth Engine"
 
+# Cache buster for force rebuild
+ARG CACHE_BUST=2025-11-24-sar-v1
+RUN echo "Cache bust: $CACHE_BUST"
+
 # Environment variables
 ENV PYTHONFAULTHANDLER=1 \
     PYTHONUNBUFFERED=1 \
