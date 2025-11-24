@@ -15,7 +15,7 @@ def test_health_check(client):
 
 
 def test_api_health_check(client):
-    response = client.get("/api/v1/health")
+    response = client.get("/health")
     assert response.status_code == 200
     assert "status" in response.json()
 
@@ -29,7 +29,7 @@ def test_user_registration(client, make_email):
         "language": "en",
     }
 
-    response = client.post("/api/v1/auth/register", json=payload)
+    response = client.post("/auth/register", json=payload)
     assert response.status_code in (200, 201)
     body = response.json()
     assert body["email"] == payload["email"]
@@ -40,7 +40,7 @@ def test_user_registration(client, make_email):
 def test_user_login(client, register_user):
     user_payload, _ = register_user()
     response = client.post(
-        "/api/v1/auth/login",
+        "/auth/login",
         params={"email": user_payload["email"],
                 "password": user_payload["password"]},
     )
@@ -51,12 +51,12 @@ def test_user_login(client, register_user):
 
 
 def test_prediction_without_auth(client, prediction_payload):
-    response = client.post("/api/v1/predictions", json=prediction_payload)
+    response = client.post("/predictions", json=prediction_payload)
     assert response.status_code == 401
 
 
 def test_prediction_with_auth(client, auth_headers, prediction_payload):
-    response = client.post("/api/v1/predictions",
+    response = client.post("/predictions",
                            json=prediction_payload, headers=auth_headers)
     assert response.status_code == 200, response.text
     payload = response.json()
@@ -67,7 +67,7 @@ def test_prediction_with_auth(client, auth_headers, prediction_payload):
 
 def test_invalid_coordinates(client, auth_headers, prediction_payload):
     invalid_payload = {**prediction_payload, "latitude": 95.0}
-    response = client.post("/api/v1/predictions",
+    response = client.post("/predictions",
                            json=invalid_payload, headers=auth_headers)
     assert response.status_code == 422
 
@@ -75,14 +75,14 @@ def test_invalid_coordinates(client, auth_headers, prediction_payload):
 def test_get_user_info(client, register_user):
     user_payload, _ = register_user(email="me@example.com")
     login_response = client.post(
-        "/api/v1/auth/login",
+        "/auth/login",
         params={"email": user_payload["email"],
                 "password": user_payload["password"]},
     )
     token = login_response.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    response = client.get("/api/v1/users/me", headers=headers)
+    response = client.get("/users/me", headers=headers)
     assert response.status_code == 200
     body = response.json()
     assert body["email"] == user_payload["email"]
@@ -96,17 +96,17 @@ def test_duplicate_user_registration(client):
         "full_name": "Test User",
     }
 
-    first = client.post("/api/v1/auth/register", json=payload)
+    first = client.post("/auth/register", json=payload)
     assert first.status_code in (200, 201)
 
-    duplicate = client.post("/api/v1/auth/register", json=payload)
+    duplicate = client.post("/auth/register", json=payload)
     assert duplicate.status_code == 400
     assert "already registered" in duplicate.json()["detail"]
 
 
 def test_invalid_login(client):
     response = client.post(
-        "/api/v1/auth/login",
+        "/auth/login",
         params={"email": "nonexistent@example.com", "password": TEST_PASSWORD},
     )
     assert response.status_code == 401

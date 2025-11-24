@@ -150,21 +150,21 @@ app.add_middleware(
 
 # app.add_exception_handler(SQLAlchemyError, database_error_handler)
 
-# Include API routes with /api/v1 prefix
+# Include API routes without prefix (DigitalOcean ingress adds /api/v1 externally)
 # Order matters - more specific routes should be included first
-app.include_router(admin_router, prefix="/api/v1")
-app.include_router(auth_router, prefix="/api/v1")
-app.include_router(audit_router, prefix="/api/v1")  # Audit logs
-app.include_router(router, prefix="/api/v1")
-app.include_router(crud_router, prefix="/api/v1")  # CRUD routes last
+app.include_router(admin_router)
+app.include_router(auth_router)
+app.include_router(audit_router)  # Audit logs
+app.include_router(router)
+app.include_router(crud_router)  # CRUD routes last
 
 
 # Custom Swagger UI endpoints (must be after router includes)
-@app.get("/api/v1/docs", include_in_schema=False)
+@app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     """Custom Swagger UI with v5.x that fully supports OpenAPI 3.1.0"""
     return get_swagger_ui_html(
-        openapi_url="/api/v1/openapi.json",
+        openapi_url="/openapi.json",
         title=f"{app.title} - Swagger UI",
         swagger_ui_parameters={"syntaxHighlight": {"theme": "monokai"}},
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-bundle.js",
@@ -172,9 +172,9 @@ async def custom_swagger_ui_html():
     )
 
 
-@app.get("/api/v1/openapi.json", include_in_schema=False)
+@app.get("/openapi.json", include_in_schema=False)
 async def get_openapi_schema():
-    """Serve OpenAPI schema at /api/v1/openapi.json"""
+    """Serve OpenAPI schema at /openapi.json"""
     from fastapi.openapi.utils import get_openapi
     return get_openapi(
         title=app.title,
