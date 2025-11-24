@@ -164,11 +164,12 @@ def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     from fastapi.openapi.utils import get_openapi
-    
+
     # Define servers based on API_PUBLIC_PATH to ensure "Try it out" works correctly
     # behind the ingress proxy
-    servers = [{"url": settings.API_PUBLIC_PATH}] if settings.API_PUBLIC_PATH else [{"url": "/api/v1"}]
-    
+    servers = [{"url": settings.API_PUBLIC_PATH}
+               ] if settings.API_PUBLIC_PATH else [{"url": "/api/v1"}]
+
     openapi_schema = get_openapi(
         title=app.title,
         version=app.version,
@@ -197,6 +198,8 @@ async def custom_swagger_ui_html():
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui.css",
     )
+
+
 @app.get("/openapi.json", include_in_schema=False)
 async def get_openapi_schema():
     """Serve OpenAPI schema at /openapi.json"""
