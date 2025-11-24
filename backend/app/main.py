@@ -102,53 +102,16 @@ app = FastAPI(
 # Custom Swagger UI with latest version that supports OpenAPI 3.1.0
 
 
-def _get_public_openapi_url() -> str:
-    """Return the OpenAPI URL adjusted for public reverse-proxy paths."""
-    base_path = settings.API_PUBLIC_PATH.strip()
-    if not base_path:
-        return app.openapi_url
-
-    normalized = base_path if base_path.startswith("/") else f"/{base_path}"
-    normalized = normalized.rstrip("/")
-    return f"{normalized}{app.openapi_url}"
-
-
-def _normalized_public_path() -> str:
-    base_path = settings.API_PUBLIC_PATH.strip()
-    if not base_path:
-        return ""
-    if not base_path.startswith("/"):
-        base_path = f"/{base_path}"
-    return base_path.rstrip("/")
-
-
-def _swagger_ui_response():
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    """Custom Swagger UI with v5.x that fully supports OpenAPI 3.1.0"""
     return get_swagger_ui_html(
-        openapi_url=_get_public_openapi_url(),
+        openapi_url=app.openapi_url,
         title=f"{app.title} - Swagger UI",
         swagger_ui_parameters={"syntaxHighlight": {"theme": "monokai"}},
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui.css",
     )
-
-
-@app.get("/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
-    """Custom Swagger UI with v5.x that fully supports OpenAPI 3.1.0"""
-    return _swagger_ui_response()
-
-
-PUBLIC_API_PATH = _normalized_public_path()
-
-if PUBLIC_API_PATH:
-
-    @app.get(f"{PUBLIC_API_PATH}/docs", include_in_schema=False)
-    async def prefixed_swagger_ui():
-        return _swagger_ui_response()
-
-    @app.get(f"{PUBLIC_API_PATH}{app.openapi_url}", include_in_schema=False)
-    async def prefixed_openapi_json():
-        return JSONResponse(app.openapi())
 
 # Add middleware layers
 # Important: Middleware executes in REVERSE ORDER (last added runs first)
