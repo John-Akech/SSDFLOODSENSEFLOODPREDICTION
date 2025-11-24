@@ -161,7 +161,6 @@ app = FastAPI(
     title="FloodSense SAR Detection API",
     description="Community-Based Predictive Flood Forecasting Using SAR and AI for South Sudan",
     version="2.0.0",
-    root_path="/sar",  # Required for DigitalOcean routing with preserve_path_prefix=true
     docs_url="/docs",
     redoc_url="/redoc"
 )
