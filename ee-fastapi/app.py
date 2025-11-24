@@ -51,9 +51,14 @@ PUBLIC_BASE_PATH = _normalize_public_path(settings.PUBLIC_PATH)
 
 def ensure_gee_initialized():
     global gee_initialized, gee_error, gee_init_attempted
-    if gee_init_attempted:
-        return gee_initialized
+    
+    # If already initialized, return True immediately
+    if gee_initialized:
+        return True
 
+    # If we tried before and failed, we might want to retry after some time
+    # For now, we'll allow retrying every time this is called if it's not initialized
+    
     gee_init_attempted = True
     try:
         import base64
@@ -863,11 +868,17 @@ async def extract_features(request: FeatureExtractionRequest):
 
     Note: If GEE connection times out, returns estimated default values
     """
+    # Lazy initialization check
     if not gee_initialized:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Google Earth Engine not initialized"
-        )
+        logger.info("GEE not initialized, attempting lazy initialization...")
+        if ensure_gee_initialized():
+            logger.info("Lazy initialization successful")
+        else:
+            logger.error(f"Lazy initialization failed: {gee_error}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"Google Earth Engine not initialized. Error: {gee_error}"
+            )
 
     try:
         from datetime import datetime, timedelta
