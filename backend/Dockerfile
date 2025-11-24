@@ -14,12 +14,6 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# Install system dependencies that might be needed
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
 # Upgrade pip first
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
