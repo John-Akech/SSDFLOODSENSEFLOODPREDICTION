@@ -424,7 +424,7 @@ const Home: React.FC = () => {
                 <div className="flex justify-between items-center">
                   <span className="text-slate-600">{t('monitoredZones')}</span>
                   <span className="font-semibold text-slate-900">
-                    {Object.keys(populationByState).length}
+                    {stats.zones}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
