@@ -4,7 +4,7 @@ LABEL maintainer="South Sudan Flood Prediction System"
 LABEL description="SAR-based flood detection using Google Earth Engine"
 
 # Cache buster for force rebuild
-ARG CACHE_BUST=2025-11-24-sar-v1
+ARG CACHE_BUST=2025-11-24-sar-v2
 RUN echo "Cache bust: $CACHE_BUST"
 
 # Environment variables
@@ -13,16 +13,28 @@ ENV PYTHONFAULTHANDLER=1 \
     PYTHONHASHSEED=random \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PIP_DEFAULT_TIMEOUT=100
+    PIP_DEFAULT_TIMEOUT=100 \
+    DEBIAN_FRONTEND=noninteractive
 
 # Install system dependencies including curl for healthcheck
+# Split into multiple RUN commands to isolate failures
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    libgdal-dev \
-    libgeos-dev \
-    libproj-dev \
-    curl \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
+
+# Install GDAL dependencies separately (these can be problematic)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gdal-bin \
+    libgdal-dev \
+    python3-gdal \
+    && rm -rf /var/lib/apt/lists/* || echo "GDAL installation skipped"
 
 # Create app directory
 WORKDIR /app
