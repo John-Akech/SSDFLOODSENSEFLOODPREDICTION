@@ -43,16 +43,16 @@ services:
       - GEE_PROJECT_ID=ace-connection-474712-p1
       - API_HOST=0.0.0.0
       - API_PORT=8080
-      # Note: GEE credentials should be at ~/.config/earthengine/ on host
-      # If you don't have credentials, the service will still start but GEE features won't work
+      # Note: Mount gee-service-account-key.json as volume or use GEE_SERVICE_ACCOUNT_KEY_BASE64
     volumes:
-      - ${USERPROFILE}/.config/earthengine:/home/appuser/.config/earthengine:ro
       - ./ee-fastapi/output:/app/output
+      # Uncomment if you have service account key file:
+      # - ./ee-fastapi/gee-service-account-key.json:/app/gee-service-account-key.json:ro
     restart: unless-stopped
     networks:
       - floodsense-network
     healthcheck:
-      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/health')"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 60s
       timeout: 15s
       retries: 5

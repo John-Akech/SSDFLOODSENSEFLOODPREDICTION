@@ -1,12 +1,6 @@
 from sqlalchemy import create_engine, MetaData, event
 from sqlalchemy.orm import declarative_base, sessionmaker
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-try:
-    from app.core.config import settings
-except ImportError:  # pragma: no cover
-    from core.config import settings
+from app.core.config import settings
 
 is_sqlite = settings.DATABASE_URL.startswith("sqlite")
 
@@ -84,8 +78,8 @@ def init_db():
 def create_default_admin():
     """Create a default admin user if none exists"""
     try:
-        from models.database_models import User
-        from core.security import get_password_hash
+        from app.models.database_models import User
+        from app.core.security import get_password_hash
 
         db = SessionLocal()
         try:

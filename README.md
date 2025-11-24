@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Academic-orange.svg)](LICENSE)
 [![Tests](https://img.shields.io/badge/Tests-38%2F38%20Passing-brightgreen.svg)](evidence/)
 
-> **A Machine Learning-Based Flood Forecasting System leveraging Satellite Imagery, Real-Time Environmental Data, and Automated Alert Mechanisms to Protect Vulnerable Communities in South Sudan**
+A Machine Learning-Based Flood Forecasting System leveraging Satellite Imagery, Real-Time Environmental Data, and Automated Alert Mechanisms to Protect Vulnerable Communities in South Sudan
 
 **Academic Capstone Project** | African Leadership University | Software Engineering | 2025
 
@@ -33,23 +33,7 @@ FloodSense is a comprehensive flood prediction and early warning system designed
 
 **[View High-Resolution Architecture Diagram](https://drive.google.com/file/d/1UZ5XmmUprbz7Nw3_yiG9reD3pUTrztH4/view?usp=sharing)**
 
-FloodSense implements a modern microservices architecture:
-
-*   **Frontend:** React 18, TypeScript, Tailwind CSS, Mapbox GL JS.
-*   **Backend:** FastAPI (Python), SQLAlchemy, Pydantic.
-*   **Data & ML:** Google Earth Engine, Scikit-learn, PyTorch, PostgreSQL/PostGIS.
-*   **Infrastructure:** Docker Compose, Nginx, DigitalOcean.
-
----
-
-## Getting Started
-
-## System Architecture
-
-**System Architecture Diagram:** [View High-Resolution Diagram](https://drive.google.com/file/d/1UZ5XmmUprbz7Nw3_yiG9reD3pUTrztH4/view?usp=sharing)
-
 FloodSense implements a modern microservices architecture with clear separation of concerns, ensuring scalability, maintainability, and resilience.
-```
 
 ### Architecture Highlights
 
@@ -59,6 +43,12 @@ FloodSense implements a modern microservices architecture with clear separation 
 - **Microservices Communication:** Internal service mesh with health checks and circuit breakers
 - **Data Pipeline:** ETL processes for satellite data ingestion, preprocessing, and model training
 - **Security:** JWT authentication, rate limiting, HTTPS enforcement, CORS configuration
+
+**Services:**
+- **Frontend:** React 18, TypeScript, Tailwind CSS, Mapbox GL JS
+- **Backend:** FastAPI (Python), SQLAlchemy, Pydantic
+- **Data & ML:** Google Earth Engine, Scikit-learn, PyTorch, PostgreSQL/PostGIS
+- **Infrastructure:** Docker Compose, Nginx, DigitalOcean
 
 ---
 
@@ -223,9 +213,6 @@ The ML pipeline is fully automated and can be triggered:
    # Navigate to backend directory
    cd backend
    
-   # Ensure virtual environment is active
-   # source venv/bin/activate  # or venv\Scripts\activate on Windows
-   
    # Run pipeline steps sequentially
    python ml_pipeline/01_load_merge_data.py    # Load and merge datasets
    python ml_pipeline/02_explore_visualize.py  # Generate EDA plots
@@ -246,58 +233,40 @@ The ML pipeline is fully automated and can be triggered:
 - Evaluation plots (confusion matrix, ROC curve, feature importance)
 - Training logs and metadata
 
+**Top Performing Model:** Random Forest Classifier (96.88% Accuracy)
+
 ---
 
 ## Installation & Deployment
->>>>>>> 7f3c893e2daa9dfc77e74893719a6e6a5cd13a11
 
 ### Prerequisites
-*   **Docker Desktop** 24+
-*   **Git**
+- Docker Desktop 24+
+- Git
 
 ### Quick Start (Docker)
 
-1.  **Clone the Repository**
-    ```bash
-    git clone https://github.com/John-Akech/SSDFLOODSENSEFLOODPREDICTION.git
-    cd SSDFLOODSENSEFLOODPREDICTION
-    ```
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/John-Akech/SSDFLOODSENSEFLOODPREDICTION.git
+   cd SSDFLOODSENSEFLOODPREDICTION
+   ```
 
-2.  **Configure Environment**
-    ```bash
-    cp backend/.env.example backend/.env
-    cp frontend/.env.example frontend/.env
-    # Update .env files with your credentials if needed
-    ```
+2. **Configure Environment**
+   ```bash
+   cp backend/.env.example backend/.env
+   cp frontend/.env.example frontend/.env
+   # Update .env files with your credentials if needed
+   ```
 
-3.  **Build and Run**
-    ```bash
-    docker-compose up -d --build
-    ```
+3. **Build and Run**
+   ```bash
+   docker-compose up -d --build
+   ```
 
-4.  **Access the Application**
-    *   **Frontend:** `http://localhost:3000`
-    *   **API Docs:** `http://localhost:8000/docs`
-    *   **Health Check:** `http://localhost:8000/api/v1/health`
-
----
-
-## 🧠 Machine Learning Pipeline
-
-The system uses an automated pipeline to process satellite data and train models:
-
-1.  **Data Extraction:** Fetches Sentinel-1 (SAR), CHIRPS (Rainfall), and MODIS (Vegetation/Temp) data via Google Earth Engine.
-2.  **Preprocessing:** Generates 72 engineered features including rolling averages, spatial statistics, and lag features.
-3.  **Training:** Trains Random Forest, Gradient Boosting, and TCN models.
-4.  **Evaluation:** Compares models based on Accuracy, F1-Score, and AUC-ROC.
-
-**Top Performing Model:** Random Forest Classifier (96.88% Accuracy).
-
-To run the pipeline manually:
-```bash
-cd backend
-python ml_pipeline/run_pipeline.py
-```
+4. **Access the Application**
+   - **Frontend:** `http://localhost:3000`
+   - **API Docs:** `http://localhost:8000/docs`
+   - **Health Check:** `http://localhost:8000/api/v1/health`
 
 ---
 
@@ -323,9 +292,9 @@ SSDFLOODSENSEFLOODPREDICTION/
 
 ## Testing & Validation
 
-*   **Unit/Integration Tests:** `pytest` (100% pass rate).
-*   **Frontend Tests:** `npm test` (Vitest/Jest).
-*   **Load Testing:** `locust` (Supports 100+ concurrent users).
+- **Unit/Integration Tests:** `pytest` (100% pass rate)
+- **Frontend Tests:** `npm test` (Vitest/Jest)
+- **Load Testing:** `locust` (Supports 100+ concurrent users)
 
 Run backend tests:
 ```bash
@@ -337,11 +306,12 @@ docker-compose exec backend pytest
 ## Contributing
 
 Contributions are welcome!
-1.  Fork the repository.
-2.  Create a feature branch (`git checkout -b feature/AmazingFeature`).
-3.  Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4.  Push to the branch (`git push origin feature/AmazingFeature`).
-5.  Open a Pull Request.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ---
 
@@ -350,8 +320,8 @@ Contributions are welcome!
 **License:** Academic / MIT. See [LICENSE](LICENSE) for details.
 
 **Project Maintainer:**
-*   **John Akech** - [GitHub](https://github.com/John-Akech) | [LinkedIn](https://linkedin.com/in/john-akech)
-*   **Email:** johnakec12@gmail.com
+- **John Akech** - [GitHub](https://github.com/John-Akech) | [LinkedIn](https://linkedin.com/in/john-akech)
+- **Email:** johnakec12@gmail.com
 
 **Citation:**
 ```bibtex

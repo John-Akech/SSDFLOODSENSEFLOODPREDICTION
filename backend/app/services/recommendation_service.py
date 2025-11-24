@@ -1,8 +1,8 @@
 from typing import List
 from sqlalchemy.orm import Session
 
-from models.database_models import Prediction as DBPrediction, Recommendation as DBRecommendation
-from schemas.schemas import RecommendationCreate, Priority
+from app.models.database_models import Prediction as DBPrediction, Recommendation as DBRecommendation
+from app.schemas.schemas import RecommendationCreate, Priority
 
 
 class RecommendationService:
@@ -46,8 +46,10 @@ class RecommendationService:
             latitude=latitude,
             longitude=longitude,
             description="Prepare sandbags/dykes along vulnerable banks; reinforce weak segments.",
-            priority=priority if priority in [Priority.HIGH, Priority.CRITICAL] else Priority.MEDIUM,
-            estimated_cost=5000.0 if priority in [Priority.HIGH, Priority.CRITICAL] else 1500.0,
+            priority=priority if priority in [
+                Priority.HIGH, Priority.CRITICAL] else Priority.MEDIUM,
+            estimated_cost=5000.0 if priority in [
+                Priority.HIGH, Priority.CRITICAL] else 1500.0,
         ))
 
         # Resource pre-positioning
@@ -58,7 +60,8 @@ class RecommendationService:
             longitude=longitude,
             description="Pre-position pumps, boats, food, and medical supplies at safe high ground.",
             priority=priority,
-            estimated_cost=8000.0 if priority in [Priority.HIGH, Priority.CRITICAL] else 3000.0,
+            estimated_cost=8000.0 if priority in [
+                Priority.HIGH, Priority.CRITICAL] else 3000.0,
         ))
 
         return recs
@@ -73,7 +76,8 @@ class RecommendationService:
                 latitude=rec.latitude,
                 longitude=rec.longitude,
                 description=rec.description,
-                priority=rec.priority.value if hasattr(rec.priority, 'value') else str(rec.priority),
+                priority=rec.priority.value if hasattr(
+                    rec.priority, 'value') else str(rec.priority),
                 estimated_cost=rec.estimated_cost,
             )
             db.add(db_rec)
@@ -82,5 +86,3 @@ class RecommendationService:
         for rec in saved:
             db.refresh(rec)
         return saved
-
-

@@ -3,7 +3,7 @@ from typing import Optional
 from jose import JWTError, jwt
 import bcrypt
 from fastapi import HTTPException, status
-from core.config import settings
+from app.core.config import settings
 import re
 from collections import defaultdict
 import os

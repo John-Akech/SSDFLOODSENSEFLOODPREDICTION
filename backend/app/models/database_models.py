@@ -1,13 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Boolean, Text, ForeignKey, LargeBinary, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-import sys
-import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-try:
-    from app.core.database import Base
-except ImportError:  # pragma: no cover
-    from core.database import Base
+from app.core.database import Base
 
 
 class User(Base):

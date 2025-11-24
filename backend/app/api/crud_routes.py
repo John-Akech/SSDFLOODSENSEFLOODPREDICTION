@@ -4,8 +4,8 @@ from typing import List
 from datetime import datetime
 import logging
 
-from core.database import get_db
-from schemas.schemas import (
+from app.core.database import get_db
+from app.schemas.schemas import (
     User, UserUpdate,
     FloodEvent, FloodEventCreate, FloodEventUpdate,
     PredictionResponse,
@@ -13,13 +13,13 @@ from schemas.schemas import (
     Alert, AlertCreate,
     Feedback, FeedbackCreate, FeedbackUpdate
 )
-from models.database_models import (
+from app.models.database_models import (
     User as DBUser, FloodEvent as DBFloodEvent,
     Prediction as DBPrediction, Feedback as DBFeedback,
     Alert as DBAlert, Recommendation as DBRecommendation, PushSubscription as DBPush
 )
-from services.recommendation_service import RecommendationService
-from middleware.auth_middleware import get_current_user, require_admin
+from app.services.recommendation_service import RecommendationService
+from app.middleware.auth_middleware import get_current_user, require_admin
 from fastapi import Body
 
 router = APIRouter(tags=["crud"])

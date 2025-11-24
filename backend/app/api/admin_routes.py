@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
-from core.database import get_db
-from middleware.auth_middleware import require_admin
-from models.database_models import Prediction as DBPrediction, User as DBUser
+from app.core.database import get_db
+from app.middleware.auth_middleware import require_admin
+from app.models.database_models import Prediction as DBPrediction, User as DBUser
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 

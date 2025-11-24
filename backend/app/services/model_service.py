@@ -40,9 +40,6 @@ except ImportError:
     logger.warning(
         "PyTorch not available - TCN and LSTM models will not be loaded")
 
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
-
 # Helper functions
 
 
