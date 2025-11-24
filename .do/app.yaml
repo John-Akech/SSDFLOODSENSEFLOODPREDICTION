@@ -67,6 +67,7 @@ services:
   http_port: 8080
   routes:
   - path: /sar
+    preserve_path_prefix: false
   health_check:
     http_path: /health
     initial_delay_seconds: 60
