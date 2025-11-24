@@ -167,15 +167,13 @@ app.add_middleware(
 
 # app.add_exception_handler(SQLAlchemyError, database_error_handler)
 
-# Include API routes
+# Include API routes with /api/v1 prefix
 # Order matters - more specific routes should be included first
-# NOTE: Routes are served at root level by the backend, but DigitalOcean routing
-# adds /api/v1 prefix externally. Docs are configured to show the external paths.
-app.include_router(admin_router)
-app.include_router(auth_router)
-app.include_router(audit_router)  # Audit logs
-app.include_router(router)
-app.include_router(crud_router)  # CRUD routes last
+app.include_router(admin_router, prefix="/api/v1")
+app.include_router(auth_router, prefix="/api/v1")
+app.include_router(audit_router, prefix="/api/v1")  # Audit logs
+app.include_router(router, prefix="/api/v1")
+app.include_router(crud_router, prefix="/api/v1")  # CRUD routes last
 
 
 @app.get("/")
