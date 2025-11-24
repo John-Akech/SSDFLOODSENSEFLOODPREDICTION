@@ -190,6 +190,7 @@ async def root():
     return {
         "message": "FloodSense API",
         "version": "2.0.0",
+        "status": "operational",
         "project": "BSc. Software Engineering",
         "student": "John Akech",
         "supervisor": "Samiratu Ntohsi"
