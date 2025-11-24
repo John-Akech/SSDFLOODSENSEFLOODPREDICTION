@@ -51,14 +51,14 @@ PUBLIC_BASE_PATH = _normalize_public_path(settings.PUBLIC_PATH)
 
 def ensure_gee_initialized():
     global gee_initialized, gee_error, gee_init_attempted
-    
+
     # If already initialized, return True immediately
     if gee_initialized:
         return True
 
     # If we tried before and failed, we might want to retry after some time
     # For now, we'll allow retrying every time this is called if it's not initialized
-    
+
     gee_init_attempted = True
     try:
         import base64
@@ -171,10 +171,17 @@ def ensure_gee_initialized():
             logger.info(
                 f"[INFO] Service account email: {service_account_email}")
 
-            # Initialize with service account
-            credentials = ee.ServiceAccountCredentials(
-                service_account_email, service_account_file)
-            ee.Initialize(credentials, project=project_id)
+            # Initialize with service account using modern google-auth library
+            # ee.ServiceAccountCredentials is deprecated and unreliable in newer versions
+            from google.oauth2 import service_account
+            
+            credentials = service_account.Credentials.from_service_account_info(service_account_info)
+            scoped_credentials = credentials.with_scopes([
+                'https://www.googleapis.com/auth/earthengine',
+                'https://www.googleapis.com/auth/cloud-platform'
+            ])
+            
+            ee.Initialize(credentials=scoped_credentials, project=project_id)
 
             logger.info(
                 f"[OK] Earth Engine initialized successfully with service account")
