@@ -243,14 +243,11 @@ async def map_view(request: Request):
 
 @app.get("/health", tags=["System"])
 async def health_check():
-    """Health check endpoint."""
+    """Health check endpoint - fast response for container health checks."""
     return {
         "status": "healthy",
         "service": "FloodSense SAR Detection",
-        "version": "2.0.0",
-        "gee_initialized": gee_initialized,
-        "gee_error": gee_error if not gee_initialized else None,
-        "project": "BSc. Software Engineering - John Akech"
+        "version": "2.0.0"
     }
 
 
