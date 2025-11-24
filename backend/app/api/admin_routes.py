@@ -6,7 +6,7 @@ from core.database import get_db
 from middleware.auth_middleware import require_admin
 from models.database_models import Prediction as DBPrediction, User as DBUser
 
-router = APIRouter(prefix="/admin", tags=["admin"])
+router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
 @router.get("/pending-predictions")

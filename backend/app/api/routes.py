@@ -32,7 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(prefix="/api/v1")
 
 
 def _in_test_mode() -> bool:
@@ -133,7 +133,12 @@ async def fetch_gee_features(latitude: float, longitude: float, lead_time_hours:
                     f"Successfully fetched and cached GEE features for ({latitude}, {longitude})")
                 return features
             else:
-                error_detail = response.json().get("detail", "Unknown error")
+                try:
+                    error_detail = response.json().get("detail", "Unknown error")
+                except ValueError:
+                    # Handle non-JSON error responses (e.g., from Nginx or unhandled crashes)
+                    error_detail = f"Non-JSON error from SAR service: {response.text[:200]}"
+
                 logger.error(
                     f"SAR service error: {response.status_code} - {error_detail}")
                 raise HTTPException(
