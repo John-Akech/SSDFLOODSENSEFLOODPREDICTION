@@ -96,31 +96,6 @@ app = FastAPI(
     redoc_url=None
 )
 
-
-@app.get("/api/v1/docs", include_in_schema=False)
-async def custom_swagger_ui_html():
-    """Custom Swagger UI with v5.x that fully supports OpenAPI 3.1.0"""
-    return get_swagger_ui_html(
-        openapi_url="/api/v1/openapi.json",
-        title=f"{app.title} - Swagger UI",
-        swagger_ui_parameters={"syntaxHighlight": {"theme": "monokai"}},
-        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-bundle.js",
-        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui.css",
-    )
-
-
-@app.get("/api/v1/openapi.json", include_in_schema=False)
-async def get_openapi_schema():
-    """Serve OpenAPI schema at /api/v1/openapi.json"""
-    from fastapi.openapi.utils import get_openapi
-    return get_openapi(
-        title=app.title,
-        version=app.version,
-        description=app.description,
-        routes=app.routes,
-        openapi_version="3.1.0"
-    )
-
 # Add middleware layers
 # Important: Middleware executes in REVERSE ORDER (last added runs first)
 # Think of it like wrapping layers - the outer layer runs first on the way in
