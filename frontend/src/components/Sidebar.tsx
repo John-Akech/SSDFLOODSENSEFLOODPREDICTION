@@ -12,7 +12,14 @@ const Sidebar: React.FC = () => {
   const navItems = [
     { path: '/home', label: t('dashboard'), gradient: 'from-blue-500 to-cyan-500' },
     { path: '/map', label: t('riskMap'), gradient: 'from-emerald-500 to-teal-500' },
-    { path: 'http://localhost:8080', label: 'SAR Detection', gradient: 'from-purple-500 to-indigo-500', external: true },
+    { 
+      path: (import.meta.env.VITE_SAR_URL && import.meta.env.VITE_SAR_URL.startsWith('/')) 
+        ? `${window.location.origin}${import.meta.env.VITE_SAR_URL}` 
+        : (import.meta.env.VITE_SAR_URL || 'http://localhost:8080'), 
+      label: 'SAR Detection', 
+      gradient: 'from-purple-500 to-indigo-500', 
+      external: true 
+    },
     { path: '/report', label: t('reportFlood'), gradient: 'from-orange-500 to-amber-500' },
     { path: '/analytics', label: t('analytics'), gradient: 'from-purple-500 to-pink-500' },
     { path: '/data-sharing', label: 'Data Sharing', gradient: 'from-indigo-500 to-purple-500' },
