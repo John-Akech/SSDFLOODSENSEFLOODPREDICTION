@@ -164,12 +164,18 @@ def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     from fastapi.openapi.utils import get_openapi
+    
+    # Define servers based on API_PUBLIC_PATH to ensure "Try it out" works correctly
+    # behind the ingress proxy
+    servers = [{"url": settings.API_PUBLIC_PATH}] if settings.API_PUBLIC_PATH else [{"url": "/api/v1"}]
+    
     openapi_schema = get_openapi(
         title=app.title,
         version=app.version,
         description=app.description,
         routes=app.routes,
-        openapi_version="3.0.3"
+        openapi_version="3.0.3",
+        servers=servers
     )
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -182,19 +188,15 @@ app.openapi = custom_openapi
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     """Custom Swagger UI with v5.x for OpenAPI 3.0.3 compatibility"""
-    openapi_url = f"{settings.API_PUBLIC_PATH}/openapi.json"
-    oauth2_redirect_url = f"{settings.API_PUBLIC_PATH}/docs/oauth2-redirect"
-    
+    # Use relative path for openapi.json to ensure it works regardless of the prefix
+    # When accessing /api/v1/docs, ./openapi.json resolves to /api/v1/openapi.json
     return get_swagger_ui_html(
-        openapi_url=openapi_url,
+        openapi_url="./openapi.json",
         title=f"{app.title} - Swagger UI",
-        oauth2_redirect_url=oauth2_redirect_url,
         swagger_ui_parameters={"syntaxHighlight": {"theme": "monokai"}},
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.11.0/swagger-ui.css",
     )
-
-
 @app.get("/openapi.json", include_in_schema=False)
 async def get_openapi_schema():
     """Serve OpenAPI schema at /openapi.json"""

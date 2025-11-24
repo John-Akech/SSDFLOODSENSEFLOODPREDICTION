@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "South Sudan Flood Prediction API"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
-    API_PUBLIC_PATH: str = os.getenv("API_PUBLIC_PATH", "")
+    API_PUBLIC_PATH: str = "/api/v1"
 
     # Security
     SECRET_KEY: str = "your-secret-key-change-in-production"
