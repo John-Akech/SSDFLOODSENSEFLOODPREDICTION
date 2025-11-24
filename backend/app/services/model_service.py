@@ -19,8 +19,6 @@ import pandas as pd
 from typing import Dict, Any, Optional, Tuple, List, Set
 import logging
 from pathlib import Path
-import sys
-import os
 import time
 from sklearn.metrics import (  # type: ignore
     roc_auc_score,
@@ -970,7 +968,6 @@ class ModelService:
             ValueError: If GEE features cannot be mapped to model format
         """
         import requests
-        import os
         from fastapi import HTTPException
 
         # Call GEE service to extract real satellite features
