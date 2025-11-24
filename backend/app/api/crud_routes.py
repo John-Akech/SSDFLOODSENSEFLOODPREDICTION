@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/users", response_model=List[User])
-async def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+async def get_users(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), current_user: DBUser = Depends(require_admin)):
     return db.query(DBUser).offset(skip).limit(limit).all()
 
 
@@ -120,8 +120,7 @@ async def update_flood_event(
 async def get_flood_events(
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db),
-    current_user: DBUser = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     return db.query(DBFloodEvent).offset(skip).limit(limit).all()
 
@@ -129,8 +128,7 @@ async def get_flood_events(
 @router.get("/flood-events/{event_id}", response_model=FloodEvent)
 async def get_flood_event(
     event_id: int,
-    db: Session = Depends(get_db),
-    current_user: DBUser = Depends(get_current_user)
+    db: Session = Depends(get_db)
 ):
     event = db.query(DBFloodEvent).filter(DBFloodEvent.id == event_id).first()
     if not event:
