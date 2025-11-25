@@ -13,9 +13,7 @@ const Sidebar: React.FC = () => {
     { path: '/home', label: t('dashboard'), gradient: 'from-blue-500 to-cyan-500' },
     { path: '/map', label: t('riskMap'), gradient: 'from-emerald-500 to-teal-500' },
     {
-      path: (import.meta.env.VITE_SAR_URL && import.meta.env.VITE_SAR_URL.startsWith('/'))
-        ? `${window.location.origin}${import.meta.env.VITE_SAR_URL}?t=${Date.now()}`
-        : (import.meta.env.VITE_SAR_URL || 'http://localhost:8080'),
+      path: import.meta.env.VITE_SAR_URL || 'http://localhost:8080',
       label: 'SAR Detection',
       gradient: 'from-purple-500 to-indigo-500',
       external: true
