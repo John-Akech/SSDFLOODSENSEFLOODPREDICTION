@@ -625,7 +625,7 @@ async def search_place(q: str, countrycodes: Optional[str] = None):
 @router.get("/gis/elevation")
 async def get_elevation(
     lat: float,
-    lng: float
+    lon: float
 ):
     """Get elevation data for a specific location using Open-Elevation API or SRTM data"""
     try:
@@ -633,7 +633,7 @@ async def get_elevation(
         import requests
         try:
             response = requests.get(
-                f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lng}",
+                f"https://api.open-elevation.com/api/v1/lookup?locations={lat},{lon}",
                 timeout=5
             )
             if response.status_code == 200:
@@ -642,7 +642,7 @@ async def get_elevation(
                     elevation = data['results'][0]['elevation']
                     return {
                         "latitude": lat,
-                        "longitude": lng,
+                        "longitude": lon,
                         "elevation": elevation,
                         "source": "open-elevation"
                     }
@@ -793,6 +793,18 @@ async def features_from_gee(lat: float, lon: float):
         logger.error(f"Error getting features: {e}")
         raise HTTPException(
             status_code=500, detail=f"Feature extraction failed: {str(e)}")
+
+
+@router.get("/push/vapid-public-key")
+async def get_vapid_public_key():
+    """Get VAPID public key for push notification subscription"""
+    vapid_key = settings.VAPID_PUBLIC_KEY
+    if not vapid_key:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Push notifications not configured"
+        )
+    return {"public_key": vapid_key}
 
 
 @router.get("/health")

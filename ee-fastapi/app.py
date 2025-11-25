@@ -397,7 +397,7 @@ async def map_view(request: Request):
     if static_js_path.exists():
         mtime = static_js_path.stat().st_mtime
         js_version = str(int(mtime))
-    
+
     return templates.TemplateResponse(
         "map.html",
         {
