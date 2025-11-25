@@ -37,17 +37,11 @@ const Sidebar: React.FC = () => {
             <a
               key={item.path}
               href={item.path}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${active
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105'
-                : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
+              className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${
+                'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
                 }`}
             >
               <span className="font-semibold text-sm">{item.label}</span>
-              {active && (
-                <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
-              )}
             </a>
           ) : (
             <Link

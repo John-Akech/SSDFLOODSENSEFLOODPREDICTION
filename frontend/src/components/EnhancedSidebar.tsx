@@ -207,26 +207,16 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
                     <a
                       key={subItem.path}
                       href={subItem.path}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className={`group flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 ${isSubActive
-                        ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg'
-                        : 'text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400'
-                        }`}
+                      className={`group flex items-center gap-4 px-4 py-3 rounded-lg transition-all duration-200 text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400`}
                     >
-                      <div className={`p-2 rounded-md ${isSubActive ? 'bg-white/20' : `bg-gradient-to-br ${subItem.gradient}`
-                        } hidden`}>
+                      <div className={`p-2 rounded-md bg-gradient-to-br ${subItem.gradient} hidden`}>
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="font-semibold text-base">{subItem.label}</div>
-                        <div className={`text-sm ${isSubActive ? 'text-blue-100' : 'text-gray-500'
-                          }`}>
+                        <div className="text-sm text-gray-500">
                           {subItem.description}
                         </div>
                       </div>
-                      {isSubActive && (
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                      )}
                     </a>
                   ) : (
                     <Link
@@ -267,27 +257,18 @@ const EnhancedSidebar: React.FC<EnhancedSidebarProps> = ({ onToggleSidebar }) =>
       <a
         key={item.path}
         href={item.path}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`group flex items-center gap-5 px-6 py-4 rounded-xl transition-all duration-300 ${isItemActive
-          ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg scale-105'
-          : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400 hover:scale-105'
-          }`}
+        className={`group flex items-center gap-5 px-6 py-4 rounded-xl transition-all duration-300 text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-slate-800 hover:text-blue-700 dark:hover:text-blue-400 hover:scale-105`}
       >
-        <div className={`p-2.5 rounded-lg ${isItemActive ? 'bg-white/20' : `bg-gradient-to-br ${item.gradient}`} hidden`}>
+        <div className={`p-2.5 rounded-lg bg-gradient-to-br ${item.gradient} hidden`}>
         </div>
         <div className="flex-1">
           <span className="font-semibold text-base">{item.label}</span>
           {item.description && (
-            <div className={`text-sm mt-1 ${isItemActive ? 'text-blue-100' : 'text-gray-500'
-              }`}>
+            <div className="text-sm mt-1 text-gray-500">
               {item.description}
             </div>
           )}
         </div>
-        {isItemActive && (
-          <div className="ml-auto w-2 h-2 bg-white rounded-full animate-pulse"></div>
-        )}
       </a>
     ) : (
       <Link
