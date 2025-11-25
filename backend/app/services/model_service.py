@@ -632,16 +632,19 @@ class ModelService:
         feature_vector = [features[col] for col in cls.feature_columns]
 
         # Apply standard scaling if scaler is loaded (REQUIRED for production models)
-        feature_array = np.array(feature_vector).reshape(1, -1)
+        # Create DataFrame to preserve feature names and avoid sklearn warnings
+        feature_df = pd.DataFrame(
+            [feature_vector], columns=cls.feature_columns)
+
         if cls.scaler is not None:
             try:
-                return cls.scaler.transform(feature_array)
+                return cls.scaler.transform(feature_df)
             except Exception as e:
                 logger.warning(
                     f"Scaler transform failed: {e}, using unscaled features")
-                return feature_array
+                return feature_df.values
 
-        return feature_array
+        return feature_df.values
 
     @classmethod
     def predict_rf(cls, features: Dict[str, Any]) -> Tuple[float, float, float]:

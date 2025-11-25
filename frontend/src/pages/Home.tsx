@@ -7,6 +7,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useLanguage } from '../i18n/LanguageContext';
 import '../styles/flood-colors.css';
 import { useDisasterMode } from '../context/DisasterModeContext';
+import { useSystemAccuracy } from '../hooks/useSystemAccuracy';
 
 const Home: React.FC = () => {
   const { isDisasterMode } = useDisasterMode();
@@ -22,8 +23,7 @@ const Home: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { t } = useLanguage();
-  // Static accuracy for performance
-  const accuracyLabel = '87%';
+  const { accuracyLabel } = useSystemAccuracy({ refreshIntervalMs: 60000 });
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -74,7 +74,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 120000); // Refresh every 2 minutes
+    const interval = setInterval(fetchData, 300000); // Refresh every 5 minutes for performance
     return () => clearInterval(interval);
   }, [fetchData]);
 

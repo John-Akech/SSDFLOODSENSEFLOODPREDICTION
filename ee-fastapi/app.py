@@ -131,12 +131,25 @@ def ensure_gee_initialized():
                 service_account_key_base64 = "".join(
                     service_account_key_base64.split())
 
+                # Fix common copy-paste errors (length % 4 == 1 is impossible in valid base64)
+                if len(service_account_key_base64) % 4 == 1:
+                    logger.warning(
+                        "[WARN] Base64 length % 4 == 1 (invalid). Attempting to fix by removing last char...")
+                    service_account_key_base64 = service_account_key_base64[:-1]
+
                 missing_padding = len(service_account_key_base64) % 4
                 if missing_padding:
                     service_account_key_base64 += '=' * (4 - missing_padding)
 
                 decoded_bytes = base64.b64decode(service_account_key_base64)
                 decoded_json = decoded_bytes.decode('utf-8')
+
+                # Handle concatenated JSON (double paste)
+                # If the user pasted the key twice, we might get {"type":...}{"type":...}
+                if '}{' in decoded_json:
+                    logger.warning(
+                        "[WARN] Detected concatenated JSON objects. Using the first one.")
+                    decoded_json = decoded_json.split('}{')[0] + '}'
 
                 logger.info(f"[INFO] Decoded JSON length: {len(decoded_json)}")
 
@@ -244,6 +257,32 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+# Middleware to handle path stripping for DigitalOcean Ingress
+# DO App Platform does not strip the prefix (e.g. /sar) when forwarding to the component.
+# We need to strip it manually so routes match correctly.
+
+
+@app.middleware("http")
+async def strip_prefix_middleware(request: Request, call_next):
+    if PUBLIC_BASE_PATH and request.url.path.startswith(PUBLIC_BASE_PATH):
+        # Modify scope to strip prefix
+        scope = request.scope
+        # Ensure we don't strip if it's just a partial match (e.g. /sar vs /sardine)
+        # But PUBLIC_BASE_PATH is normalized to start with / and no trailing /
+        prefix = PUBLIC_BASE_PATH
+        path = scope["path"]
+
+        if path.startswith(prefix + "/") or path == prefix:
+            new_path = path[len(prefix):]
+            if not new_path.startswith("/"):
+                new_path = "/" + new_path
+
+            scope["path"] = new_path
+            scope["root_path"] = prefix
+
+    response = await call_next(request)
+    return response
+
 # Initialize database on startup
 
 
@@ -341,17 +380,9 @@ output_dir.mkdir(exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/output", StaticFiles(directory=str(output_dir)), name="output")
 
-if PUBLIC_BASE_PATH:
-    app.mount(
-        f"{PUBLIC_BASE_PATH}/static",
-        StaticFiles(directory="static"),
-        name="static-prefixed",
-    )
-    app.mount(
-        f"{PUBLIC_BASE_PATH}/output",
-        StaticFiles(directory=str(output_dir)),
-        name="output-prefixed",
-    )
+# Note: Prefixed mounts are now handled by the strip_prefix_middleware
+# which strips PUBLIC_BASE_PATH from the request path before routing.
+# So /sar/static becomes /static and matches the standard mount below.
 
 # Load templates
 templates = Jinja2Templates(directory="template")

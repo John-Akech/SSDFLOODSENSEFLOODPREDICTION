@@ -15,7 +15,7 @@ const coordCache = new Map<string, { lat: number; lon: number }>();
 // Rate limiting queue
 let requestQueue: Array<() => Promise<void>> = [];
 let isProcessing = false;
-const REQUEST_DELAY = 1000; // 1 second between requests (Nominatim policy)
+const REQUEST_DELAY = 100; // 100ms between requests for better performance
 
 // Load cache from localStorage on startup
 const loadCacheFromStorage = () => {

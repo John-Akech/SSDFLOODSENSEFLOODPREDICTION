@@ -274,17 +274,17 @@ const DataSharing: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-5xl mx-auto mt-12">
               {[
                 {
-                  num: stats ? stats.total_predictions.toLocaleString() : '2,345',
+                  num: stats ? stats.total_predictions.toLocaleString() : '-',
                   label: 'Total Predictions',
                   color: 'from-blue-500 to-blue-600'
                 },
                 {
-                  num: stats ? stats.total_users.toLocaleString() : '487',
+                  num: stats ? stats.total_users.toLocaleString() : '-',
                   label: 'Active Contributors',
                   color: 'from-green-500 to-green-600'
                 },
                 {
-                  num: accuracyLoading ? 'Updating...' : (accuracyLabel || '-'),
+                  num: accuracyLoading ? 'Loading...' : (accuracyLabel || '-'),
                   label: 'System Accuracy',
                   color: 'from-purple-500 to-purple-600'
                 },

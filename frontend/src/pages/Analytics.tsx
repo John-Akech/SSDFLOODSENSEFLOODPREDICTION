@@ -66,13 +66,9 @@ const Analytics: React.FC = () => {
           Object.keys(systemStats.population_by_state).forEach(state => statesFromData.add(state));
         }
 
-        // Set states, with fallback to common South Sudan states if no data
+        // Only use real states from backend data - no fallbacks
         const stateList = Array.from(statesFromData).sort();
-        setAllStates(stateList.length > 0 ? stateList : [
-          'Central Equatoria', 'Eastern Equatoria', 'Western Equatoria',
-          'Jonglei', 'Unity', 'Upper Nile',
-          'Northern Bahr el Ghazal', 'Western Bahr el Ghazal', 'Warrap', 'Lakes'
-        ]);
+        setAllStates(stateList);
 
         // Seed live models from system if available
         if (systemStats?.live_models) {
@@ -86,8 +82,8 @@ const Analytics: React.FC = () => {
     };
     fetchData();
 
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchData, 30000);
+    // Auto-refresh every 2 minutes for better performance
+    const interval = setInterval(fetchData, 120000);
     return () => clearInterval(interval);
   }, []);
 

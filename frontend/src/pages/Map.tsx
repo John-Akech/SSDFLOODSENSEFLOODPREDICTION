@@ -175,7 +175,7 @@ const Map: React.FC = () => {
     } catch (error) {
       console.error('Failed to fetch data:', error);
       setError(t('mapDataLoadError'));
-      // Set fallback data
+      // Update timestamp only on error
       setStats(prev => ({ ...prev, lastUpdate: new Date().toLocaleTimeString() }));
     } finally {
       setLoading(false);
@@ -185,7 +185,7 @@ const Map: React.FC = () => {
   useEffect(() => {
     if (!autoRefresh) return;
     fetchData();
-    const interval = setInterval(fetchData, 30000); // Refresh every 30 seconds
+    const interval = setInterval(fetchData, 90000); // Refresh every 90 seconds for performance
     return () => clearInterval(interval);
   }, [fetchData, autoRefresh]);
 
