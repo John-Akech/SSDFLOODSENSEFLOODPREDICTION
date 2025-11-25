@@ -91,11 +91,11 @@ const NotificationBell: React.FC = () => {
     try {
       // Check browser support
       if (!('serviceWorker' in navigator)) {
-        alert('Your browser does not support service workers');
+        alert('Your browser does not support service workers. Please use a modern browser like Chrome, Firefox, or Edge.');
         return;
       }
       if (!('PushManager' in window)) {
-        alert('Your browser does not support push notifications');
+        alert('Your browser does not support push notifications. Please use a modern browser.');
         return;
       }
 
@@ -108,13 +108,16 @@ const NotificationBell: React.FC = () => {
 
       // Get service worker registration
       const reg = await navigator.serviceWorker.ready;
+      console.log('Service worker ready:', reg);
 
-      // Get VAPID public key from environment
-      if (!VAPID_PUBLIC_KEY) {
-        console.error('VITE_VAPID_PUBLIC_KEY not configured');
-        alert('Push notification configuration is missing. Please contact support.');
+      // Check VAPID public key
+      if (!VAPID_PUBLIC_KEY || VAPID_PUBLIC_KEY === 'undefined') {
+        console.error('VITE_VAPID_PUBLIC_KEY not configured. Current value:', VAPID_PUBLIC_KEY);
+        alert('Push notification configuration is missing. The VAPID key is not set. Please contact support.');
         return;
       }
+
+      console.log('VAPID key available, subscribing...');
 
       // Subscribe to push notifications
       const sub = await reg.pushManager.subscribe({
@@ -122,13 +125,15 @@ const NotificationBell: React.FC = () => {
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
+      console.log('Push subscription successful:', sub);
+
       // Send subscription to backend
       await apiService.pushSubscribe(sub.toJSON());
-      alert('Push notifications enabled successfully!');
+      alert('Push notifications enabled successfully! You will receive flood alerts.');
     } catch (e: any) {
       console.error('Push subscribe failed:', e);
       const errorMsg = e?.message || 'Unknown error';
-      alert(`Failed to enable notifications: ${errorMsg}\n\nPlease check:\n- Browser supports notifications\n- Permissions are granted\n- Using HTTPS or localhost`);
+      alert(`Failed to enable notifications: ${errorMsg}\n\nPlease check:\n- Browser supports notifications\n- Permissions are granted\n- Using HTTPS or localhost\n- VAPID key is configured`);
     }
   };
 
@@ -150,7 +155,20 @@ const NotificationBell: React.FC = () => {
         className="relative p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 group"
         aria-label="Notifications"
       >
-        <span className="font-bold text-sm">ALERTS</span>
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+          />
+        </svg>
         {unreadCount > 0 && (
           <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse shadow-lg">
             {unreadCount > 99 ? '99+' : unreadCount}

@@ -37,8 +37,7 @@ const Sidebar: React.FC = () => {
             <a
               key={item.path}
               href={item.path}
-              className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${
-                'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
+              className={`group flex items-center gap-4 px-4 py-3 rounded-xl transition-all duration-300 ${'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-105'
                 }`}
             >
               <span className="font-semibold text-sm">{item.label}</span>
