@@ -953,39 +953,6 @@ class ModelService:
         return model_features
 
     @classmethod
-    def get_fallback_features(cls, latitude: float, longitude: float) -> Dict[str, Any]:
-        """Generate fallback features based on South Sudan regional averages.
-
-        Used when satellite data is unavailable. These are reasonable defaults
-        based on historical South Sudan flood conditions.
-        """
-        import random
-
-        # Add slight randomness based on location for more realistic predictions
-        random.seed(int((latitude + longitude) * 1000))
-
-        # South Sudan average conditions (non-flood baseline)
-        return {
-            'VV_mean': -12.5 + random.uniform(-2, 2),
-            'VV_std': 2.1 + random.uniform(-0.5, 0.5),
-            'VV_min': -18.0 + random.uniform(-2, 2),
-            'VV_max': -8.0 + random.uniform(-2, 2),
-            'VH_mean': -19.5 + random.uniform(-2, 2),
-            'VH_std': 2.3 + random.uniform(-0.5, 0.5),
-            'VH_min': -25.0 + random.uniform(-2, 2),
-            'VH_max': -14.0 + random.uniform(-2, 2),
-            'VV_stdDev_mean': 1.8 + random.uniform(-0.3, 0.3),
-            'VH_stdDev_mean': 2.0 + random.uniform(-0.3, 0.3),
-            'precipitation_sum': 150.0 + random.uniform(-50, 100),  # mm
-            'precipitation_mean': 5.0 + random.uniform(-2, 5),
-            'precipitation_max': 25.0 + random.uniform(-5, 15),
-            # Varies with latitude
-            'elevation_mean': 420.0 + (latitude - 6.877) * 10,
-            'slope_mean': 1.5 + random.uniform(-0.5, 1.5),
-            'water_occurrence_mean': 0.15 + random.uniform(-0.05, 0.15),
-        }
-
-    @classmethod
     def generate_features_from_location(cls, lat: float, lon: float) -> Dict[str, Any]:
         """Generate model features for a location by calling GEE service
 

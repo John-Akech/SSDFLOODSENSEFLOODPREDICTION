@@ -245,38 +245,28 @@ async def create_prediction(
                     f"Successfully mapped {len(features)} features from GEE data")
 
             except ValueError as ve:
-                logger.warning(
-                    f"Feature mapping error, using fallback features: {ve}")
-                # Use fallback features based on location averages for South Sudan
-                features = ModelService.get_fallback_features(
-                    request.latitude,
-                    request.longitude
+                logger.error(f"Feature mapping error: {ve}")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail={
+                        "message": "Incomplete satellite data",
+                        "error": str(ve),
+                        "suggestion": (
+                            "Please retry once Sentinel-1/CHIRPS coverage is available for this location. "
+                            "Ensure the SAR microservice is running and the bbox overlaps recent imagery."
+                        )
+                    }
                 )
-                logger.info(
-                    f"Using {len(features)} fallback features for prediction")
-            except HTTPException as he:
-                # If SAR service is down, use fallback
-                if he.status_code >= 500:
-                    logger.warning(
-                        f"SAR service unavailable, using fallback features: {he.detail}")
-                    features = ModelService.get_fallback_features(
-                        request.latitude,
-                        request.longitude
-                    )
-                    logger.info(
-                        f"Using {len(features)} fallback features for prediction")
-                else:
-                    # Re-raise client errors (400-level)
-                    raise
+            except HTTPException:
+                # Re-raise HTTP exceptions from fetch_gee_features
+                raise
             except Exception as e:
-                logger.warning(
-                    f"Error fetching satellite data, using fallback: {e}")
-                features = ModelService.get_fallback_features(
-                    request.latitude,
-                    request.longitude
+                logger.error(
+                    f"Unexpected error fetching/mapping features: {e}")
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Failed to process satellite data: {str(e)}"
                 )
-                logger.info(
-                    f"Using {len(features)} fallback features for prediction")
 
         # Make prediction based on model type
         model_predictions = None
