@@ -16,8 +16,6 @@ type CachedLandingStats = {
   stats: LandingStats;
   timestamp: string;
 };
-
-const DEFAULT_STATS: LandingStats = { predictions: null, communities: null };
 const STATS_CACHE_KEY = 'landing_stats_cache';
 
 const readCachedStats = (): CachedLandingStats | null => {
@@ -45,8 +43,9 @@ const Landing: React.FC = () => {
   const { isOffline } = useNetworkStatus();
   const { shouldReduceMotion } = usePerformanceProfile();
   const { accuracyLabel, isLoading: accuracyLoading } = useSystemAccuracy({ refreshIntervalMs: 60_000 });
-  const [stats, setStats] = useState<LandingStats>(DEFAULT_STATS);
+  const [stats, setStats] = useState<LandingStats | null>(null);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
   const accuracyDisplay = accuracyLabel === '—'
     ? (accuracyLoading ? t('loading') : 'Unavailable')
     : accuracyLabel;
@@ -56,6 +55,7 @@ const Landing: React.FC = () => {
     if (cached) {
       setStats(cached.stats);
       setLastUpdated(cached.timestamp);
+      setIsLoadingStats(false);
     }
   }, []);
 
@@ -77,9 +77,9 @@ const Landing: React.FC = () => {
         if (cached) {
           setStats(cached.stats);
           setLastUpdated(cached.timestamp);
-        } else {
-          setStats({ predictions: 0, communities: 0 });
         }
+      } finally {
+        setIsLoadingStats(false);
       }
     };
 
@@ -89,6 +89,7 @@ const Landing: React.FC = () => {
         setStats(cached.stats);
         setLastUpdated(cached.timestamp);
       }
+      setIsLoadingStats(false);
       return;
     }
 
@@ -219,7 +220,11 @@ const Landing: React.FC = () => {
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-blue-700 uppercase tracking-wide">{t('predictionsMade')}</p>
                       <p className="text-3xl font-bold text-blue-900">
-                        {stats.predictions === null ? t('loading') : stats.predictions.toLocaleString()}
+                        {isLoadingStats ? (
+                          <span className="inline-block bg-blue-200 rounded animate-pulse h-9 w-24"></span>
+                        ) : (
+                          stats?.predictions?.toLocaleString() || '0'
+                        )}
                       </p>
                       <p className="text-xs text-blue-600">{t('realTimeAIPredictions')}</p>
                     </div>
@@ -235,7 +240,11 @@ const Landing: React.FC = () => {
                     <div className="space-y-1">
                       <p className="text-sm font-semibold text-green-700 uppercase tracking-wide">{t('activeCommunities')}</p>
                       <p className="text-3xl font-bold text-green-900">
-                        {stats.communities === null ? t('loading') : stats.communities.toLocaleString()}
+                        {isLoadingStats ? (
+                          <span className="inline-block bg-green-200 rounded animate-pulse h-9 w-24"></span>
+                        ) : (
+                          stats?.communities?.toLocaleString() || '0'
+                        )}
                       </p>
                       <p className="text-xs text-green-600">{t('protectedCommunities')}</p>
                     </div>
@@ -403,7 +412,7 @@ const Landing: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-8 sm:mb-12 lg:mb-16">
             {[
               {
-                value: stats.predictions === null ? t('loading') : `${stats.predictions.toLocaleString()}+`,
+                value: isLoadingStats ? '...' : `${stats?.predictions?.toLocaleString() || '0'}+`,
                 label: t('totalPredictions'),
                 desc: t('aiPoweredPredictions') // Reusing key
               },

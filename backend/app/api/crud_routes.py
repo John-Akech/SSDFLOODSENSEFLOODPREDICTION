@@ -139,9 +139,9 @@ async def get_flood_event(
 
 
 @router.get("/predictions")
-async def get_predictions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+async def get_predictions(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
     """Get predictions - returns in format expected by frontend"""
-    predictions = db.query(DBPrediction).offset(skip).limit(limit).all()
+    predictions = db.query(DBPrediction).order_by(DBPrediction.created_at.desc()).offset(skip).limit(limit).all()
     return {
         "predictions": [
             {
@@ -318,12 +318,12 @@ async def create_alert(alert: AlertCreate, db: Session = Depends(get_db), curren
 
 
 @router.get("/alerts")
-async def get_alerts(skip: int = 0, limit: int = 100, active_only: bool = False, db: Session = Depends(get_db)):
+async def get_alerts(skip: int = 0, limit: int = 50, active_only: bool = False, db: Session = Depends(get_db)):
     """Get alerts - returns in format expected by frontend"""
     query = db.query(DBAlert)
     if active_only:
         query = query.filter(DBAlert.is_active)
-    alerts = query.offset(skip).limit(limit).all()
+    alerts = query.order_by(DBAlert.created_at.desc()).offset(skip).limit(limit).all()
     return {
         "alerts": [
             {

@@ -3,19 +3,8 @@ import { apiService } from '../services/api';
 import { reverseGeocode } from '../services/geocoding';
 import '../styles/flood-colors.css';
 
-type AppEnv = Record<string, string | undefined>;
-
-declare global {
-  interface Window {
-    __APP_ENV__?: AppEnv;
-  }
-}
-
-const getEnvVar = (key: string) => {
-  const envSource = (typeof window !== 'undefined' ? window.__APP_ENV__ : undefined)
-    ?? (globalThis as { __APP_ENV__?: AppEnv }).__APP_ENV__;
-  return envSource?.[key];
-};
+// VAPID public key directly from Vite environment
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
 
 const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -121,9 +110,8 @@ const NotificationBell: React.FC = () => {
       const reg = await navigator.serviceWorker.ready;
 
       // Get VAPID public key from environment
-      const vapid = getEnvVar('VITE_VAPID_PUBLIC_KEY');
-      if (!vapid) {
-        console.warn('VAPID public key not found in environment');
+      if (!VAPID_PUBLIC_KEY) {
+        console.error('VITE_VAPID_PUBLIC_KEY not configured');
         alert('Push notification configuration is missing. Please contact support.');
         return;
       }
@@ -131,7 +119,7 @@ const NotificationBell: React.FC = () => {
       // Subscribe to push notifications
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapid),
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
       // Send subscription to backend
