@@ -67,85 +67,74 @@ const Admin: React.FC = () => {
   // Fetch data with caching and timeout optimization
   const fetchUsers = async () => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
-
       // Limit to 50 users for faster loading
       const data = await apiService.getUsers({ limit: 50 });
-      clearTimeout(timeoutId);
-      setUsers(data);
-      return data;
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.warn('[PERFORMANCE] Users fetch timed out');
-        setError(t('usersLoadTimeout'));
+      if (Array.isArray(data)) {
+        setUsers(data);
+        return data;
       } else {
-        setError(t('usersLoadFailed'));
+        console.error('[ERROR] Users response is not an array:', data);
+        setUsers([]);
+        return [];
       }
+    } catch (err: any) {
+      console.error('[ERROR] Failed to fetch users:', err);
+      setError(t('usersLoadFailed'));
+      setUsers([]);
       return [];
     }
   };
 
   const fetchAlerts = async () => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
-
       // Limit to most recent 100 alerts for faster loading
       const data = await apiService.getActiveAlerts({ limit: 100 });
-      clearTimeout(timeoutId);
       const alertsArray = data.alerts || [];
-      setAlerts(alertsArray);
-      return alertsArray;
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.warn('[PERFORMANCE] Alerts fetch timed out');
-        setError(t('alertsLoadTimeout'));
+      if (Array.isArray(alertsArray)) {
+        setAlerts(alertsArray);
+        return alertsArray;
       } else {
-        setError(t('alertsLoadFailed'));
+        console.error('[ERROR] Alerts response is not an array:', alertsArray);
+        setAlerts([]);
+        return [];
       }
+    } catch (err: any) {
+      console.error('[ERROR] Failed to fetch alerts:', err);
+      setError(t('alertsLoadFailed'));
+      setAlerts([]);
       return [];
     }
   };
 
   const fetchPredictions = async () => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
-
       // Limit to most recent 100 predictions for faster loading
       const data = await apiService.getPredictions({ limit: 100 });
-      clearTimeout(timeoutId);
       const predictionsArray = data.predictions || data;
-      setPredictions(predictionsArray);
-      return predictionsArray;
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.warn('[PERFORMANCE] Predictions fetch timed out');
-        setError(t('predictionsLoadTimeout'));
+      if (Array.isArray(predictionsArray)) {
+        setPredictions(predictionsArray);
+        return predictionsArray;
       } else {
-        setError(t('predictionsLoadFailed'));
+        console.error('[ERROR] Predictions response is not an array:', predictionsArray);
+        setPredictions([]);
+        return [];
       }
+    } catch (err: any) {
+      console.error('[ERROR] Failed to fetch predictions:', err);
+      setError(t('predictionsLoadFailed'));
+      setPredictions([]);
       return [];
     }
   };
 
   const fetchModelStats = async () => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s timeout
-
       const data = await apiService.getModelStats(MODEL_STATS_WINDOW);
-      clearTimeout(timeoutId);
       console.log('[DEBUG] Model Stats Data:', JSON.stringify(data, null, 2));
       setModelStats(data);
       return data;
     } catch (err: any) {
-      if (err.name === 'AbortError') {
-        console.warn('[PERFORMANCE] Model stats fetch timed out');
-      } else {
-        console.error('Failed to load model stats:', err);
-      }
+      console.error('[ERROR] Failed to load model stats:', err);
       return null;
     }
   };
@@ -250,39 +239,30 @@ const Admin: React.FC = () => {
       }
 
       try {
-        // Parallel fetch with race condition - take first results within 1.8s
-        const fetchPromise = Promise.all([fetchUsers(), fetchAlerts(), fetchPredictions(), fetchModelStats(), fetchTimeSeriesData(), fetchSettings()]);
-        const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 1800));
-
-        const result = await Promise.race([
-          fetchPromise.then(data => ({ success: true, data })),
-          timeoutPromise.then(() => ({ success: false, data: null }))
+        // Parallel fetch all data
+        const [usersData, alertsData, predictionsData, modelStatsData] = await Promise.all([
+          fetchUsers(),
+          fetchAlerts(),
+          fetchPredictions(),
+          fetchModelStats(),
+          fetchTimeSeriesData(),
+          fetchSettings().catch(() => null) // Settings can fail without breaking dashboard
         ]);
 
-        if (result.success && result.data) {
-          const [usersData, alertsData, predictionsData, modelStatsData] = result.data;
+        // Update cache
+        setDataCache({
+          users: usersData,
+          alerts: alertsData,
+          predictions: predictionsData,
+          modelStats: modelStatsData,
+          timestamp: Date.now()
+        });
 
-          // Update cache
-          setDataCache({
-            users: usersData,
-            alerts: alertsData,
-            predictions: predictionsData,
-            modelStats: modelStatsData,
-            timestamp: Date.now()
-          });
-
-          const loadTime = performance.now() - startTime;
-          console.info(`[PERFORMANCE] Data loaded in ${loadTime.toFixed(0)}ms`);
-        } else {
-          console.warn('[PERFORMANCE] Data loading exceeded 1.8s - using partial data');
-          // Use cache if available
-          if (dataCache.users) setUsers(dataCache.users);
-          if (dataCache.alerts) setAlerts(dataCache.alerts);
-          if (dataCache.predictions) setPredictions(dataCache.predictions);
-          if (dataCache.modelStats) setModelStats(dataCache.modelStats);
-        }
+        const loadTime = performance.now() - startTime;
+        console.info(`[PERFORMANCE] Data loaded in ${loadTime.toFixed(0)}ms`);
       } catch (err) {
-        console.error('[PERFORMANCE] Data loading failed:', err);
+        console.error('[ERROR] Data loading failed:', err);
+        setError('Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
