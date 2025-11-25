@@ -853,33 +853,6 @@ async def api_health_check(db: Session = Depends(get_db)):
             "message": f"Database connection failed: {str(e)}"
         }
 
-    # Check 3: GEE service (warning only, not critical)
-    try:
-        import requests
-        gee_service_url = (
-            os.getenv("GEE_SERVICE_URL")
-            or os.getenv("SAR_SERVICE_URL")
-            or "http://sar-detection:8080"
-        )
-        response = requests.get(f"{gee_service_url}/health", timeout=5)
-        if response.status_code == 200:
-            health_status["checks"]["gee_service"] = {
-                "status": "healthy",
-                "url": gee_service_url
-            }
-        else:
-            health_status["checks"]["gee_service"] = {
-                "status": "warning",
-                "message": f"GEE service returned status {response.status_code}",
-                "impact": "Real-time predictions unavailable"
-            }
-    except Exception as e:
-        health_status["checks"]["gee_service"] = {
-            "status": "warning",
-            "message": f"GEE service unreachable: {str(e)}",
-            "impact": "Real-time predictions unavailable"
-        }
-
     # Add simple top-level fields for backward compatibility with tests
     health_status["database"] = database_status
     health_status["models"] = models_status
