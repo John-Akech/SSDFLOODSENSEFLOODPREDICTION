@@ -804,7 +804,7 @@ async def get_vapid_public_key():
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Push notifications not configured"
         )
-    return {"public_key": vapid_key}
+    return {"public_key": vapid_key, "version": "1.0"}
 
 
 @router.get("/health")
