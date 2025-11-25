@@ -391,11 +391,19 @@ templates = Jinja2Templates(directory="template")
 @app.get("/", tags=["UI"])
 async def map_view(request: Request):
     """Render interactive flood detection map."""
+    # Generate cache-busting version from file modification time
+    static_js_path = Path("static/js/main.js")
+    js_version = "1"
+    if static_js_path.exists():
+        mtime = static_js_path.stat().st_mtime
+        js_version = str(int(mtime))
+    
     return templates.TemplateResponse(
         "map.html",
         {
             "request": request,
             "public_path": PUBLIC_BASE_PATH,
+            "js_version": js_version,
         }
     )
 
