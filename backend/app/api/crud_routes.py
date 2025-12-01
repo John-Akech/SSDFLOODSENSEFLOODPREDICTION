@@ -120,7 +120,8 @@ async def update_flood_event(
 async def get_flood_events(
     skip: int = 0,
     limit: int = 100,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
 ):
     return db.query(DBFloodEvent).offset(skip).limit(limit).all()
 
@@ -128,7 +129,8 @@ async def get_flood_events(
 @router.get("/flood-events/{event_id}", response_model=FloodEvent)
 async def get_flood_event(
     event_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: DBUser = Depends(get_current_user)
 ):
     event = db.query(DBFloodEvent).filter(DBFloodEvent.id == event_id).first()
     if not event:
