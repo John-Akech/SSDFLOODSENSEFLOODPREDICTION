@@ -189,10 +189,10 @@ class AutomatedAlertScheduler:
         # 2. SMS Notifications (for low-resource areas)
         try:
             # Get phone numbers from subscribed users
-            from app.models.database_models import DBUser
-            users_with_phones = db.query(DBUser).filter(
-                DBUser.phone_number.isnot(None),
-                DBUser.sms_alerts_enabled
+            from app.models.database_models import User
+            users_with_phones = db.query(User).filter(
+                User.phone_number.isnot(None),
+                User.sms_alerts_enabled
             ).all()
 
             if users_with_phones and self.sms_service.enabled:
@@ -216,10 +216,10 @@ class AutomatedAlertScheduler:
 
         # 3. Email Notifications (for users with email)
         try:
-            from app.models.database_models import DBUser
-            users_with_email = db.query(DBUser).filter(
-                DBUser.email.isnot(None),
-                DBUser.email_alerts_enabled
+            from app.models.database_models import User
+            users_with_email = db.query(User).filter(
+                User.email.isnot(None),
+                User.email_alerts_enabled
             ).all()
 
             if users_with_email:

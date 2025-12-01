@@ -51,7 +51,7 @@ FloodSense is a comprehensive flood prediction and early warning system designed
 
 ---
 
-## 🏗️ System Architecture
+## System Architecture
 
 **[View High-Resolution Architecture Diagram](https://drive.google.com/file/d/1UZ5XmmUprbz7Nw3_yiG9reD3pUTrztH4/view?usp=sharing)**
 
@@ -1325,7 +1325,7 @@ If you use FloodSense in your research, please cite:
 
 **Current Version:** 1.0.0
 
-**Status:** ✅ Production Ready
+**Status:** Production Ready
 
 **Last Updated:** December 2025
 
@@ -1350,4 +1350,4 @@ If you use FloodSense in your research, please cite:
 
 ---
 
-**Built with ❤️ for the people of South Sudan**
+**Built with care for the people of South Sudan**

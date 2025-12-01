@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 import re
 
 from app.core.database import get_db
-from app.models.database_models import DBUser
+from app.models.database_models import User as DBUser
 from app.services.sms_service import get_sms_service
 from app.api.auth_routes import get_current_user
 

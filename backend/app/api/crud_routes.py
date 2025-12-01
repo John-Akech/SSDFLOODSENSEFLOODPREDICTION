@@ -41,7 +41,7 @@ async def get_current_user_profile(current_user: DBUser = Depends(get_current_us
 
 @router.get("/users/{user_id}", response_model=User)
 async def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(DBUser).filter(DBUser.id == user_id).first()
+    user = db.query(DBUser).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
@@ -54,7 +54,7 @@ async def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends
         raise HTTPException(
             status_code=403, detail="Not authorized to update this user")
 
-    user = db.query(DBUser).filter(DBUser.id == user_id).first()
+    user = db.query(DBUser).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -68,7 +68,7 @@ async def update_user(user_id: int, user_data: UserUpdate, db: Session = Depends
 
 @router.delete("/users/{user_id}")
 async def delete_user(user_id: int, db: Session = Depends(get_db), current_user: DBUser = Depends(require_admin)):
-    user = db.query(DBUser).filter(DBUser.id == user_id).first()
+    user = db.query(DBUser).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -985,8 +985,8 @@ async def get_time_series_stats(days: int = 7, db: Session = Depends(get_db)):
 
             # Count new users for this day
             users_count = db.query(DBUser).filter(
-                DBUser.created_at >= date_start,
-                DBUser.created_at <= date_end
+                User.created_at >= date_start,
+                User.created_at <= date_end
             ).count()
 
             # Count new alerts for this day
