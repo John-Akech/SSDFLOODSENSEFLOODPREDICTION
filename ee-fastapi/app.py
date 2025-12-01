@@ -302,10 +302,10 @@ async def startup_event():
         logger.info("Initializing Google Earth Engine...")
         result = ensure_gee_initialized()
         if result:
-            logger.info("✅ Google Earth Engine initialized successfully")
+            logger.info("[OK] Google Earth Engine initialized successfully")
         else:
             logger.error(
-                f"❌ Google Earth Engine initialization failed: {gee_error}")
+                f"[ERROR] Google Earth Engine initialization failed: {gee_error}")
     except Exception as e:
         logger.error(f"GEE initialization error: {e}")
         import traceback

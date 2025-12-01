@@ -67,29 +67,29 @@ class SMSService:
 
     def format_sms_message(self, message: str, severity: str, location: str) -> str:
         """Format message for SMS (160 character limit for single SMS)"""
-        # Emojis for severity (low bandwidth, universally understood)
-        severity_icons = {
-            "emergency": "🚨",
-            "critical": "⚠️",
-            "high": "⚠",
-            "medium": "ℹ️",
-            "low": "ℹ"
+        # Prefix indicators for severity
+        severity_prefix = {
+            "emergency": "[EMERGENCY]",
+            "critical": "[CRITICAL]",
+            "high": "[WARNING]",
+            "medium": "[ADVISORY]",
+            "low": "[INFO]"
         }
 
-        icon = severity_icons.get(severity, "ℹ️")
+        prefix = severity_prefix.get(severity, "[INFO]")
 
         # Compress message to fit SMS limit
-        # Format: [Icon] SEVERITY: Location - Brief action
+        # Format: [PREFIX] SEVERITY: Location - Brief action
         if len(message) <= 140:
-            return f"{icon} {message}"
+            return f"{prefix} {message}"
 
         # Extract key information for ultra-short message
         if severity in ["emergency", "critical"]:
-            return f"{icon} FLOOD {severity.upper()}: {location}. EVACUATE NOW. Check FloodSense app for details."
+            return f"{prefix} FLOOD {severity.upper()}: {location}. EVACUATE NOW. Check FloodSense app for details."
         elif severity == "high":
-            return f"{icon} FLOOD WARNING: {location}. Prepare evacuation. Monitor updates."
+            return f"{prefix} FLOOD WARNING: {location}. Prepare evacuation. Monitor updates."
         else:
-            return f"{icon} FLOOD {severity.upper()}: {location}. Stay alert. Visit FloodSense."
+            return f"{prefix} FLOOD {severity.upper()}: {location}. Stay alert. Visit FloodSense."
 
     def send_sms(
         self,
@@ -217,7 +217,7 @@ class SMSService:
             logger.error("SMS service not configured")
             return False
 
-        test_message = "🌊 FloodSense SMS Alert Test: This is a test message. You are subscribed to flood alerts for South Sudan."
+        test_message = "FloodSense SMS Alert Test: This is a test message. You are subscribed to flood alerts for South Sudan."
 
         result = self.send_sms(
             phone_numbers=[phone_number],

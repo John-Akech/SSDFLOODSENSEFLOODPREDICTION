@@ -44,7 +44,7 @@ def seed_data():
             db.add(user)
             db.commit()
             db.refresh(user)
-            print("✓ Admin user created: admin@floodsense.org / admin123")
+            print("[OK] Admin user created: admin@floodsense.org / admin123")
 
         # Seed Locations (Real South Sudan Data)
         if db.query(Location).count() == 0:

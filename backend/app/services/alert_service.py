@@ -127,7 +127,7 @@ class AlertService:
             # LOW: Minor risk
             severity = "low"
             action = "Stay informed"
-            message = f"🔵 FLOOD INFORMATION for {location_str}: {action}. Minor flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Continue normal activities but monitor weather."
+            message = f"FLOOD INFORMATION for {location_str}: {action}. Minor flood risk ({flood_probability:.0%}) within {lead_time_hours} hours. Continue normal activities but monitor weather."
 
         # Add model confidence note
         message += f" Prediction: {model_type.upper()} model. Update frequency: Check for new alerts every 6 hours."

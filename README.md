@@ -14,7 +14,7 @@ A Machine Learning-Based Flood Forecasting System leveraging Satellite Imagery, 
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Key Achievements](#key-achievements)
@@ -75,7 +75,7 @@ FloodSense implements a modern microservices architecture with clear separation 
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Backend (API & ML Services)
 - **Framework:** FastAPI 0.115+ (Python 3.11+)
@@ -124,7 +124,7 @@ FloodSense implements a modern microservices architecture with clear separation 
 
 ---
 
-## 📦 Prerequisites
+## Prerequisites
 
 Before installing FloodSense, ensure you have the following software installed on your system:
 
@@ -165,7 +165,7 @@ Before installing FloodSense, ensure you have the following software installed o
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### Option 1: Docker (Recommended)
 
@@ -419,7 +419,7 @@ The SAR service will be available at [http://localhost:8080](http://localhost:80
 
 ---
 
-## 🏃 Running the Application
+## Running the Application
 
 ### Starting Services (Docker)
 
@@ -468,7 +468,7 @@ docker-compose up -d --build backend
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Backend Tests
 
@@ -536,7 +536,7 @@ locust -f ../locustfile.py
 
 ---
 
-## 🤖 Machine Learning Pipeline
+## Machine Learning Pipeline
 
 FloodSense implements a comprehensive, end-to-end ML pipeline for data extraction, preprocessing, model training, evaluation, and deployment.
 
@@ -727,7 +727,7 @@ The ML pipeline is fully automated and can be triggered:
 
 ---
 
-## 🌐 Production Deployment
+## Production Deployment
 
 FloodSense is deployed on DigitalOcean App Platform with automatic deployments from GitHub.
 
@@ -803,7 +803,7 @@ kubectl get pods -n floodsense
 
 ---
 
-## 📚 API Documentation
+## API Documentation
 
 ### Interactive API Documentation
 
@@ -868,7 +868,7 @@ curl -X GET "http://localhost:8000/api/v1/predictions/" \
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues and Solutions
 
@@ -1079,7 +1079,7 @@ If you encounter issues not covered here:
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 SSDFLOODSENSEFLOODPREDICTION/
@@ -1181,7 +1181,7 @@ SSDFLOODSENSEFLOODPREDICTION/
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these guidelines:
 
@@ -1271,7 +1271,7 @@ When reporting issues, include:
 
 ---
 
-## 📜 License & Contact
+## License & Contact
 
 ### License
 
@@ -1310,7 +1310,7 @@ If you use FloodSense in your research, please cite:
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **African Leadership University** for academic support
 - **Google Earth Engine** for satellite data access
@@ -1321,7 +1321,7 @@ If you use FloodSense in your research, please cite:
 
 ---
 
-## 📊 Project Status
+## Project Status
 
 **Current Version:** 1.0.0
 
@@ -1335,7 +1335,7 @@ If you use FloodSense in your research, please cite:
 
 ---
 
-## 🚀 Future Enhancements
+## Future Enhancements
 
 - [ ] Mobile application (iOS/Android)
 - [ ] WhatsApp integration for alerts
