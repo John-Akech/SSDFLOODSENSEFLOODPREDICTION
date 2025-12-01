@@ -16,6 +16,10 @@ class User(Base):
     role = Column(String, default="community_member")
     language = Column(String, default="en")
     contact_info = Column(Text, nullable=True)  # Encrypted with AES-256
+    # International format: +211...
+    phone_number = Column(String, nullable=True)
+    sms_alerts_enabled = Column(Boolean, default=False)
+    email_alerts_enabled = Column(Boolean, default=True)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())

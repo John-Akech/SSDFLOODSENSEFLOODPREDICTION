@@ -25,3 +25,5 @@ cryptography>=43.0.1
 psycopg2-binary==2.9.9  # PostgreSQL driver for production
 pywebpush==2.1.2
 starlette>=0.47.2
+twilio>=8.10.0  # SMS notifications via Twilio
+africastalking>=1.2.5  # SMS notifications via Africa's Talking (better African coverage)

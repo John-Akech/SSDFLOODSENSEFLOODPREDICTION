@@ -19,6 +19,7 @@ from .api.audit_routes import router as audit_router
 from .api.crud_routes import router as crud_router
 from .api.auth_routes import router as auth_router
 from .api.admin_routes import router as admin_router
+from .api.sms_routes import router as sms_router
 from .api.routes import router
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -81,8 +82,25 @@ async def lifespan(app: FastAPI):
         print(
             f"[WARNING] Push notification service initialization failed: {e}")
 
+    # Start automated alert scheduler
+    print("Starting automated alert scheduler...")
+    try:
+        from app.services.automated_alert_scheduler import get_automated_scheduler
+        import asyncio
+        scheduler = get_automated_scheduler()
+        asyncio.create_task(scheduler.start_scheduler())
+        print("[OK] Automated alert scheduler started (checking every 6 hours)")
+    except Exception as e:
+        print(f"[WARNING] Failed to start alert scheduler: {e}")
+
     yield
-    # Shutdown: cleanup would go here if needed
+    # Shutdown: Stop scheduler
+    try:
+        from app.services.automated_alert_scheduler import get_automated_scheduler
+        scheduler = get_automated_scheduler()
+        scheduler.stop_scheduler()
+    except Exception:
+        pass
 
 
 # Create the main FastAPI application
@@ -155,6 +173,7 @@ app.add_middleware(
 app.include_router(admin_router)
 app.include_router(auth_router)
 app.include_router(audit_router)  # Audit logs
+app.include_router(sms_router)  # SMS alert subscriptions
 app.include_router(router)
 app.include_router(crud_router)  # CRUD routes last
 
