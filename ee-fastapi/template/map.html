@@ -1745,8 +1745,18 @@
     <script src="https://cdn.jsdelivr.net/npm/ol@v7.5.2/dist/ol.js"></script>
     <script>
         window.__SAR_PUBLIC_PATH = "{{ public_path }}";
+        // Define toggleSidebar function inline as fallback
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.sidebar-toggle');
+            if (sidebar && toggle) {
+                sidebar.classList.toggle('open');
+                toggle.classList.toggle('active');
+            }
+        }
     </script>
-    <script src="{{ public_path if public_path else '/sar' }}/static/js/main.js?v={{ js_version }}"></script>
+    <script src="{{ public_path }}/static/js/main.js?v={{ js_version }}"
+        onerror="console.error('Failed to load main.js')"></script>
 </body>
 
 </html>
