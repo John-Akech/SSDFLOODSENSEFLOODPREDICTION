@@ -4,15 +4,13 @@ Runs predictions on schedule and automatically sends multi-channel alerts
 """
 import asyncio
 import logging
-from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import Dict, Any
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.services.model_service import ModelService
 from app.services.alert_service import alert_service
 from app.services.sms_service import get_sms_service
-from app.services.push_notification_service import get_push_service
 from app.utils.email_service import EmailService
 
 logger = logging.getLogger(__name__)
@@ -194,7 +192,7 @@ class AutomatedAlertScheduler:
             from app.models.database_models import DBUser
             users_with_phones = db.query(DBUser).filter(
                 DBUser.phone_number.isnot(None),
-                DBUser.sms_alerts_enabled == True
+                DBUser.sms_alerts_enabled
             ).all()
 
             if users_with_phones and self.sms_service.enabled:
@@ -221,7 +219,7 @@ class AutomatedAlertScheduler:
             from app.models.database_models import DBUser
             users_with_email = db.query(DBUser).filter(
                 DBUser.email.isnot(None),
-                DBUser.email_alerts_enabled == True
+                DBUser.email_alerts_enabled
             ).all()
 
             if users_with_email:

@@ -4,7 +4,6 @@ API endpoints for SMS alert subscriptions and testing
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
-from typing import Optional
 import re
 
 from app.core.database import get_db

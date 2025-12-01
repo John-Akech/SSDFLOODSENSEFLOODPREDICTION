@@ -3,6 +3,7 @@ from app.middleware.auth_middleware import get_current_user
 from app.services.gis_service import GISService
 from app.services.alert_service import alert_service
 from app.services.model_service import ModelService
+from app.core.config import settings
 from app.models.database_models import (
     Prediction as DBPrediction,
     Alert as DBAlert,

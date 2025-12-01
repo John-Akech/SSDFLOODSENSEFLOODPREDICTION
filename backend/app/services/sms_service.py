@@ -4,7 +4,7 @@ Sends SMS alerts via Twilio API for low-resource areas with limited internet
 Fallback to Africa's Talking for better regional coverage
 """
 import logging
-from typing import List, Optional
+from typing import List
 import os
 
 logger = logging.getLogger(__name__)
