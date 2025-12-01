@@ -4,13 +4,14 @@ LABEL maintainer="John Akech <j.akech@alustudent.com>"
 LABEL description="FloodSense Backend API - ML Predictions & Alerts"
 
 # Cache buster for forcing rebuilds - This forces Docker to rebuild from this point
-ARG CACHE_BUST=2025-11-24-v5
+ARG CACHE_BUST=2025-12-02-v1
 RUN echo "Cache bust: $CACHE_BUST"
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_DEFAULT_TIMEOUT=300 \
-    PIP_RETRIES=5
+    PIP_RETRIES=5 \
+    PYTHONPATH=/app
 
 WORKDIR /app
 
@@ -40,7 +41,8 @@ USER appuser
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')"
+# Simple health check that doesn't require models to be loaded
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

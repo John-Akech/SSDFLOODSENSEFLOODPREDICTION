@@ -245,6 +245,11 @@ async def audit_write_requests(request: Request, call_next):
 
 @app.get("/health")
 async def health_check():
+    """
+    Simple health check endpoint for container orchestration.
+    Returns healthy even if models are still loading to prevent container restarts.
+    Use /api/v1/health for detailed system status including model availability.
+    """
     return {
         "status": "healthy",
         "service": "FloodSense ML API",

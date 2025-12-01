@@ -4,7 +4,7 @@ LABEL maintainer="South Sudan Flood Prediction System"
 LABEL description="SAR-based flood detection using Google Earth Engine"
 
 # Cache buster for force rebuild
-ARG CACHE_BUST=2025-11-24-sar-v3
+ARG CACHE_BUST=2025-12-02-v1
 RUN echo "Cache bust: $CACHE_BUST"
 
 # Environment variables
@@ -14,7 +14,8 @@ ENV PYTHONFAULTHANDLER=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_DEFAULT_TIMEOUT=100 \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    PYTHONPATH=/app
 
 # Create app directory
 WORKDIR /app
@@ -29,8 +30,10 @@ RUN pip install --upgrade pip && \
 # Copy application code (excluding sensitive files via .dockerignore)
 COPY . .
 
-# Create output directory
-RUN mkdir -p output && chmod 755 output
+# Create necessary directories with proper permissions
+RUN mkdir -p output credentials && \
+    chmod 755 output && \
+    chmod 700 credentials 2>/dev/null || true
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && \
@@ -40,4 +43,8 @@ USER appuser
 
 EXPOSE 8080
 
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "4"]
+# Health check that works even during GEE initialization
+HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health').read()" || exit 1
+
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "2"]
