@@ -30,7 +30,7 @@ import os
 
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1")
+router = APIRouter(prefix="")
 
 
 def _in_test_mode() -> bool:

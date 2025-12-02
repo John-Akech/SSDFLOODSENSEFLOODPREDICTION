@@ -12,7 +12,7 @@ from app.schemas.schemas import UserCreate, User, Token, UserLogin
 from app.models.database_models import User as DBUser
 from app.middleware.auth_middleware import get_current_user
 
-router = APIRouter(prefix="/api/v1/auth", tags=["authentication"])
+router = APIRouter(prefix="/auth", tags=["authentication"])
 
 
 @router.post("/register", response_model=User, status_code=status.HTTP_200_OK)

@@ -186,9 +186,8 @@ def custom_openapi():
 
     # Define servers based on API_PUBLIC_PATH to ensure "Try it out" works correctly
     # behind the ingress proxy
-    # Use root path since router prefixes already include /api/v1
-    servers = [{"url": settings.API_PUBLIC_PATH}
-               ] if settings.API_PUBLIC_PATH else [{"url": "/"}]
+    # Ingress routes /api/v1 to backend, so set server to /api/v1
+    servers = [{"url": "/api/v1"}]
 
     openapi_schema = get_openapi(
         title=app.title,

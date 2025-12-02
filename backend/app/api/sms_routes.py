@@ -11,7 +11,7 @@ from app.models.database_models import User as DBUser
 from app.services.sms_service import get_sms_service
 from app.api.auth_routes import get_current_user
 
-router = APIRouter(prefix="/api/v1/sms", tags=["SMS Notifications"])
+router = APIRouter(prefix="/sms", tags=["SMS Notifications"])
 
 
 class SMSSubscriptionRequest(BaseModel):
