@@ -6,8 +6,13 @@ backend/tests/test_alert_service.py:generic-api-key:32
 # Example environment files (not real secrets)
 backend/.env.example:generic-api-key:144
 
-# Test fixtures and mock data
-**/tests/**/*.py
-**/.env.example
-**/.env.sample
-**/conftest.py
+# README documentation with example curl commands (not real tokens)
+91c48e8d71c5b7d80035351d657141ef322c32fd:README.md:curl-auth-header:860
+91c48e8d71c5b7d80035351d657141ef322c32fd:README.md:curl-auth-header:1001
+000d222*:README.md:curl-auth-header:*
+
+# Test fixtures and mock data (these formats don't work, keep the specific fingerprints above)
+# **/tests/**/*.py
+# **/.env.example
+# **/.env.sample
+# **/conftest.py
