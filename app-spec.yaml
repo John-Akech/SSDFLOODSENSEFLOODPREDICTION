@@ -50,7 +50,7 @@ services:
     value: http://sar-detection:8080
   - key: API_PUBLIC_PATH
     scope: RUN_AND_BUILD_TIME
-    value: /api/v1
+    value: /
   - key: ENVIRONMENT
     scope: RUN_AND_BUILD_TIME
     value: production

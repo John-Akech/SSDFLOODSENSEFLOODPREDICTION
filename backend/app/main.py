@@ -168,7 +168,7 @@ app.add_middleware(
 
 # app.add_exception_handler(SQLAlchemyError, database_error_handler)
 
-# Include API routes without prefix (DigitalOcean ingress adds /api/v1 externally)
+# Include API routes WITHOUT prefix since routers already have /api/v1 in their own prefix
 # Order matters - more specific routes should be included first
 app.include_router(admin_router)
 app.include_router(auth_router)
@@ -186,8 +186,9 @@ def custom_openapi():
 
     # Define servers based on API_PUBLIC_PATH to ensure "Try it out" works correctly
     # behind the ingress proxy
+    # Use root path since router prefixes already include /api/v1
     servers = [{"url": settings.API_PUBLIC_PATH}
-               ] if settings.API_PUBLIC_PATH else [{"url": "/api/v1"}]
+               ] if settings.API_PUBLIC_PATH else [{"url": "/"}]
 
     openapi_schema = get_openapi(
         title=app.title,

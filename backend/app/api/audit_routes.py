@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     pass
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1")
 
 # Response models
 

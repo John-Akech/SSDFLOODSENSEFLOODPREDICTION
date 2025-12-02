@@ -89,7 +89,7 @@ def register_user(client, make_email):
             "role": overrides.get("role", "community_member"),
             "language": overrides.get("language", "en"),
         }
-        response = client.post("/auth/register", json=payload)
+        response = client.post("/api/v1/auth/register", json=payload)
         assert response.status_code in (200, 201), response.text
         return payload, response.json()
 
@@ -101,7 +101,7 @@ def auth_headers(client, register_user):
     """Return Authorization headers for an authenticated user."""
     user_payload, _ = register_user()
     login_response = client.post(
-        "/auth/login",
+        "/api/v1/auth/login",
         params={"email": user_payload["email"],
                 "password": user_payload["password"]},
     )

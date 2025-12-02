@@ -130,8 +130,10 @@ def clear_failed_logins(email: str):
         del failed_login_attempts[email]
 
 
-def sanitize_input(input_str: str) -> str:
+def sanitize_input(input_str: str | None) -> str:
     """Sanitize user input to prevent injection attacks"""
+    if input_str is None:
+        return ""
     # Remove potential SQL injection characters
     dangerous_chars = ['--', ';', '/*', '*/', 'xp_',
                        'sp_', 'DROP', 'DELETE', 'INSERT', 'UPDATE']
