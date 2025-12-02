@@ -1,3 +1,4 @@
+/* eslint-env node */
 // Mock import.meta for Jest
 const importMeta = {
     env: {
