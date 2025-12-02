@@ -89,7 +89,9 @@ def initialize_database():
 
     try:
         from app.core.database import engine, Base
-        from app.models import database_models, audit_log
+        # Import models to register them with Base
+        import app.models.database_models  # noqa: F401
+        import app.models.audit_log  # noqa: F401
 
         Base.metadata.create_all(bind=engine)
         print("✓ Database tables initialized")

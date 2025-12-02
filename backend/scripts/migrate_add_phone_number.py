@@ -36,7 +36,7 @@ def migrate_database():
 
     # Get database connection
     db_url = get_database_url()
-    print(f"Connecting to database...")
+    print("Connecting to database...")
 
     try:
         engine = create_engine(db_url)
