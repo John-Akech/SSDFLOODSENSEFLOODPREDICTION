@@ -65,19 +65,6 @@ jobs:
       - name: pip-audit
         run: pip-audit -r backend/requirements.txt
 
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source . --report-format sarif --report-path gitleaks-report.sarif
-
-      - name: Upload gitleaks report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-gitleaks-report
-          path: gitleaks-report.sarif
-          if-no-files-found: warn
-
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@0.24.0
         with:

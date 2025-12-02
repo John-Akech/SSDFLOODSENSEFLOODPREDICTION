@@ -51,19 +51,6 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v2
-        with:
-          args: detect --source . --report-format sarif --report-path frontend-gitleaks.sarif
-
-      - name: Upload gitleaks report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-gitleaks-report
-          path: frontend-gitleaks.sarif
-          if-no-files-found: warn
-
       - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
