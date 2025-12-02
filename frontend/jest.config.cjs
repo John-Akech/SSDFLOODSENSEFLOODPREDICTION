@@ -5,6 +5,7 @@ module.exports = {
     testEnvironment: 'jsdom',
     clearMocks: true,
     maxWorkers: 2,
+    setupFiles: ['<rootDir>/jest.setup.js'],
     setupFilesAfterEnv: ['<rootDir>/src/test/setupTests.ts'],
     testMatch: ['<rootDir>/src/**/*.(spec|test).(ts|tsx)'],
     transform: {

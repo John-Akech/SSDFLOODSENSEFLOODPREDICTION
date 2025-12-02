@@ -3,8 +3,10 @@ import { apiService } from '../services/api';
 import { reverseGeocode } from '../services/geocoding';
 import '../styles/flood-colors.css';
 
-// VAPID public key directly from Vite environment
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+// VAPID public key from Vite environment (with fallback for tests)
+const VAPID_PUBLIC_KEY = typeof import.meta !== 'undefined'
+  ? import.meta.env.VITE_VAPID_PUBLIC_KEY
+  : '';
 
 const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
