@@ -65,8 +65,8 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_VAPID_PUBLIC_KEY: BCfFpupgFjzlrtWzheHdS2eZeglftP82MOIzlQzjFfxnuxKr3TXbi29bdRaEmux1w6SUXH93ZRArDqyi1KYLy-U
-        VITE_API_URL: http://localhost:8000/api/v1
-        VITE_SAR_URL: http://localhost:8080
+        VITE_API_URL: /api/v1
+        VITE_SAR_URL: /sar
     ports:
       - "80:80"
     depends_on:
